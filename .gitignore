@@ -1,0 +1,10 @@
+**/node_modules/
+**/dist/
+**/.git/
+/installer/build/
+*.exe
+*.syso
+*.log
+*.zip
+.env
+.DS_Store

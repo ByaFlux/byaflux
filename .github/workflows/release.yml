@@ -1,0 +1,88 @@
+name: Publicar ByaFlux
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: byaflux-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  mod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: node scripts/configure.mjs
+      - run: npm install --global pnpm@12.18.0
+      - run: pnpm --dir mod install --frozen-lockfile
+      - run: node --test tests/*.test.mjs
+      - run: pnpm --dir mod testTsc
+      - run: pnpm --dir mod buildStandalone
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mod
+          path: |
+            mod/dist/desktop.asar
+            mod/LICENSE
+          if-no-files-found: error
+  installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: node scripts/configure.mjs
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: installer/go.mod
+          cache-dependency-path: installer/go.sum
+      - uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884
+        with:
+          path-type: inherit
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2
+      - name: Compilar instaladores Windows x64
+        working-directory: installer
+        shell: msys2 {0}
+        run: |
+          go mod download
+          go test -tags cli ./...
+          go install github.com/tc-hib/go-winres@d743268d7ea168077ddd443c4240562d4f5e8c3e
+          VERSION="Unknown"
+          RESOURCE_VERSION="0.0.0"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="$GITHUB_REF_NAME"
+            RESOURCE_VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          go-winres make --product-version "$RESOURCE_VERSION"
+          HASH="$(git rev-parse --short HEAD)"
+          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -tags 'static gui' -ldflags "-s -w -H=windowsgui -extldflags=-static -X equilotl/buildinfo.InstallerGitHash=$HASH -X equilotl/buildinfo.InstallerTag=$VERSION" -o ByaFluxInstaller.exe
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -tags cli -ldflags "-s -w -X equilotl/buildinfo.InstallerGitHash=$HASH -X equilotl/buildinfo.InstallerTag=$VERSION" -o ByaFluxInstallerCli.exe
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: installers
+          path: installer/ByaFluxInstaller*.exe
+          if-no-files-found: error
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [mod, installer]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          path: release
+          merge-multiple: true
+      - name: Publicar versão completa
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" release/* --verify-tag --title "ByaFlux $GITHUB_SHA" --notes-file RELEASE_NOTES.md --latest
