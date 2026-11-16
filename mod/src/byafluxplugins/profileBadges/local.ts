@@ -55,7 +55,15 @@ export const profilePatch = {
 export const accountPatch = {
     find: 'action:"PRESS_SWITCH_ACCOUNTS"',
     replacement: {
-        match: /onCloseAccountPopout:(\i)\}\)(?=\]\}\)\}\))/,
-        replace: "$&,$self.renderAccountAction($1)"
+        match: /onCloseAccountPopout:(\i)\}\)(?=\]\}\)\}\),\(0,\i.jsx\)\(\i\.\i.Overlay,\{className:\i\.\i,children:\(0,\i.jsxs\)\(\i,\{children:\[\(0,\i.jsx\)\((\i),\{action:"PRESS_SWITCH_ACCOUNTS")/,
+        replace: "$&,$self.renderAccountAction($2,$1)"
+    }
+};
+
+export const accountContextPatch = {
+    find: "handleOpenSettingsContextMenu=",
+    replacement: {
+        match: /(?<=focusProps:\{ringTarget:\i\},className:\i\.\i,)(?="data-jump-section":\i\})/,
+        replace: "onContextMenu:$self.openSelfContextMenu,"
     }
 };
