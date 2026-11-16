@@ -1,0 +1,15 @@
+.vc-profilebadges-content {
+    padding-bottom: 20px;
+}
+
+.vc-profilebadges-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vc-profilebadges-option img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}

@@ -1,0 +1,26 @@
+ByaFlux 0.0.7-test.1 — ProfileBadges local
+
+Teste em uma pasta separada da sua instalação estável.
+
+1. Instale Node.js 24 ou superior e pnpm.
+2. Feche o Discord completamente, inclusive o ícone perto do relógio.
+3. Abra o terminal na pasta ByaFlux deste pacote:
+
+   pnpm install
+   pnpm build
+   pnpm inject
+
+4. Abra o Discord e clique no seu usuário no canto inferior esquerdo.
+5. Use Set badges, logo abaixo de Orbs.
+
+ProfileBadges fica em Plugins > Show ByaFlux e vem ativo por padrão.
+Se precisar, também é possível abrir Set badges nas configurações do plugin.
+Se houver outra cópia de ProfileBadges em userplugins, remova a cópia antiga antes de compilar.
+
+As alterações são locais e separadas por conta. Não há API, publicação das escolhas nem criação de badges personalizadas neste plugin.
+O botão Restaurar badges reais desfaz as escolhas visuais.
+ByaBadges, o sistema oficial de badges do projeto, continua independente.
+
+Inclui código fonte e build de desenvolvimento, com atualizações automáticas desativadas.
+Validação: 37 testes, TypeScript, compilação e aplicação dos patches no bundle web atual do Discord.
+A interface ainda precisa ser conferida dentro do Discord para Windows.

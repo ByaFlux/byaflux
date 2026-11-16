@@ -1,0 +1,61 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2026 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+import type { ProfileBadge } from "@api/Badges";
+
+import { boostLevels, currentBadge, imageUrl, nitroLevels, staticBadges } from "./badges";
+
+export interface BadgeSelection {
+    selectedBadges: string[];
+    nitroLevel: string;
+    boostLevel: string;
+}
+
+export const emptySelection: BadgeSelection = { selectedBadges: [], nitroLevel: "basic", boostLevel: "1m" };
+
+export function applyLocalBadges(userId: string | undefined, currentUserId: string | undefined, badges: ProfileBadge[], selection = emptySelection): ProfileBadge[] {
+    if (!currentUserId || userId !== currentUserId) return badges;
+    const selected = new Set(selection.selectedBadges);
+    const chosen = staticBadges.filter(badge => selected.has(badge.key));
+    if (selected.has("nitro")) {
+        const badge = currentBadge(nitroLevels, selection.nitroLevel);
+        chosen.push({ key: "nitro", title: `Discord Nitro · ${badge.title}`, hash: badge.hash });
+    }
+    if (selected.has("boost")) {
+        const badge = currentBadge(boostLevels, selection.boostLevel);
+        chosen.push({ key: "boost", title: `Server Boost · ${badge.title}`, hash: badge.hash });
+    }
+    const replacedHashes = new Set(chosen.map(badge => badge.hash));
+    if (selected.has("nitro")) nitroLevels.forEach(badge => replacedHashes.add(badge.hash));
+    if (selected.has("boost")) boostLevels.forEach(badge => replacedHashes.add(badge.hash));
+    return [
+        ...badges.filter(badge => !badge.id.startsWith("byaflux-local-") && ![...replacedHashes].some(hash => badge.iconSrc?.includes(hash))),
+        ...chosen.map(badge => ({
+            id: `byaflux-local-${badge.key}`,
+            name: badge.title,
+            description: badge.title,
+            detail: "Visual local. Esta badge não foi adicionada à sua conta do Discord.",
+            infoLabel: "ByaFlux · Visual local",
+            iconSrc: imageUrl(badge.hash)
+        }))
+    ];
+}
+
+export const profilePatch = {
+    find: "UserProfileBadgeListRows",
+    replacement: {
+        match: /let (\i)=(\i)(?=;if\(null!=\i\)\{let \i=new Set\(\2.map)/,
+        replace: "let $1=$self.applyLocalBadges(arguments[0].displayProfile?.userId,$2)"
+    }
+};
+
+export const accountPatch = {
+    find: 'action:"PRESS_SWITCH_ACCOUNTS"',
+    replacement: {
+        match: /onCloseAccountPopout:(\i)\}\)(?=\]\}\)\}\))/,
+        replace: "$&,$self.renderAccountAction($1)"
+    }
+};
