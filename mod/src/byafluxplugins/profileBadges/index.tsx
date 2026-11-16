@@ -12,16 +12,14 @@ import { isPluginEnabled } from "@api/PluginManager";
 import { definePluginSettings } from "@api/Settings";
 import { Button } from "@components/Button";
 import ErrorBoundary from "@components/ErrorBoundary";
-import { FormSwitch } from "@components/FormSwitch";
 import { StarFilled } from "@components/Icons";
-import { Paragraph } from "@components/Paragraph";
 import { Devs } from "@utils/constants";
 import definePlugin from "@utils/types";
-import { ContextMenuApi, Menu, Modal, openModal, React, Select, UserStore } from "@webpack/common";
+import { ContextMenuApi, Menu, Modal, openModal, React, UserStore } from "@webpack/common";
 import type { RenderModalProps } from "@vencord/discord-types";
 import type { ComponentType } from "react";
 
-import { boostLevels, currentBadge, imageUrl, nitroLevels, staticBadges } from "./badges";
+import { BadgeEditor } from "./editor";
 import { accountContextPatch, accountPatch, applyLocalBadges, BadgeSelection, emptySelection, profilePatch } from "./local";
 
 const settings = definePluginSettings({}).withPrivateSettings<{ profiles?: Record<string, BadgeSelection>; }>();
@@ -34,21 +32,6 @@ interface AccountActionProps {
     onClick(): void;
 }
 
-function LevelPicker({ levels, value, onChange }: {
-    levels: typeof nitroLevels;
-    value: string;
-    onChange(value: string): void;
-}) {
-    return <Select
-        options={levels.map(level => ({ value: level.id, label: level.title }))}
-        isSelected={id => id === value}
-        select={onChange}
-        serialize={id => id}
-        renderOptionLabel={option => <span className="vc-profilebadges-option"><img src={imageUrl(currentBadge(levels, option.value).hash)} alt="" />{option.label}</span>}
-        renderOptionValue={options => options.map(option => <span key={option.value} className="vc-profilebadges-option"><img src={imageUrl(currentBadge(levels, option.value).hash)} alt="" />{option.label}</span>)}
-    />;
-}
-
 function BadgePanel({ userId, ...props }: RenderModalProps & { userId: string; }) {
     const { profiles } = settings.use(PROFILE_KEYS);
     const selection = profiles?.[userId] ?? emptySelection;
@@ -56,22 +39,8 @@ function BadgePanel({ userId, ...props }: RenderModalProps & { userId: string; }
         settings.store.profiles = { ...settings.store.profiles, [userId]: { ...(settings.store.profiles?.[userId] ?? emptySelection), ...change } };
         notifyBadgeUpdates();
     }
-    function toggle(key: string, enabled: boolean) {
-        const current = settings.store.profiles?.[userId] ?? emptySelection;
-        save({ selectedBadges: enabled ? [...new Set([...current.selectedBadges, key])] : current.selectedBadges.filter(item => item !== key) });
-    }
     return <Modal {...props} title="Set badges" size="md">
-        <div className="vc-profilebadges-content">
-            <Paragraph>Somente você vê estas alterações. Elas não concedem Nitro, benefícios ou badges reais.</Paragraph>
-            {staticBadges.map(badge => <FormSwitch key={badge.key}
-                title={<span className="vc-profilebadges-option"><img src={imageUrl(badge.hash)} alt="" />{badge.title}</span>}
-                value={selection.selectedBadges.includes(badge.key)} onChange={enabled => toggle(badge.key, enabled)} />)}
-            <FormSwitch title="Discord Nitro" value={selection.selectedBadges.includes("nitro")} onChange={enabled => toggle("nitro", enabled)} />
-            {selection.selectedBadges.includes("nitro") && <LevelPicker levels={nitroLevels} value={selection.nitroLevel} onChange={nitroLevel => save({ nitroLevel })} />}
-            <FormSwitch title="Server Boost" value={selection.selectedBadges.includes("boost")} onChange={enabled => toggle("boost", enabled)} />
-            {selection.selectedBadges.includes("boost") && <LevelPicker levels={boostLevels} value={selection.boostLevel} onChange={boostLevel => save({ boostLevel })} />}
-            <Button variant="secondary" onClick={() => save({ ...emptySelection, selectedBadges: [] })}>Restaurar badges reais</Button>
-        </div>
+        <BadgeEditor selection={selection} save={save} />
     </Modal>;
 }
 

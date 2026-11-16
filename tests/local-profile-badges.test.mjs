@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from '../mod/node_modules/esbuild/lib/main.js';
 const { outputFiles } = await build({ entryPoints: ['mod/src/byafluxplugins/profileBadges/local.ts'], bundle: true, write: false, format: 'esm', platform: 'node' });
-const { applyLocalBadges, accountPatch, profilePatch, accountContextPatch } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`);
+const { applyLocalBadges, accountPatch, profilePatch, accountContextPatch, badgeOrder, moveBadge, dragTarget, dragOffset } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`);
 const self = '1227436212982251533';
 const selection = { selectedBadges: ['staff', 'nitro', 'boost'], nitroLevel: 'gold', boostLevel: '24m' };
 const canonical = regex => new RegExp(regex.source.replaceAll('\\i', '(?:[A-Za-z_$][\\w$]*)'), regex.flags);
@@ -56,7 +56,7 @@ test('profile patch uses the profile user ID and preserves native array for othe
     assert.ok(row({displayProfile:{userId:self}}).some(b => b.id === 'byaflux-local-staff'));
 });
 
-async function loadPlugin() {
+async function loadPlugin(entry = "index.tsx") {
     const modules = {
         '@api/Badges': 'export function notifyBadgeUpdates(){};',
         '@api/PluginManager': 'export const isPluginEnabled=()=>!!globalThis.__accountProfileEnabled;',
@@ -68,13 +68,15 @@ async function loadPlugin() {
         '@components/Paragraph': 'export function Paragraph(){}',
         '@utils/constants': 'export const Devs={Ven:{id:1n,name:"Ven"}}',
         '@utils/types': 'export default x=>x;',
+        '@utils/misc': 'export const classes=(...values)=>values.filter(Boolean).join(" ");',
         '@webpack/common': `export const UserStore={getCurrentUser:()=>({id:"${self}"})}; export const React={createElement(type,props,...children){return {type,props:{...props,...(children.length?{children:children.length===1?children[0]:children}:{})}}}}; export const Menu={Menu:"menu",MenuGroup:"group",MenuItem:"item"}; export const ContextMenuApi={openContextMenu(event,render){globalThis.__selfContextRender=render;},closeContextMenu(){}}; export const Modal="modal",Select="select"; export function openModal(render){globalThis.__localBadgeModal=render;}`
     };
-    const result = await build({entryPoints:['mod/src/byafluxplugins/profileBadges/index.tsx'],bundle:true,write:false,format:'esm',platform:'node',loader:{'.css':'empty'},plugins:[{name:'runtime',setup(b){
+    const result = await build({entryPoints:[`mod/src/byafluxplugins/profileBadges/${entry}`],bundle:true,write:false,format:'esm',platform:'node',loader:{'.css':'empty'},plugins:[{name:'runtime',setup(b){
         b.onResolve({filter:/.*/},args=>Object.hasOwn(modules,args.path)?{path:args.path,namespace:'fixture'}:undefined);
         b.onLoad({filter:/.*/,namespace:'fixture'},args=>({contents:modules[args.path]}));
     }}]});
-    return (await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'))).default;
+    const module = await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));
+    return entry === 'index.tsx' ? module.default : module;
 }
 
 test('self context menus open the local editor while other user menus stay unchanged', async t => {
@@ -130,4 +132,41 @@ test('account panel right click opens Set badges and preserves the server-profil
     const patched=source.replace(canonical(accountContextPatch.replacement.match),accountContextPatch.replacement.replace.replaceAll('$self','plugin'));
     assert.match(patched,/onContextMenu:plugin.openSelfContextMenu/);
     plugin.stop();
+});
+
+
+test('badge ordering survives duplicate, unknown and older saved entries', () => {
+    const order = badgeOrder(['boost','unknown','nitro','boost']);
+    assert.deepEqual(order.slice(0,2),['boost','nitro']);
+    assert.equal(order.length,14);
+    assert.deepEqual(badgeOrder(),badgeOrder(undefined));
+    const selected = {...selection,order};
+    assert.deepEqual(applyLocalBadges(self,self,[],selected).map(b=>b.id),['byaflux-local-boost','byaflux-local-nitro','byaflux-local-staff']);
+    assert.deepEqual(moveBadge(['nitro','boost','staff'],0,2),['boost','staff','nitro']);
+});
+
+test('drag offsets account for expanded level rows and support both directions', () => {
+    const rects=[{top:0,height:60},{top:60,height:280},{top:340,height:60}];
+    assert.equal(dragTarget(rects,400),2);
+    assert.equal(dragTarget(rects,-50),0);
+    assert.equal(dragOffset(rects,0,2,0),340);
+    assert.equal(dragOffset(rects,0,2,1),-60);
+    assert.equal(dragOffset(rects,1,0,1),-60);
+    assert.equal(dragOffset(rects,1,0,0),280);
+    assert.equal(dragOffset(rects,1,1,2),0);
+});
+
+
+test('every Nitro and Boost level is selectable by its exact saved ID', async () => {
+    const { LevelPicker } = await loadPlugin('editor.tsx');
+    const { nitroLevels, boostLevels } = await import('../mod/src/byafluxplugins/profileBadges/badges.ts');
+    for (const levels of [nitroLevels,boostLevels]) {
+        const selected=[];
+        const tree=LevelPicker({levels,value:levels[2].id,onChange:value=>selected.push(value)});
+        const buttons=tree.props.children;
+        for (const button of buttons) button.props.onClick();
+        assert.deepEqual(selected,levels.map(level=>level.id));
+        assert.equal(buttons[2].props['aria-pressed'],true);
+        assert.equal(buttons.filter(button=>button.props['aria-pressed']).length,1);
+    }
 });

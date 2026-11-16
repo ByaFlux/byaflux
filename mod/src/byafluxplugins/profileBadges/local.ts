@@ -12,9 +12,38 @@ export interface BadgeSelection {
     selectedBadges: string[];
     nitroLevel: string;
     boostLevel: string;
+    order?: string[];
 }
 
 export const emptySelection: BadgeSelection = { selectedBadges: [], nitroLevel: "basic", boostLevel: "1m" };
+
+export const badgeKeys = [...staticBadges.map(badge => badge.key), "nitro", "boost"];
+
+export function badgeOrder(order: readonly string[] = []): string[] {
+    return [...new Set([...order.filter(key => badgeKeys.includes(key)), ...badgeKeys])];
+}
+
+export function moveBadge(order: readonly string[], from: number, to: number): string[] {
+    const next = [...order];
+    const [key] = next.splice(from, 1);
+    next.splice(to, 0, key);
+    return next;
+}
+
+export interface BadgeRect { top: number; height: number; }
+
+export function dragTarget(rects: readonly BadgeRect[], center: number): number {
+    return Math.max(0, rects.findLastIndex(rect => center >= rect.top + rect.height / 2));
+}
+
+export function dragOffset(rects: readonly BadgeRect[], from: number, to: number, index: number): number {
+    if (index === from) return to > from
+        ? rects[to].top + rects[to].height - rects[from].top - rects[from].height
+        : rects[to].top - rects[from].top;
+    if (index > from && index <= to) return -rects[from].height;
+    if (index >= to && index < from) return rects[from].height;
+    return 0;
+}
 
 export function applyLocalBadges(userId: string | undefined, currentUserId: string | undefined, badges: ProfileBadge[], selection = emptySelection): ProfileBadge[] {
     if (!currentUserId || userId !== currentUserId) return badges;
@@ -28,6 +57,8 @@ export function applyLocalBadges(userId: string | undefined, currentUserId: stri
         const badge = currentBadge(boostLevels, selection.boostLevel);
         chosen.push({ key: "boost", title: `Server Boost · ${badge.title}`, hash: badge.hash });
     }
+    const order = badgeOrder(selection.order);
+    chosen.sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
     const replacedHashes = new Set(chosen.map(badge => badge.hash));
     if (selected.has("nitro")) nitroLevels.forEach(badge => replacedHashes.add(badge.hash));
     if (selected.has("boost")) boostLevels.forEach(badge => replacedHashes.add(badge.hash));
