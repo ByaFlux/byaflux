@@ -1,7 +1,11 @@
 name: Publicar ByaFlux
 on:
   push:
+    branches: [main]
     tags: ['v*']
+    paths:
+      - package.json
+      - mod/package.json
   workflow_dispatch:
 permissions:
   contents: read
@@ -54,8 +58,8 @@ jobs:
           go mod download
           go test -tags cli ./...
           go install github.com/tc-hib/go-winres@d743268d7ea168077ddd443c4240562d4f5e8c3e
-          VERSION="Unknown"
-          RESOURCE_VERSION="0.0.0"
+          RESOURCE_VERSION="$(node -p "require('../package.json').version")"
+          VERSION="v$RESOURCE_VERSION"
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="$GITHUB_REF_NAME"
             RESOURCE_VERSION="${GITHUB_REF_NAME#v}"
@@ -70,7 +74,7 @@ jobs:
           path: installer/ByaFluxInstaller*.exe
           if-no-files-found: error
   release:
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     needs: [mod, installer]
     runs-on: ubuntu-latest
     permissions:
@@ -85,4 +89,34 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" release/* --verify-tag --title "ByaFlux $GITHUB_SHA" --notes-file RELEASE_NOTES.md --latest
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          mod_version="$(node -p "require('./mod/package.json').version")"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          test "$version" = "$mod_version"
+          tag="v$version"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            test "$GITHUB_REF_NAME" = "$tag"
+          fi
+
+          mkdir -p publish
+          cp release/dist/desktop.asar publish/desktop.asar
+          cp release/LICENSE publish/LICENSE
+          cp release/ByaFluxInstaller.exe publish/ByaFluxInstaller.exe
+          cp release/ByaFluxInstallerCli.exe publish/ByaFluxInstallerCli.exe
+          release_files=(
+            publish/desktop.asar
+            publish/ByaFluxInstaller.exe
+            publish/ByaFluxInstallerCli.exe
+            publish/LICENSE
+          )
+          for file in "${release_files[@]}"; do
+            test -s "$file"
+          done
+
+          if gh release view "$tag" > /dev/null 2>&1; then
+            gh release upload "$tag" "${release_files[@]}" --clobber
+          else
+            gh release create "$tag" "${release_files[@]}" --target "$GITHUB_SHA" --draft --title "ByaFlux $GITHUB_SHA" --notes-file RELEASE_NOTES.md
+          fi
+          gh release edit "$tag" --draft=false --title "ByaFlux $GITHUB_SHA" --notes-file RELEASE_NOTES.md --latest
