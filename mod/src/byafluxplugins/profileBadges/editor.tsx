@@ -148,7 +148,9 @@ export function BadgeEditor({ selection, save }: EditorProps) {
                                 const to = Math.max(0, Math.min(order.length - 1, index + (event.key === "ArrowUp" ? -1 : 1)));
                                 save({ order: moveBadge(order, index, to) });
                                 setNotice(`${title}: posição ${to + 1}.`);
-                            }}><span aria-hidden="true">⋮⋮</span></Button>
+                            }}><span className="vc-profilebadges-grip" aria-hidden="true">
+                                {[0, 1, 2, 3].map(dot => <span key={dot} />)}
+                            </span></Button>
                         <div className="vc-profilebadges-row-content">
                             <FormSwitch title={<span className="vc-profilebadges-option"><img src={imageUrl(hash)} alt="" />{title}</span>}
                                 value={selected} onChange={enabled => toggle(key, enabled)} hideBorder />

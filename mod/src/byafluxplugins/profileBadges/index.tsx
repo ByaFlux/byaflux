@@ -6,7 +6,7 @@
 
 import "./style.css";
 
-import { notifyBadgeUpdates, ProfileBadge } from "@api/Badges";
+import { getBadgeRevision, notifyBadgeUpdates, ProfileBadge, subscribeToBadgeUpdates } from "@api/Badges";
 import type { NavContextMenuPatchCallback } from "@api/ContextMenu";
 import { isPluginEnabled } from "@api/PluginManager";
 import { definePluginSettings } from "@api/Settings";
@@ -23,7 +23,6 @@ import { BadgeEditor } from "./editor";
 import { accountContextPatch, accountPatch, applyLocalBadges, BadgeSelection, emptySelection, profilePatch } from "./local";
 
 const settings = definePluginSettings({}).withPrivateSettings<{ profiles?: Record<string, BadgeSelection>; }>();
-const PROFILE_KEYS: "profiles"[] = ["profiles"];
 let active = false;
 
 interface AccountActionProps {
@@ -33,8 +32,8 @@ interface AccountActionProps {
 }
 
 function BadgePanel({ userId, ...props }: RenderModalProps & { userId: string; }) {
-    const { profiles } = settings.use(PROFILE_KEYS);
-    const selection = profiles?.[userId] ?? emptySelection;
+    React.useSyncExternalStore(subscribeToBadgeUpdates, getBadgeRevision, getBadgeRevision);
+    const selection = settings.store.profiles?.[userId] ?? emptySelection;
     function save(change: Partial<BadgeSelection>) {
         settings.store.profiles = { ...settings.store.profiles, [userId]: { ...(settings.store.profiles?.[userId] ?? emptySelection), ...change } };
         notifyBadgeUpdates();

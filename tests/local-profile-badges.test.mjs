@@ -58,7 +58,7 @@ test('profile patch uses the profile user ID and preserves native array for othe
 
 async function loadPlugin(entry = "index.tsx") {
     const modules = {
-        '@api/Badges': 'export function notifyBadgeUpdates(){};',
+        '@api/Badges': 'let revision=0;const listeners=new Set();export function notifyBadgeUpdates(){revision++;for(const listener of listeners)listener()};export function subscribeToBadgeUpdates(listener){listeners.add(listener);return ()=>listeners.delete(listener)};export const getBadgeRevision=()=>revision;',
         '@api/PluginManager': 'export const isPluginEnabled=()=>!!globalThis.__accountProfileEnabled;',
         '@api/Settings': 'export function definePluginSettings(){return {withPrivateSettings(){return this},store:{}}}',
         '@components/Button': 'export function Button(){}',
@@ -69,7 +69,7 @@ async function loadPlugin(entry = "index.tsx") {
         '@utils/constants': 'export const Devs={Ven:{id:1n,name:"Ven"}}',
         '@utils/types': 'export default x=>x;',
         '@utils/misc': 'export const classes=(...values)=>values.filter(Boolean).join(" ");',
-        '@webpack/common': `export const UserStore={getCurrentUser:()=>({id:"${self}"})}; export const React={createElement(type,props,...children){return {type,props:{...props,...(children.length?{children:children.length===1?children[0]:children}:{})}}}}; export const Menu={Menu:"menu",MenuGroup:"group",MenuItem:"item"}; export const ContextMenuApi={openContextMenu(event,render){globalThis.__selfContextRender=render;},closeContextMenu(){}}; export const Modal="modal",Select="select"; export function openModal(render){globalThis.__localBadgeModal=render;}`
+        '@webpack/common': `export const UserStore={getCurrentUser:()=>({id:"${self}"})}; export const React={useSyncExternalStore(subscribe,getSnapshot){globalThis.__panelSubscription?.();globalThis.__panelSubscription=subscribe(()=>{globalThis.__panelUpdates=(globalThis.__panelUpdates??0)+1});return getSnapshot()},createElement(type,props,...children){return {type,props:{...props,...(children.length?{children:children.length===1?children[0]:children}:{})}}}}; export const Menu={Menu:"menu",MenuGroup:"group",MenuItem:"item"}; export const ContextMenuApi={openContextMenu(event,render){globalThis.__selfContextRender=render;},closeContextMenu(){}}; export const Modal="modal",Select="select"; export function openModal(render){globalThis.__localBadgeModal=render;}`
     };
     const result = await build({entryPoints:[`mod/src/byafluxplugins/profileBadges/${entry}`],bundle:true,write:false,format:'esm',platform:'node',loader:{'.css':'empty'},plugins:[{name:'runtime',setup(b){
         b.onResolve({filter:/.*/},args=>Object.hasOwn(modules,args.path)?{path:args.path,namespace:'fixture'}:undefined);
@@ -169,4 +169,21 @@ test('every Nitro and Boost level is selectable by its exact saved ID', async ()
         assert.equal(buttons[2].props['aria-pressed'],true);
         assert.equal(buttons.filter(button=>button.props['aria-pressed']).length,1);
     }
+});
+
+
+test('open badge panel observes saves immediately without the settings hook', async t => {
+    t.after(()=>{globalThis.__panelSubscription?.();delete globalThis.__panelSubscription;delete globalThis.__panelUpdates;delete globalThis.__localBadgeModal;});
+    const plugin=await loadPlugin();
+    plugin.toolboxActions['Set badges']();
+    const panel=globalThis.__localBadgeModal({onClose(){},transitionState:0});
+    let editor=panel.type(panel.props).props.children;
+    editor.props.save({selectedBadges:['nitro','boost'],nitroLevel:'gold',boostLevel:'24m'});
+    assert.equal(globalThis.__panelUpdates,1);
+    editor=panel.type(panel.props).props.children;
+    assert.equal(editor.props.selection.nitroLevel,'gold');
+    assert.equal(editor.props.selection.boostLevel,'24m');
+    editor.props.save({selectedBadges:[]});
+    assert.equal(globalThis.__panelUpdates,2);
+    assert.deepEqual(panel.type(panel.props).props.children.props.selection.selectedBadges,[]);
 });

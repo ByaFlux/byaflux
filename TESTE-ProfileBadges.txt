@@ -1,4 +1,4 @@
-ByaFlux 0.0.7-test.3 — ProfileBadges local
+ByaFlux 0.0.7-test.4 — ProfileBadges local
 
 Teste em uma pasta separada da sua instalação estável.
 
@@ -23,7 +23,7 @@ O botão Restaurar badges reais desfaz as escolhas visuais.
 ByaBadges, o sistema oficial de badges do projeto, continua independente.
 
 Inclui código fonte e build de desenvolvimento, com atualizações automáticas desativadas.
-Validação: 43 testes, TypeScript, compilação e aplicação dos patches no bundle web atual do Discord.
+Validação: 44 testes, TypeScript, compilação e aplicação dos patches no bundle web atual do Discord.
 A interface ainda precisa ser conferida dentro do Discord para Windows.
 
 Novidades da test.3:
@@ -33,3 +33,8 @@ Novidades da test.3:
 - Há rolagem automática perto das bordas. As setas do teclado também mudam a ordem.
 - Níveis, escolhas e ordem são salvos separadamente por conta.
 - Os testes de interação usam React com componentes simulados do Discord.
+
+Correções da test.4:
+- A alça agora tem quatro pontos separados, em duas colunas: ::.
+- O painel observa as notificações de alteração das badges e atualiza a seleção na hora, sem precisar reabrir.
+- Cliques de Nitro/Boost, arraste e reabertura verificados em uma simulação React do painel completo.
