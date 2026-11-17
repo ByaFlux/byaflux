@@ -16,12 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { useSettings } from "@api/Settings";
 import { Button } from "@components/Button";
 import { Card } from "@components/Card";
 import { Divider } from "@components/Divider";
 import { Flex } from "@components/Flex";
-import { FormSwitch } from "@components/FormSwitch";
 import { Heading } from "@components/Heading";
 import { Link } from "@components/Link";
 import { Paragraph } from "@components/Paragraph";
@@ -69,8 +67,6 @@ function EquibopSection() {
 }
 
 function Updater() {
-    const settings = useSettings(["autoUpdate", "autoUpdateNotification"]);
-
     const [repo, err, repoPending] = useAwaiter(getRepo, { fallbackValue: "Loading..." });
 
     React.useEffect(() => {
@@ -86,28 +82,11 @@ function Updater() {
     return (
         <SettingsTab>
             <EquibopSection />
-            <Heading className={Margins.top16}>Update Preferences</Heading>
+            <Heading className={Margins.top16}>Atualizações do ByaFlux</Heading>
             <Paragraph className={Margins.bottom20}>
-                Control how ByaFlux keeps itself up to date. You can choose to update automatically in the background or be notified when new updates are available.
+                Quando uma nova versão estiver disponível, uma faixa aparecerá no topo do Discord.
+                Clique em “Atualizar e reiniciar” para baixar a atualização e reiniciar o Discord.
             </Paragraph>
-
-            <div className="vc-settings-switches">
-                <FormSwitch
-                    title="Automatically update"
-                    description="When enabled, ByaFlux will automatically download and install updates in the background without asking for confirmation. You'll need to restart Discord to apply the changes."
-                    value={settings.autoUpdate}
-                    onChange={(v: boolean) => settings.autoUpdate = v}
-                    hideBorder
-                />
-                <FormSwitch
-                    title="Get notified when an automatic update completes"
-                    description="Receive a notification when ByaFlux finishes downloading an update in the background, so you know when to restart Discord."
-                    value={settings.autoUpdateNotification}
-                    onChange={(v: boolean) => settings.autoUpdateNotification = v}
-                    disabled={!settings.autoUpdate}
-                    hideBorder
-                />
-            </div>
 
             <Divider className={Margins.top20} />
 

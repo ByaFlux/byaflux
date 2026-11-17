@@ -21,18 +21,30 @@ import { isPrimitiveReactNode } from "@utils/react";
 import { waitFor } from "@webpack";
 import { ReactNode } from "react";
 
-let NoticesModule: any;
-waitFor(m => m.show && m.dismiss && !m.suppressAll, m => NoticesModule = m);
+type Notice = [type: "GENERIC", message: ReactNode, buttonText: string, onOkClick: () => void];
 
-export const noticesQueue = [] as any[];
-export let currentNotice: any = null;
+interface NoticesModule {
+    show(...args: [...Notice, id: string]): void;
+    dismiss(): void;
+}
+
+let NoticesModule: NoticesModule | undefined;
+export const noticesQueue: Notice[] = [];
+export let currentNotice: Notice | null = null;
+
+waitFor(m => m.show && m.dismiss && !m.suppressAll, (module: NoticesModule) => {
+    NoticesModule = module;
+    if (!currentNotice) nextNotice();
+});
 
 export function popNotice() {
-    NoticesModule.dismiss();
+    NoticesModule?.dismiss();
 }
 
 export function nextNotice() {
-    currentNotice = noticesQueue.shift();
+    if (!NoticesModule) return;
+
+    currentNotice = noticesQueue.shift() ?? null;
 
     if (currentNotice) {
         NoticesModule.show(...currentNotice, "EquicordNotice");

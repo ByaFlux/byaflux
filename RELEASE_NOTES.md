@@ -1,12 +1,7 @@
-ByaFlux 0.0.8 — teste do atualizador.
+# ByaFlux 0.0.9
 
-Esta versão mantém as funcionalidades e o código da v0.0.7. Apenas a versão foi incrementada para testar a identificação, o download e a instalação de atualizações.
+- Corrige a fila de avisos quando o módulo de notificações do Discord ainda está carregando.
+- Novas versões exibem uma faixa no topo com o botão “Atualizar e reiniciar”. O download e a reinicialização só começam após o clique.
+- Remove as opções de instalação em segundo plano para manter esse comportamento consistente nas configurações antigas.
 
-Se você já usa a versão de produção, procure a atualização no ByaFlux e clique em **Atualizar e reiniciar**.
-Depois do reinício, confira se a versão exibida é **0.0.8**.
-
-Instalações de desenvolvimento por pnpm têm o atualizador desativado.
-
-Para instalação manual no Windows x64, baixe **ByaFluxInstaller.exe**, feche completamente o Discord e use Install.
-
-Créditos: Equicord, Vencord e seus contribuidores. GPL-3.0-or-later.
+Instalações de desenvolvimento com o atualizador desativado continuam exigindo atualização manual.

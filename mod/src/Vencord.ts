@@ -43,7 +43,7 @@ import { initPluginManager, PMLogger, startAllPlugins } from "./api/PluginManage
 import { PlainSettings, Settings, SettingsStore } from "./api/Settings";
 import { areLocalSettingsDirty, getCloudSettings, getCloudSyncDirection, markLocalSettingsDirty, putCloudSettings, shouldCloudSync } from "./api/SettingsSync/cloudSync";
 import { relaunch } from "./utils/native";
-import { checkForUpdates, update, updateAndRestart, UpdateLogger } from "./utils/updater";
+import { checkForUpdates, updateAndRestart, UpdateLogger } from "./utils/updater";
 import { onceReady } from "./webpack";
 import { patches } from "./webpack/patchWebpack";
 
@@ -126,21 +126,6 @@ async function runUpdateCheck() {
     try {
         const isOutdated = await checkForUpdates();
         if (!isOutdated) return;
-
-        if (Settings.autoUpdate) {
-            await update();
-            if (Settings.autoUpdateNotification) {
-                if (notifiedForUpdatesThisSession) return;
-                notifiedForUpdatesThisSession = true;
-
-                showNotice(
-                    "ByaFlux atualizado!",
-                    "Restart",
-                    relaunch
-                );
-            }
-            return;
-        }
 
         if (notifiedForUpdatesThisSession) return;
         notifiedForUpdatesThisSession = true;
