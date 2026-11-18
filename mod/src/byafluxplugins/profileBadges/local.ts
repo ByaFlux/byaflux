@@ -45,6 +45,18 @@ export function dragOffset(rects: readonly BadgeRect[], from: number, to: number
     return 0;
 }
 
+export function isSubscriptionBadge(badge: ProfileBadge, kind: "nitro" | "boost"): boolean {
+    const data = badge as ProfileBadge & { badge_id?: string; legacyBadgeId?: string; icon?: string; icon_src?: string; simple_icon_url?: string; };
+    const ids = [badge.id, badge.key, data.badge_id, data.legacyBadgeId];
+    const pattern = kind === "nitro"
+        ? /^(?:premium|premium_tier_[123]|premium_tenure(?:_[a-z0-9]+)*|nitro(?:_[a-z0-9]+)*)$/i
+        : /^(?:guild_booster|guild_boosting|server_booster|boost)(?:_[a-z0-9]+)*$/i;
+    if (ids.some(id => typeof id === "string" && pattern.test(id))) return true;
+    const icons = [badge.iconSrc, data.icon, data.icon_src, data.simple_icon_url];
+    const levels = kind === "nitro" ? nitroLevels : boostLevels;
+    return icons.some(icon => typeof icon === "string" && levels.some(level => icon.includes(level.hash)));
+}
+
 export function applyLocalBadges(userId: string | undefined, currentUserId: string | undefined, badges: ProfileBadge[], selection = emptySelection): ProfileBadge[] {
     if (!currentUserId || userId !== currentUserId) return badges;
     const selected = new Set(selection.selectedBadges);
@@ -63,7 +75,10 @@ export function applyLocalBadges(userId: string | undefined, currentUserId: stri
     if (selected.has("nitro")) nitroLevels.forEach(badge => replacedHashes.add(badge.hash));
     if (selected.has("boost")) boostLevels.forEach(badge => replacedHashes.add(badge.hash));
     return [
-        ...badges.filter(badge => !badge.id.startsWith("byaflux-local-") && ![...replacedHashes].some(hash => badge.iconSrc?.includes(hash))),
+        ...badges.filter(badge => !badge.id.startsWith("byaflux-local-")
+            && !(selected.has("nitro") && isSubscriptionBadge(badge, "nitro"))
+            && !(selected.has("boost") && isSubscriptionBadge(badge, "boost"))
+            && ![...replacedHashes].some(hash => badge.iconSrc?.includes(hash))),
         ...chosen.map(badge => ({
             id: `byaflux-local-${badge.key}`,
             name: badge.title,
@@ -74,14 +89,6 @@ export function applyLocalBadges(userId: string | undefined, currentUserId: stri
         }))
     ];
 }
-
-export const profilePatch = {
-    find: "UserProfileBadgeListRows",
-    replacement: {
-        match: /let (\i)=(\i)(?=;if\(null!=\i\)\{let \i=new Set\(\2.map)/,
-        replace: "let $1=$self.applyLocalBadges(arguments[0].displayProfile?.userId,$2)"
-    }
-};
 
 export const accountPatch = {
     find: 'action:"PRESS_SWITCH_ACCOUNTS"',

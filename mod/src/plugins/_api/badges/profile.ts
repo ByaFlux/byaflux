@@ -16,5 +16,5 @@ export const profileBadgeUpdatesPatch = {
 
 export function mergeProfileBadges(current: ProfileBadge[], native: ProfileBadge[]): ProfileBadge[] {
     const ids = new Set(current.map(badge => badge.id));
-    return [...current, ...native.filter(badge => !ids.has(badge.id) && !badge.id.startsWith("byaflux_"))];
+    return [...current, ...native.filter(badge => !ids.has(badge.id) && !badge.id.startsWith("byaflux_") && !badge.id.startsWith("byaflux-local-"))];
 }

@@ -18,7 +18,7 @@
 
 import "./fixDiscordBadgePadding.css";
 
-import { _getBadges, getBadgeRevision, notifyBadgeUpdates, subscribeToBadgeUpdates, BadgePosition, BadgeRarity, BadgeUserArgs, DirectoryBadge, ProfileBadge } from "@api/Badges";
+import { applyProfileBadgeTransforms, _getBadges, getBadgeRevision, notifyBadgeUpdates, subscribeToBadgeUpdates, BadgePosition, BadgeRarity, BadgeUserArgs, DirectoryBadge, ProfileBadge } from "@api/Badges";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { CopyIcon, LinkIcon } from "@components/Icons";
 import { openContributorModal } from "@components/settings/tabs";
@@ -251,7 +251,7 @@ export default definePlugin({
     },
 
     mergeProfileBadges(profile: { userId: string; guildId: string; }, native: ProfileBadge[]) {
-        return mergeProfileBadges(this.getBadges(profile), native);
+        return applyProfileBadgeTransforms(profile, mergeProfileBadges(this.getBadges(profile), native));
     },
 
     useBadgeUpdates() {
@@ -262,7 +262,7 @@ export default definePlugin({
         if (!profile) return [];
 
         try {
-            return _getBadges(profile);
+            return applyProfileBadgeTransforms(profile, _getBadges(profile));
         } catch (e) {
             new Logger("BadgeAPI#getBadges").error(e);
             return [];

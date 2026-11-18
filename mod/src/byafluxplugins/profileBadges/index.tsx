@@ -6,10 +6,10 @@
 
 import "./style.css";
 
-import { getBadgeRevision, notifyBadgeUpdates, ProfileBadge, subscribeToBadgeUpdates } from "@api/Badges";
+import { addProfileBadgeTransform, removeProfileBadgeTransform, notifyBadgeUpdates, ProfileBadge } from "@api/Badges";
 import type { NavContextMenuPatchCallback } from "@api/ContextMenu";
 import { isPluginEnabled } from "@api/PluginManager";
-import { definePluginSettings } from "@api/Settings";
+import { definePluginSettings, migratePluginSettings } from "@api/Settings";
 import { Button } from "@components/Button";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { StarFilled } from "@components/Icons";
@@ -20,7 +20,9 @@ import type { RenderModalProps } from "@vencord/discord-types";
 import type { ComponentType } from "react";
 
 import { BadgeEditor } from "./editor";
-import { accountContextPatch, accountPatch, applyLocalBadges, BadgeSelection, emptySelection, profilePatch } from "./local";
+import { accountContextPatch, accountPatch, applyLocalBadges, BadgeSelection, emptySelection } from "./local";
+
+migratePluginSettings("FakeBadges", "ProfileBadges");
 
 const settings = definePluginSettings({}).withPrivateSettings<{ profiles?: Record<string, BadgeSelection>; }>();
 let active = false;
@@ -32,10 +34,16 @@ interface AccountActionProps {
 }
 
 function BadgePanel({ userId, ...props }: RenderModalProps & { userId: string; }) {
-    React.useSyncExternalStore(subscribeToBadgeUpdates, getBadgeRevision, getBadgeRevision);
-    const selection = settings.store.profiles?.[userId] ?? emptySelection;
+    const [selection, setSelection] = React.useState<BadgeSelection>(() => {
+        const saved = settings.store.profiles?.[userId] ?? emptySelection;
+        return { ...saved, selectedBadges: [...saved.selectedBadges], order: saved.order ? [...saved.order] : undefined };
+    });
+    const latest = React.useRef(selection);
     function save(change: Partial<BadgeSelection>) {
-        settings.store.profiles = { ...settings.store.profiles, [userId]: { ...(settings.store.profiles?.[userId] ?? emptySelection), ...change } };
+        const next = { ...latest.current, ...change };
+        latest.current = next;
+        setSelection(next);
+        settings.store.profiles = { ...settings.store.profiles, [userId]: next };
         notifyBadgeUpdates();
     }
     return <Modal {...props} title="Set badges" size="md">
@@ -70,13 +78,13 @@ const userContextMenu: NavContextMenuPatchCallback = (children, { user }: { user
 };
 
 export default definePlugin({
-    name: "ProfileBadges",
+    name: "FakeBadges",
     description: "Escolha badges visuais para o seu perfil, visíveis somente no seu Discord.",
     authors: [Devs.Ven],
     enabledByDefault: true,
     dependencies: ["BadgeAPI"],
     settings,
-    patches: [profilePatch, accountPatch, accountContextPatch],
+    patches: [accountPatch, accountContextPatch],
     settingsAboutComponent: () => <Button onClick={openBadgeEditor}>Set badges</Button>,
     toolboxActions: { "Set badges": openBadgeEditor },
     contextMenus: {
@@ -86,8 +94,14 @@ export default definePlugin({
             userContextMenu(children, { user: UserStore.getCurrentUser() });
         }
     },
-    start() { active = true; notifyBadgeUpdates(); },
-    stop() { active = false; notifyBadgeUpdates(); },
+    start() {
+        active = true;
+        addProfileBadgeTransform("ByaFlux.ProfileBadges", (args, badges) => this.applyLocalBadges(args.userId, badges));
+    },
+    stop() {
+        active = false;
+        removeProfileBadgeTransform("ByaFlux.ProfileBadges");
+    },
     applyLocalBadges(userId: string | undefined, badges: ProfileBadge[]) {
         const currentUserId = UserStore.getCurrentUser()?.id;
         return active ? applyLocalBadges(userId, currentUserId, badges, currentUserId ? settings.store.profiles?.[currentUserId] : undefined) : badges;

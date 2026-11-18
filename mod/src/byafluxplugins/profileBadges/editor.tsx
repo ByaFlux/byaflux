@@ -5,10 +5,9 @@
  */
 
 import { Button } from "@components/Button";
-import { FormSwitch } from "@components/FormSwitch";
 import { Paragraph } from "@components/Paragraph";
 import { classes } from "@utils/misc";
-import { React } from "@webpack/common";
+import { Checkbox, React } from "@webpack/common";
 
 import { boostLevels, currentBadge, imageUrl, nitroLevels, staticBadges } from "./badges";
 import { badgeOrder, BadgeRect, BadgeSelection, dragOffset, dragTarget, emptySelection, moveBadge } from "./local";
@@ -152,8 +151,9 @@ export function BadgeEditor({ selection, save }: EditorProps) {
                                 {[0, 1, 2, 3].map(dot => <span key={dot} />)}
                             </span></Button>
                         <div className="vc-profilebadges-row-content">
-                            <FormSwitch title={<span className="vc-profilebadges-option"><img src={imageUrl(hash)} alt="" />{title}</span>}
-                                value={selected} onChange={enabled => toggle(key, enabled)} hideBorder />
+                            <Checkbox value={selected} onChange={() => toggle(key, !selected)}>
+                                <span className="vc-profilebadges-option"><img src={imageUrl(hash)} alt="" />{title}</span>
+                            </Checkbox>
                             {levels && selected && <LevelPicker levels={levels} value={level} onChange={value => save(key === "nitro" ? { nitroLevel: value } : { boostLevel: value })} />}
                         </div>
                     </div>

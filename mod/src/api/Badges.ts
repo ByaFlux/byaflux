@@ -114,6 +114,23 @@ export function notifyBadgeUpdates() {
     for (const listener of badgeListeners) listener();
 }
 
+export type ProfileBadgeTransform = (args: BadgeUserArgs, badges: ProfileBadge[]) => ProfileBadge[];
+const profileBadgeTransforms = new Map<string, ProfileBadgeTransform>();
+
+export function addProfileBadgeTransform(id: string, transform: ProfileBadgeTransform) {
+    profileBadgeTransforms.set(id, transform);
+    notifyBadgeUpdates();
+}
+
+export function removeProfileBadgeTransform(id: string) {
+    if (profileBadgeTransforms.delete(id)) notifyBadgeUpdates();
+}
+
+export function applyProfileBadgeTransforms(args: BadgeUserArgs, badges: ProfileBadge[]) {
+    for (const transform of profileBadgeTransforms.values()) badges = transform(args, badges);
+    return badges;
+}
+
 /**
  * Register a new badge with the Badges API
  * @param badge The badge to register

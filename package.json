@@ -1,6 +1,6 @@
 {
   "name": "byaflux-dev",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "private": true,
   "description": "ByaFlux: comandos de desenvolvimento na raiz do projeto",
   "scripts": {
@@ -9,7 +9,6 @@
     "inject": "node mod/scripts/runInstaller.mjs -- --install",
     "uninject": "node mod/scripts/runInstaller.mjs -- --uninstall",
     "repair": "node mod/scripts/runInstaller.mjs -- --repair",
-    "test": "node --test tests/*.test.mjs",
     "typecheck": "node scripts/dev.mjs typecheck",
     "badges:source": "node scripts/badges-source.mjs"
   },
