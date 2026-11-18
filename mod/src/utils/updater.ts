@@ -28,6 +28,12 @@ export let isOutdated = false;
 export let isNewer = false;
 export let updateError: any;
 export let changes: Record<"hash" | "author" | "message", string>[];
+let updateAvailableHandler: (() => void) | undefined;
+
+export function setUpdateAvailableHandler(handler: () => void) {
+    updateAvailableHandler = handler;
+    if (isOutdated) handler();
+}
 
 async function Unwrap<T>(p: Promise<IpcRes<T>>) {
     const res = await p;
@@ -49,7 +55,9 @@ export async function checkForUpdates() {
         }
     }
 
-    return (isOutdated = changes.length > 0);
+    isOutdated = changes.length > 0;
+    if (isOutdated) updateAvailableHandler?.();
+    return isOutdated;
 }
 
 export async function update() {

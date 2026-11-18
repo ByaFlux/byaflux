@@ -1,9 +1,6 @@
-# ByaFlux 0.1.0
+# ByaFlux 0.1.1
 
-- FakeBadges com seleção imediata, níveis e ordenação de badges locais. Nitro e Boost substituem as badges nativas na visualização.
-- FakeAccount com perfis visuais por username e foto, além da cópia pelo botão direito.
-- AlwaysExtended para mostrar todas as badges sem o contador +N.
-- FakeDeafen com controles de fake mute e fake deafen, sem verificador de atualizações separado.
-- ByaFluxInfo removido. Documentação simplificada em português e inglês.
+- A busca manual em Updater também aciona a faixa nativa no topo do Discord, com o botão **Atualizar e reiniciar**.
+- A verificação automática agora ocorre ao abrir o Discord e a cada cinco minutos.
 
-Atualize pelo botão **Atualizar e reiniciar** ou use o instalador abaixo.
+Quem está em uma versão anterior pode receber esta correção pelo botão **Atualizar e reiniciar** em **ByaFlux → Updater**.

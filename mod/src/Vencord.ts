@@ -43,7 +43,7 @@ import { initPluginManager, PMLogger, startAllPlugins } from "./api/PluginManage
 import { PlainSettings, Settings, SettingsStore } from "./api/Settings";
 import { areLocalSettingsDirty, getCloudSettings, getCloudSyncDirection, markLocalSettingsDirty, putCloudSettings, shouldCloudSync } from "./api/SettingsSync/cloudSync";
 import { relaunch } from "./utils/native";
-import { checkForUpdates, updateAndRestart, UpdateLogger } from "./utils/updater";
+import { checkForUpdates, setUpdateAvailableHandler, updateAndRestart, UpdateLogger } from "./utils/updater";
 import { onceReady } from "./webpack";
 import { patches } from "./webpack/patchWebpack";
 
@@ -120,16 +120,10 @@ async function syncSettings() {
 
 let notifiedForUpdatesThisSession = false;
 
-async function runUpdateCheck() {
-    if (IS_UPDATER_DISABLED) return;
+function showUpdateNotice() {
+    if (notifiedForUpdatesThisSession) return;
 
     try {
-        const isOutdated = await checkForUpdates();
-        if (!isOutdated) return;
-
-        if (notifiedForUpdatesThisSession) return;
-        notifiedForUpdatesThisSession = true;
-
         showNotice(
             "Uma nova versão do ByaFlux está disponível!",
             "Atualizar e reiniciar",
@@ -141,6 +135,17 @@ async function runUpdateCheck() {
                 });
             }
         );
+        notifiedForUpdatesThisSession = true;
+    } catch (error) {
+        UpdateLogger.error("Failed to show update notice", error);
+    }
+}
+
+async function runUpdateCheck() {
+    if (IS_UPDATER_DISABLED) return;
+
+    try {
+        await checkForUpdates();
     } catch (err) {
         UpdateLogger.error("Failed to check for updates", err);
     }
@@ -153,10 +158,11 @@ async function init() {
     syncSettings();
 
     if (!IS_DEV && !IS_WEB && !IS_UPDATER_DISABLED) {
+        setUpdateAvailableHandler(showUpdateNotice);
         runUpdateCheck();
 
         // Periodic checks also detect releases published while Discord stays open.
-        setInterval(runUpdateCheck, 1000 * 60 * 30); // 30 minutes
+        setInterval(runUpdateCheck, 1000 * 60 * 5); // 5 minutes
     }
 
     if (IS_DEV) {
