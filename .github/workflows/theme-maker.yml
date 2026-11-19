@@ -2,7 +2,7 @@ name: Validate Custom Theme Maker
 on:
   push:
     branches: [ctm-desktop]
-    paths: ['mod/src/shared/themeMaker/**', 'mod/src/main/themes/themeMaker.ts', 'mod/src/components/settings/tabs/themeMaker/**', 'mod/scripts/testThemeMaker.mjs', 'mod/scripts/ctm-browser/**', '.github/workflows/theme-maker.yml']
+    paths: ['mod/src/shared/themeMaker/**', 'mod/src/main/themes/themeMaker.ts', 'mod/src/components/settings/tabs/themeMaker/**', 'mod/scripts/testThemeMaker.mjs', 'mod/src/shared/iconMaker/**', 'mod/src/components/settings/tabs/iconMaker/**', 'mod/scripts/testIconMaker.mjs', 'mod/scripts/ctm-browser/**', '.github/workflows/theme-maker.yml']
   workflow_dispatch:
   workflow_call:
 permissions:
