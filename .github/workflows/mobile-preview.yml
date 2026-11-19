@@ -1,4 +1,4 @@
-name: ByaFlux Mobile preview
+name: ByaFlux Mobile
 on:
   push:
     branches: [mobile-preview]
@@ -51,7 +51,7 @@ jobs:
           KEYSTORE_ENTRY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
         run: |
           python3 mobile/scripts/signing.py
-      - name: Sign preview loader
+      - name: Sign Android loader
         env:
           KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
           KEYSTORE_ENTRY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
@@ -93,7 +93,7 @@ jobs:
           test "${#apks[@]}" -eq 1
           apk="${apks[0]}"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk"
-          cp "$apk" mobile-output/ByaFluxMobile-0.2.0-preview.2.apk
+          cp "$apk" mobile-output/ByaFluxMobile-0.2.1.apk
           cp mobile/work/core/bundle/dist/valenced.bundle mobile-output/byaflux-mobile.bundle
           cp mobile/work/core/bundle/dist/manifest.json mobile-output/manifest.json
           cp mobile/README.md mobile-output/LEIA-ME.md
@@ -102,15 +102,15 @@ jobs:
           sha256sum mobile-output/*.apk > mobile-output/SHA256SUMS
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ByaFluxMobile-0.2.0-preview.2
+          name: ByaFluxMobile-0.2.1
           path: mobile-output/
           if-no-files-found: error
-      - name: Publish signed mobile preview
+      - name: Publish ByaFlux Mobile
         if: env.MOBILE_SIGNED == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: python3 mobile/scripts/publish.py
-      - name: Explain unsigned preview
+      - name: Explain unsigned build
         if: env.MOBILE_SIGNED != 'true'
         run: echo "APK compiled as a test artifact. Configure MOBILE_KEYSTORE_BASE64, MOBILE_KEYSTORE_PASSWORD, MOBILE_KEY_ALIAS and MOBILE_KEY_PASSWORD to enable signed releases and updates." >> "$GITHUB_STEP_SUMMARY"

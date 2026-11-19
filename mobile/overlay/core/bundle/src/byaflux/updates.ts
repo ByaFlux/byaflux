@@ -1,6 +1,6 @@
 import { Linking } from 'react-native'
 
-export const MobileVersionCode = 20002
+export const MobileVersionCode = 20199
 export const MobileChannel =
     'https://raw.githubusercontent.com/ByaFlux/byaflux/mobile-updates/android.json'
 export type MobileUpdate = {

@@ -25,9 +25,9 @@ if existing.returncode == 0:
     print(f'{tag} already published. No release or update channel changes.')
     raise SystemExit(0)
 notes = Path('mobile-output/RELEASE_NOTES.txt')
-notes.write_text(f'ByaFlux Mobile {version}\nPrévia Android, Android 9 ou superior.\nInstale o APK do instalador. Após atualizar, reinstale o ByaFlux pelo instalador.\nPlugins de voz precisam de validação no aparelho.\n')
+notes.write_text(f'ByaFlux Mobile {version}\nByaFlux para Android 9 ou superior.\nInstale o APK do instalador. Após atualizar, reinstale o ByaFlux pelo instalador.\nSomente os plugins obrigatórios são ativados por padrão. Aviso de atualização com botão Atualizar.\n')
 assets = [str(apk), 'mobile-output/SHA256SUMS', 'mobile-output/byaflux-mobile.bundle', 'mobile-output/manifest.json']
-gh('release','create',tag,*assets,'--target',os.environ['GITHUB_SHA'],'--title',f'ByaFlux Mobile {version}','--notes-file',str(notes),'--prerelease','--latest=false')
+gh('release','create',tag,*assets,'--target',os.environ['GITHUB_SHA'],'--title',f'ByaFlux Mobile {version}','--notes-file',str(notes),'--latest=false')
 branch = 'mobile-updates'
 ref = gh('api',f'repos/{repo}/git/ref/heads/{branch}',check=False)
 if ref.returncode != 0:

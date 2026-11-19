@@ -125,8 +125,8 @@ function DonateCard() {
                                 ByaFlux Mobile
                             </Text>
                             <Text variant="text-md/medium">
-                                Prévia Android do ByaFlux. Compartilhe seu
-                                feedback no repositório.
+                                ByaFlux para Android. Compartilhe seu feedback
+                                no repositório.
                             </Text>
                         </Stack>
                         <Stack spacing={12} direction="horizontal">

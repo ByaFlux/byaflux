@@ -4,5 +4,5 @@
   "description": "Mantém a área de badges dos perfis expandida, mostrando todas sem agrupar em +N.",
   "author": "Haru <1227436212982251533>",
   "icon": "AwardIcon",
-  "enabledByDefault": true
+  "enabledByDefault": false
 }

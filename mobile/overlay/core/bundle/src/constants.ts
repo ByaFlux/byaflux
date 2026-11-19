@@ -1,3 +1,3 @@
 export const LicenseFallbackURL = 'https://www.gnu.org/licenses/gpl-3.0.txt'
 export const BuildEnvironment = __DEV__ ? 'development' : 'production'
-export const FullVersion = `0.2.0-preview.2 (${__BUILD_COMMIT__})`
+export const FullVersion = `0.2.1 (${__BUILD_COMMIT__})`

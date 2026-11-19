@@ -2,39 +2,32 @@ import { registerInternalPlugin } from '@valenced/plugins/_'
 import { useSyncExternalStore } from 'react'
 import { Alert, AppState } from 'react-native'
 import { Action, notify, Panel } from '~/byaflux/mobile'
+import { connectUpdateNotice } from '~/byaflux/update-notice'
 import { updates } from '~/byaflux/updates'
 import manifest from './manifest.json'
 
 registerInternalPlugin(manifest, {
     start({ cleanup }) {
-        let active = true
-        let announced = 0
-        async function check() {
-            await updates.check()
-            const update = updates.current()
-            if (
-                active &&
-                update &&
-                AppState.currentState !== 'background' &&
-                update.versionCode !== announced
-            ) {
-                announced = update.versionCode
+        const notice = connectUpdateNotice({
+            current: updates.current,
+            subscribe: updates.subscribe,
+            isActive: () => AppState.currentState === 'active',
+            open: updates.open,
+            onError: error => notify(String(error), true),
+            show: (version, update) =>
                 Alert.alert(
                     'Atualização do ByaFlux',
-                    `A versão ${update.versionName} está disponível.`,
+                    `A versão ${version} está disponível.`,
                     [
                         { text: 'Agora não', style: 'cancel' },
-                        {
-                            text: 'Atualizar',
-                            onPress: () => {
-                                void updates
-                                    .open()
-                                    .catch(error => notify(String(error), true))
-                            },
-                        },
+                        { text: 'Atualizar', onPress: update },
                     ],
-                )
-            }
+                ),
+        })
+        let last = Date.now()
+        async function check() {
+            last = Date.now()
+            await updates.check()
         }
         void check()
         const timer = setInterval(
@@ -43,15 +36,14 @@ registerInternalPlugin(manifest, {
             },
             5 * 60 * 1000,
         )
-        let last = Date.now()
         const listener = AppState.addEventListener('change', state => {
-            if (state === 'active' && Date.now() - last > 5 * 60 * 1000) {
-                last = Date.now()
-                void check()
+            if (state === 'active') {
+                notice.present()
+                if (Date.now() - last > 5 * 60 * 1000) void check()
             }
         })
         cleanup(() => {
-            active = false
+            notice.dispose()
             clearInterval(timer)
             listener.remove()
         })
