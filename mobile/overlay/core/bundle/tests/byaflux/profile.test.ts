@@ -162,21 +162,14 @@ describe('ByaFlux mobile profile integration', () => {
         }
         pending.setPendingBadgeDisplayOrder([custom])
         expect(originalOrder).not.toHaveBeenCalled()
-        badgeState.setExtended(true)
-        expect(fixtures.limit.MAX_DISPLAYED_PROFILE_BADGES).toBe(
-            Number.MAX_SAFE_INTEGER,
-        )
+        expect(fixtures.limit.MAX_DISPLAYED_PROFILE_BADGES).toBe(6)
 
         const rendered = fixtures.jsx.jsx(ProfileBadgeRows, {
             userId: id,
             badges: [],
         }) as { props: { badges: unknown[]; style: unknown[] } }
         expect(rendered.props.badges.length).toBeGreaterThan(0)
-        expect(rendered.props.style).toContainEqual({
-            flexWrap: 'wrap',
-            rowGap: 4,
-            flexShrink: 1,
-        })
+        expect(rendered.props.style).toBeUndefined()
         for (const fn of cleanup.reverse()) fn()
         expect(ids.resolveProfileBadgeId(custom)).toBe(null)
         expect(fixtures.limit.MAX_DISPLAYED_PROFILE_BADGES).toBe(6)

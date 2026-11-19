@@ -1,0 +1,8 @@
+{
+  "id": "byaflux.fake-dm",
+  "name": "FakeDM",
+  "description": "Cria mensagens e registros de chamadas apenas neste aparelho.",
+  "author": "Haru <1227436212982251533>",
+  "icon": "PuzzlePieceIcon",
+  "enabledByDefault": false
+}

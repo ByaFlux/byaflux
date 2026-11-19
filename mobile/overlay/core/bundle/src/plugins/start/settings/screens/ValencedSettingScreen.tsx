@@ -2,18 +2,41 @@ import { getAssetIdByName } from '@valenced/assets'
 import { styles } from '@valenced/components/_'
 import { Design } from '@valenced/discord/design'
 import { SettingListRenderer } from '@valenced/discord/modules/settings/renderer'
+import { useSyncExternalStore } from 'react'
 import { Image, Linking, ScrollView, StyleSheet, View } from 'react-native'
+import { updates } from '~/byaflux/updates'
 import ValencedDonate from '~assets/ValencedDonate'
 import { Setting } from '../constants'
 
 const { Button, Card, Stack, Text } = Design
 
 export default function ValencedSettingScreen() {
+    useSyncExternalStore(updates.subscribe, updates.snapshot)
     return (
         <ScrollView style={{ flex: 1 }}>
             <Stack spacing={0}>
                 <View style={{ padding: 16, paddingBottom: 0 }}>
                     <DonateCard />
+                </View>
+                <View style={{ padding: 16 }}>
+                    <Design.TableRowGroup title="Atualizações">
+                        <Design.TableRow
+                            label={updates.status()}
+                            onPress={() => {
+                                void updates.check()
+                            }}
+                        />
+                        <Design.TableRow
+                            label={
+                                updates.current()
+                                    ? 'Atualizar ByaFlux'
+                                    : 'Abrir instalador'
+                            }
+                            onPress={() => {
+                                void updates.open()
+                            }}
+                        />
+                    </Design.TableRowGroup>
                 </View>
                 <View>
                     <SettingListRenderer.SettingsList

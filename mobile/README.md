@@ -1,35 +1,26 @@
-# ByaFlux Mobile 0.1.0-preview.1
+# ByaFlux Mobile 0.2.0-preview.1
 
-Prévia Android baseada no Valenced 1.3.0. Requer Android 9 ou superior e internet para baixar o Discord compatível.
+Requer Android 9 ou superior. O APK é o instalador. Abra-o, instale o ByaFlux e autorize a instalação quando o Android pedir. O Discord oficial fica separado.
 
-## Instalar
+Em Configurações > ByaFlux > Plugins, ative os plugins desejados. AlwaysExtended foi removido.
 
-1. Instale o APK ByaFluxMobile. Ele é o instalador.
-2. Abra o aplicativo e toque em Install.
-3. Autorize a instalação do aplicativo ByaFlux quando o Android solicitar.
-4. Abra o ByaFlux instalado e entre na sua conta.
-5. Acesse Configurações, ByaFlux, Plugins.
+Esta prévia inclui ByaBadges, FakeBadges, FakeDeafen, FakeDM, FollowMe, FollowUser, ServerInfo, VolumeBooster, ReadAllNotification, RelationshipNotifier, MessageLoggerEnhanced e IconViewer.
 
-O aplicativo modificado usa o pacote app.byaflux.mobile e instala separadamente do Discord oficial. Não instale o carregador interno como se fosse o Discord.
+As adaptações Android precisam de testes em aparelho real. FollowMe exige Mover membros e usuários em canais de voz do mesmo servidor. VolumeBooster depende dos limites do motor de áudio do Android. FakeDM e FakeBadges são apenas locais. O logger registra mensagens carregadas enquanto está ativo e guarda no aparelho até 500 registros.
 
-## Plugins
+## Atualizações
 
-- ByaBadges é obrigatório. Carrega o catálogo oficial a cada cinco minutos e mantém o último catálogo válido offline. As três imagens SVG atuais estão incluídas como PNG para o Android.
-- FakeBadges vem desligado. Ative-o e abra suas opções. Toque em Usar minha conta ou informe um ID. Escolha badges, níveis de Nitro e boost. As alterações são apenas locais. Nitro e boost selecionados substituem a badge correspondente do Discord. Subir e Descer mudam a ordem das badges comuns selecionadas.
-- AlwaysExtended vem ligado. Remove o limite de badges quando a versão compatível do Discord expõe essa opção e permite a quebra de linha.
+O instalador consulta o canal mobile ao abrir. O ByaFlux também verifica ao iniciar e exibe o botão nas suas configurações. O Android pede confirmação de instalação. Depois de atualizar o instalador, reinstale o ByaFlux por ele para aplicar o novo bundle.
 
-Os plugins de computador do Vencord e Equicord precisam de adaptação. Plugins mobile compatíveis com a API do Valenced podem ser instalados pela área de plugins da base.
+Cada alteração neste ramo compila um APK nos Actions. A publicação automática só acontece com os quatro segredos de assinatura configurados: MOBILE_KEYSTORE_BASE64, MOBILE_KEYSTORE_PASSWORD, MOBILE_KEY_ALIAS e MOBILE_KEY_PASSWORD. Sem eles, o workflow gera somente um artefato de testes e não anuncia atualizações.
 
-## Estado da prévia
+Releases mobile são prévias com prefixo mobile-v e não substituem a release latest do desktop. O canal android.json fica no ramo mobile-updates. Cada publicação precisa de uma versão maior. Preserve a chave de assinatura para atualizar o APK sem desinstalar.
 
-A compilação do bundle, a checagem de tipos e os testes automatizados verificam o código. A interface e as chamadas precisam de validação em um aparelho Android real. A tela do ByaBadges mostra quantas integrações de perfil foram detectadas. Zero após abrir um perfil indica incompatibilidade que precisa de correção.
+A primeira prévia 0.1.0 usava uma assinatura temporária. A migração para uma assinatura permanente requer reinstalar o instalador. Se precisar reinstalar o ByaFlux separado, faça antes uma cópia das configurações desejadas.
 
-Esta prévia não tem atualizador próprio do instalador. Não atualiza para o Valenced original. A assinatura de desenvolvimento não é uma chave de distribuição permanente. Para publicar atualizações estáveis, configure e preserve sua própria chave de assinatura.
+## Código
 
-O carregador nativo e os patches usam a release 1.3.0 do Valenced. A compilação substitui apenas o bundle e o manifesto dos plugins, verifica os arquivos originais por SHA-256 e assina novamente o carregador. Os identificadores internos valenced permanecem por compatibilidade.
+Os overlays fixam fontes e checksums em base-lock.json. Base: Valenced e Valenced Manager, com licenças e créditos preservados. O carregador nativo e os patches assinados usam a versão 1.3.0 original. O workflow compila o JavaScript do ByaFlux e embute o carregador no instalador.
 
-## Código e compilação
-
-Este ramo contém os arquivos alterados em overlay e fixa os commits originais em base-lock.json. O script scripts/prepare.py baixa os dois projetos e aplica as alterações. O workflow mobile-preview.yml compila o APK. Ele não publica uma release nem altera o ramo main.
-
-Base: https://github.com/Valenced/valenced e https://github.com/Valenced/valenced-manager. As licenças originais continuam nos projetos preparados. Os plugins do ByaFlux exibem Haru, ID 1227436212982251533, como autor. Créditos da base e dos arquivos reaproveitados foram preservados.
+https://github.com/Valenced/valenced
+https://github.com/Valenced/valenced-manager

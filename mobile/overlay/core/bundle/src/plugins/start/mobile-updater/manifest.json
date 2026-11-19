@@ -1,0 +1,9 @@
+{
+  "id": "byaflux.mobile-updater",
+  "name": "ByaFluxUpdater",
+  "description": "Verifica atualizações do ByaFlux Mobile e abre o instalador.",
+  "author": "Haru <1227436212982251533>",
+  "icon": "DownloadIcon",
+  "essential": true,
+  "enabledByDefault": true
+}

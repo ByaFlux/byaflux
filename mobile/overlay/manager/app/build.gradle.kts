@@ -23,7 +23,9 @@ android {
         minSdk = 28
         targetSdk = 34
         versionName = version.toString()
-        versionCode = versionName!!.removePrefix("v").split("-").first().replace(".", "").toInt()
+        val parts = versionName!!.substringBefore("-").split(".").map(String::toInt)
+        val preview = versionName!!.substringAfter("-preview.", "99").toInt()
+        versionCode = parts[0] * 1000000 + parts[1] * 10000 + parts[2] * 100 + preview
 
         buildConfigField("boolean", "BUNDLED_PREVIEW", "true")
         buildConfigField("String", "MOD_NAME", "\"ByaFlux\"")

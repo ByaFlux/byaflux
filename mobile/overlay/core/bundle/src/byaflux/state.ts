@@ -27,7 +27,6 @@ const listeners = new Set<() => void>()
 let revision = 0
 let official: BadgeCatalog | undefined
 let fake: FakeSettings | undefined
-let extended = false
 const nativeHashes = [...nitroLevels, ...boostLevels].map(x => x.hash)
 
 export const badgeState = {
@@ -52,11 +51,6 @@ export const badgeState = {
         fake = value
         this.changed()
     },
-    setExtended(value: boolean) {
-        extended = value
-        this.changed()
-    },
-    isExtended: () => extended,
     badges(userId: string): DisplayBadge[] {
         const result: DisplayBadge[] = []
         if (official) {

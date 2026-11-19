@@ -1,0 +1,8 @@
+{
+  "id": "byaflux.message-logger-enhanced",
+  "name": "MessageLoggerEnhanced",
+  "description": "Mantém mensagens apagadas e histórico de edições localmente.",
+  "author": "Haru <1227436212982251533>",
+  "icon": "PuzzlePieceIcon",
+  "enabledByDefault": false
+}

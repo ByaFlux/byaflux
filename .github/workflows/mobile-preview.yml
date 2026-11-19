@@ -5,7 +5,7 @@ on:
     paths: ['mobile/**', '.github/workflows/mobile-preview.yml']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: byaflux-mobile-preview
   cancel-in-progress: false
@@ -43,31 +43,57 @@ jobs:
           deno run --unstable-sloppy-imports ../../../scripts/badges.test.ts
       - name: Prepare verified loader assets
         run: python3 mobile/scripts/package-loader.py
+      - name: Configure permanent signing when available
+        env:
+          MOBILE_KEYSTORE_BASE64: ${{ secrets.MOBILE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          KEYSTORE_ENTRY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          KEYSTORE_ENTRY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
+        run: |
+          python3 mobile/scripts/signing.py
       - name: Sign preview loader
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          KEYSTORE_ENTRY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          KEYSTORE_ENTRY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           tools="$ANDROID_HOME/build-tools/36.0.0"
           sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
-          keytool -genkeypair -keystore "$RUNNER_TEMP/mobile-preview.jks" -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=ByaFlux Mobile Preview,O=ByaFlux,C=BR'
+          if [ "$MOBILE_SIGNED" = "true" ]; then
+            keystore="$GITHUB_WORKSPACE/mobile/work/manager/app/keystore.jks"
+          else
+            keystore="$RUNNER_TEMP/mobile-preview.jks"
+            export KEYSTORE_PASSWORD=android KEYSTORE_ENTRY_PASSWORD=android KEYSTORE_ENTRY_ALIAS=androiddebugkey
+            keytool -genkeypair -keystore "$RUNNER_TEMP/mobile-preview.jks" -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=ByaFlux Mobile Preview,O=ByaFlux,C=BR'
+          fi
           assets=mobile/work/manager/app/src/main/assets
           "$tools/zipalign" -f -P 16 4 "$assets/byaflux-loader-unsigned.apk" "$RUNNER_TEMP/loader-aligned.apk"
-          "$tools/apksigner" sign --ks "$RUNNER_TEMP/mobile-preview.jks" --ks-pass pass:android --key-pass pass:android --out "$assets/byaflux-loader.apk" "$RUNNER_TEMP/loader-aligned.apk"
+          "$tools/apksigner" sign --ks "$keystore" --ks-key-alias "$KEYSTORE_ENTRY_ALIAS" --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_ENTRY_PASSWORD --out "$assets/byaflux-loader.apk" "$RUNNER_TEMP/loader-aligned.apk"
           "$tools/apksigner" verify "$assets/byaflux-loader.apk"
           rm "$assets/byaflux-loader-unsigned.apk"
       - name: Build Android installer
         working-directory: mobile/work/manager
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: ./gradlew :app:assembleDebug --no-daemon --console=plain
+          KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          KEYSTORE_ENTRY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          KEYSTORE_ENTRY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
+        run: |
+          if [ "$MOBILE_SIGNED" = "true" ]; then
+            ./gradlew :app:assembleRelease --no-daemon --console=plain
+          else
+            ./gradlew :app:assembleDebug --no-daemon --console=plain
+          fi
       - name: Verify APK and collect deliverables
         run: |
           set -euo pipefail
           mkdir -p mobile-output
-          mapfile -t apks < <(find mobile/work/manager/app/build/outputs/apk/debug -type f -name '*.apk')
+          mapfile -t apks < <(find mobile/work/manager/app/build/outputs/apk -type f -name '*.apk')
           test "${#apks[@]}" -eq 1
           apk="${apks[0]}"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk"
-          cp "$apk" mobile-output/ByaFluxMobile-0.1.0-preview.1.apk
+          cp "$apk" mobile-output/ByaFluxMobile-0.2.0-preview.1.apk
           cp mobile/work/core/bundle/dist/valenced.bundle mobile-output/byaflux-mobile.bundle
           cp mobile/work/core/bundle/dist/manifest.json mobile-output/manifest.json
           cp mobile/README.md mobile-output/LEIA-ME.md
@@ -76,6 +102,15 @@ jobs:
           sha256sum mobile-output/*.apk > mobile-output/SHA256SUMS
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ByaFluxMobile-0.1.0-preview.1
+          name: ByaFluxMobile-0.2.0-preview.1
           path: mobile-output/
           if-no-files-found: error
+      - name: Publish signed mobile preview
+        if: env.MOBILE_SIGNED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python3 mobile/scripts/publish.py
+      - name: Explain unsigned preview
+        if: env.MOBILE_SIGNED != 'true'
+        run: echo "APK compiled as a test artifact. Configure MOBILE_KEYSTORE_BASE64, MOBILE_KEYSTORE_PASSWORD, MOBILE_KEY_ALIAS and MOBILE_KEY_PASSWORD to enable signed releases and updates." >> "$GITHUB_STEP_SUMMARY"

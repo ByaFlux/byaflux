@@ -1,0 +1,8 @@
+{
+  "id": "byaflux.icon-viewer",
+  "name": "IconViewer",
+  "description": "Pesquisa e visualiza ícones e imagens do Discord.",
+  "author": "Haru <1227436212982251533>",
+  "icon": "PuzzlePieceIcon",
+  "enabledByDefault": false
+}

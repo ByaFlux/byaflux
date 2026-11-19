@@ -61,9 +61,6 @@ function profileProps(props: Record<string, unknown>) {
         catalogBadges: Array.isArray(props.catalogBadges)
             ? catalogFor(props.catalogBadges, props.userId)
             : props.catalogBadges,
-        style: badgeState.isExtended()
-            ? [props.style, { flexWrap: 'wrap', rowGap: 4, flexShrink: 1 }]
-            : props.style,
     }
 }
 
@@ -269,36 +266,5 @@ export function connectProfiles(cleanup: PluginCleanupApi) {
         before(ReactJSXRuntime, 'jsx', patch),
         before(ReactJSXRuntime, 'jsxs', patch),
         before(React, 'createElement', patch),
-    )
-    cleanup(
-        getModules(
-            withProps<Record<string, unknown>>(
-                'MAX_DISPLAYED_PROFILE_BADGES',
-                'getProfileBadgeIconUrl',
-            ),
-            module => {
-                const descriptor = Object.getOwnPropertyDescriptor(
-                    module,
-                    'MAX_DISPLAYED_PROFILE_BADGES',
-                )
-                if (!descriptor?.configurable) return
-                const original = module.MAX_DISPLAYED_PROFILE_BADGES
-                Object.defineProperty(module, 'MAX_DISPLAYED_PROFILE_BADGES', {
-                    configurable: true,
-                    enumerable: descriptor.enumerable,
-                    get: () =>
-                        badgeState.isExtended()
-                            ? Number.MAX_SAFE_INTEGER
-                            : original,
-                })
-                cleanup(() => {
-                    Object.defineProperty(
-                        module,
-                        'MAX_DISPLAYED_PROFILE_BADGES',
-                        descriptor,
-                    )
-                })
-            },
-        ),
     )
 }

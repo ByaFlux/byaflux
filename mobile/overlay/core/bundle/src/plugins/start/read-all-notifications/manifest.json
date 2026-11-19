@@ -1,0 +1,8 @@
+{
+  "id": "byaflux.read-all-notifications",
+  "name": "ReadAllNotification",
+  "description": "Marca canais não lidos como lidos com um toque.",
+  "author": "Haru <1227436212982251533>",
+  "icon": "PuzzlePieceIcon",
+  "enabledByDefault": false
+}
