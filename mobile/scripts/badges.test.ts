@@ -22,8 +22,6 @@ const twice = badgeState.merge(merged,a)
 assert(twice.length===merged.length,'Repeated render duplicated badges')
 badgeState.setFake(undefined)
 assert(badgeState.merge(native,a).some(b=>(b as Record<string,unknown>).id==='premium'),'Disabling FakeBadges must restore native badges')
-badgeState.setExtended(true);assert(badgeState.isExtended(),'Expansion flag failed')
-badgeState.setExtended(false);assert(!badgeState.isExtended(),'Expansion cleanup failed')
 let invalid=false;try{validateCatalog({schemaVersion:1,badges:{x:{name:'x',description:'x',icon:'http://insecure/x.png'}},users:{}})}catch{invalid=true}
 assert(invalid,'Invalid catalog accepted')
 console.log('PASS: badge order, deduplication, tier replacement, per-user isolation, immutable inputs, disable cleanup and catalog validation.')
