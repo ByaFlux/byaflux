@@ -1,0 +1,77 @@
+name: ByaFlux Mobile preview
+on:
+  push:
+    branches: [mobile-preview]
+    paths: ['mobile/**', '.github/workflows/mobile-preview.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: byaflux-mobile-preview
+  cancel-in-progress: false
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.6
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: android-actions/setup-android@v3
+      - name: Prepare pinned upstream sources
+        run: python3 mobile/scripts/prepare.py
+      - name: Install bundle dependencies
+        working-directory: mobile/work/core/bundle
+        run: deno install --frozen
+      - name: Build ByaFlux bundle
+        working-directory: mobile/work/core/bundle
+        env:
+          BYAFLUX_BUILD_COMMIT: ${{ github.sha }}
+        run: deno run --allow-all scripts/build.ts --reproducible
+      - name: Typecheck and test
+        working-directory: mobile/work/core/bundle
+        run: |
+          deno x tsc --noEmit -p .
+          deno run test
+          deno run --unstable-sloppy-imports ../../../scripts/badges.test.ts
+      - name: Prepare verified loader assets
+        run: python3 mobile/scripts/package-loader.py
+      - name: Sign preview loader
+        run: |
+          set -euo pipefail
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+          keytool -genkeypair -keystore "$RUNNER_TEMP/mobile-preview.jks" -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=ByaFlux Mobile Preview,O=ByaFlux,C=BR'
+          assets=mobile/work/manager/app/src/main/assets
+          "$tools/zipalign" -f -p 4 "$assets/byaflux-loader-unsigned.apk" "$RUNNER_TEMP/loader-aligned.apk"
+          "$tools/apksigner" sign --ks "$RUNNER_TEMP/mobile-preview.jks" --ks-pass pass:android --key-pass pass:android --out "$assets/byaflux-loader.apk" "$RUNNER_TEMP/loader-aligned.apk"
+          "$tools/apksigner" verify "$assets/byaflux-loader.apk"
+          rm "$assets/byaflux-loader-unsigned.apk"
+      - name: Build Android installer
+        working-directory: mobile/work/manager
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./gradlew :app:assembleDebug --no-daemon --console=plain
+      - name: Verify APK and collect deliverables
+        run: |
+          set -euo pipefail
+          mkdir -p mobile-output
+          apk=mobile/work/manager/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk"
+          cp "$apk" mobile-output/ByaFluxMobile-0.1.0-preview.1.apk
+          cp mobile/work/core/bundle/dist/valenced.bundle mobile-output/byaflux-mobile.bundle
+          cp mobile/work/core/bundle/dist/manifest.json mobile-output/manifest.json
+          cp mobile/README.md mobile-output/LEIA-ME.md
+          cp mobile/work/core/LICENSE mobile-output/LICENSE-core
+          cp mobile/work/manager/LICENSE mobile-output/LICENSE-manager
+          sha256sum mobile-output/*.apk > mobile-output/SHA256SUMS
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ByaFluxMobile-0.1.0-preview.1
+          path: mobile-output/
+          if-no-files-found: error

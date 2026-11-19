@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0-preview.1",
+  "core": {
+    "repo": "https://github.com/Valenced/valenced.git",
+    "commit": "75b0b93403eda24a77fa9cc1a5c8f7a60293126d"
+  },
+  "manager": {
+    "repo": "https://github.com/Valenced/valenced-manager.git",
+    "commit": "c6e573699e6a719bde5230c00d9041e223b138bc"
+  },
+  "release": "1.3.0",
+  "assets": {
+    "app-release.apk": {
+      "url": "https://github.com/Valenced/valenced/releases/download/1.3.0/app-release.apk",
+      "sha256": "a442937372f2198950210739a5c347b89d51938595495e25ba786db76752f79a"
+    },
+    "valenced.reseam": {
+      "url": "https://github.com/Valenced/valenced/releases/download/1.3.0/valenced.reseam",
+      "sha256": "005979e107104c7b7bb49ec7c0e492345d05f1362e4118cdce2f391d4564bcfa"
+    }
+  }
+}

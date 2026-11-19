@@ -1,0 +1,11 @@
+{
+  "id": "byaflux.always-extended",
+  "name": "AlwaysExtended",
+  "description": "Mantém todas as badges do perfil visíveis.",
+  "author": "Haru <1227436212982251533>",
+  "icon": "AwardIcon",
+  "enabledByDefault": true,
+  "dependencies": {
+    "byaflux.bya-badges": {}
+  }
+}

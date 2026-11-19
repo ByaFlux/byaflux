@@ -1,0 +1,11 @@
+{
+  "id": "byaflux.fake-badges",
+  "name": "FakeBadges",
+  "description": "Altera as badges dos perfis apenas neste aparelho.",
+  "author": "Haru <1227436212982251533>",
+  "icon": "AwardIcon",
+  "enabledByDefault": false,
+  "dependencies": {
+    "byaflux.bya-badges": {}
+  }
+}

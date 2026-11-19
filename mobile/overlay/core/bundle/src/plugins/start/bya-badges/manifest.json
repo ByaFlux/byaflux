@@ -1,0 +1,9 @@
+{
+  "id": "byaflux.bya-badges",
+  "name": "ByaBadges",
+  "description": "Badges oficiais do ByaFlux, sincronizadas com o catálogo do projeto.",
+  "author": "Haru <1227436212982251533>",
+  "icon": "AwardIcon",
+  "enabledByDefault": true,
+  "essential": true
+}
