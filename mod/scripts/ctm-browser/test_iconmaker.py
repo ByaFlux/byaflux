@@ -56,19 +56,25 @@ with sync_playwright() as playwright:
         expect(page.get_by_role('heading', name='IconMaker', exact=True)).to_be_visible()
         expect(page.get_by_role('button', name='Baixar PNG', exact=True)).to_be_enabled()
         preview = page.get_by_label('Prévia do ícone', exact=True)
-        for label in ['Gato', 'Robô', 'Fantasma', 'Raposa', 'Coroa', 'Chapéu', 'Headset', 'Asas', 'Chifres', 'Base']:
+        page.get_by_role('button', name='Ver todos os corpos', exact=True).click()
+        page.get_by_role('button', name='Ver todos os olhos', exact=True).click()
+        for label in ['Gato', 'Alien', 'Fofinho', 'Coroa', 'Cartola', 'Headphones', 'Anjo', 'Diabinho', 'Invertido', 'Padrão']:
             page.get_by_role('radio', name='Corpo ' + label, exact=True).check()
             assert preview.locator('svg').count() == 1
-        for label in ['Feliz', 'Piscando', 'Corações', 'Bravo', 'Estrelas', 'Sono', 'Brilho', 'Sem olhos', 'Normal']:
+        for label in ['Feliz', 'Piscando', 'Corações', 'Bravo', 'Estrelas', 'Retos', 'Fofos', 'Óculos de sol', 'Padrão']:
             page.get_by_role('radio', name='Olhos ' + label, exact=True).check()
         before = preview.inner_html()
         page.get_by_role('switch', name='Classic Mode', exact=True).check()
         assert preview.inner_html() != before
+        page.get_by_role('switch', name='Classic Mode', exact=True).uncheck()
         page.get_by_role('button', name='Fundo #5865f2', exact=True).click()
+        page.get_by_role('switch', name='Classic Mode', exact=True).check()
         change_color(page.get_by_label('Cor do corpo', exact=True), '#44cc88')
-        page.wait_for_function("document.querySelector('.bf-im-canvas').innerHTML.includes('#44cc88')")
+        page.wait_for_function("document.querySelector('.bf-im-stage').innerHTML.includes('#44cc88')")
         change_color(page.get_by_label('Cor do corpo', exact=True), '#ffffff')
+        page.get_by_role('button', name='Configurar exportação', exact=True).click()
         page.get_by_label('Nome do arquivo', exact=True).fill('IconMaker teste')
+        page.get_by_label('Recorte do fundo', exact=True).select_option('square')
         page.get_by_label('Tamanho PNG', exact=True).select_option('128')
 
         def download(button, filename):
@@ -111,23 +117,27 @@ with sync_playwright() as playwright:
         expect(page.get_by_role('alert')).to_contain_text('PNG, JPG ou WebP')
         page.get_by_role('button', name='Novo projeto', exact=True).click()
         page.get_by_label('Tipo de fundo', exact=True).select_option('transparent')
-        page.get_by_role('button', name='Animado', exact=False).first.click()
+        page.get_by_role('button', name='Animado', exact=True).click()
+        page.get_by_role('radio', name='Movimento Flutuar', exact=True).check()
         expect(page.get_by_role('button', name='Reproduzir', exact=True)).to_be_visible()
         page.get_by_role('button', name='Reproduzir', exact=True).click()
         frame0 = preview.inner_html()
-        page.wait_for_function("(old) => document.querySelector('.bf-im-canvas').innerHTML !== old", arg=frame0)
+        page.wait_for_function("(old) => document.querySelector('.bf-im-stage').innerHTML !== old", arg=frame0)
         page.get_by_role('button', name='Pausar', exact=True).click()
-        for label in ['Pular', 'Pulsar', 'Girar', 'Balançar', 'Tremor', 'Esticar', 'Orbitar', 'Virar', 'Piscar', 'Flutuar']:
+        for label in ['Pular', 'Zoom elástico', 'Giro contínuo', 'Girar e parar', 'Dançar', 'Elástico', 'Dar a volta', 'Giro no eixo Y', 'Teletransporte', 'Escapar', 'Zoom e desaparecer', 'Flutuar']:
             page.get_by_role('radio', name='Movimento ' + label, exact=True).check()
             change_color(page.get_by_label('Quadro da prévia', exact=True), '0.23')
-        for label in ['Listras', 'Raios', 'Anéis', 'Partículas', 'Estrelas', 'Corações', 'Grade', 'Sem efeito']:
+        for label in ['Brilho diagonal', 'Raios giratórios', 'Círculos expansivos', 'Céu estrelado', 'Chuva', 'Terra', 'Enchimento', 'Xadrez', 'Estrelas brilhantes', 'Notas musicais', 'Corações', 'Serra circular', 'Sem efeito']:
             page.get_by_role('radio', name='Efeito ' + label, exact=True).check()
+            change_color(page.get_by_label('Quadro da prévia', exact=True), '0.4')
+            image = Image.open(download('PNG deste quadro', 'effect-' + str(len(downloads)) + '.png')).convert('RGBA')
+            assert image.size == (512, 512) and image.getbbox(), label
         page.get_by_role('radio', name='Movimento Flutuar', exact=True).check()
         page.get_by_label('Tamanho GIF', exact=True).select_option('128')
         page.get_by_label('Nome do arquivo', exact=True).fill('Animado teste')
         gif_path = download('Baixar GIF animado', 'animated.gif')
         gif = Image.open(gif_path)
-        assert gif.size == (128, 128) and gif.n_frames == 40
+        assert gif.size == (128, 128) and gif.n_frames == 60
         assert gif.info.get('loop') == 0
         gif.seek(0)
         first = gif.convert('RGBA')
@@ -136,17 +146,27 @@ with sync_playwright() as playwright:
         other = gif.convert('RGBA')
         assert ImageChops.difference(first.convert('RGB'), other.convert('RGB')).getbbox()
         assert gif.disposal_method == 2
+        shared = download('Compartilhar projeto', 'shared.json')
+        data = json.loads(shared.read_text())
+        assert data['project']['schema'] == 2 and data['project']['duration'] == 3
+        page.get_by_role('button', name='Novo projeto', exact=True).click()
+        page.get_by_label('Arquivo do projeto', exact=True).set_input_files(str(shared))
+        expect(page.get_by_role('radio', name='Movimento Flutuar', exact=True)).to_be_checked()
+        page.get_by_role('switch', name='Modo escuro', exact=True).uncheck()
+        expect(page.locator('.bf-im-site')).to_have_class('bf-im bf-im-site light')
+        page.screenshot(path=str(SHOTS / 'iconmaker-light.png'), full_page=True)
+        page.get_by_role('switch', name='Modo escuro', exact=True).check()
         page.get_by_role('switch', name='Classic Mode', exact=True).check()
         page.get_by_role('button', name='Salvar projeto', exact=True).click()
         expect(page.get_by_role('status').filter(has_text='Projeto salvo neste dispositivo.')).to_be_visible()
         page.reload(wait_until='networkidle')
         expect(page.get_by_role('button', name='Baixar GIF animado', exact=True)).to_be_enabled()
         expect(page.get_by_role('switch', name='Classic Mode', exact=True)).to_be_checked()
+        page.get_by_role('button', name='Configurar exportação', exact=True).click()
         assert page.get_by_label('Nome do arquivo', exact=True).input_value() == 'Animado teste'
         assert page.get_by_label('Tamanho GIF', exact=True).input_value() == '128'
         page.get_by_label('Tamanho GIF', exact=True).select_option('512')
-        page.get_by_role('button', name='Animação', exact=True).click()
-        change_color(page.get_by_label('Velocidade', exact=True), '0.5')
+        change_color(page.get_by_label('Velocidade', exact=True), '1')
         page.get_by_label('Fluidez', exact=True).select_option('24')
         before_downloads = len(downloads)
         page.get_by_role('button', name='Baixar GIF animado', exact=True).click()
@@ -157,7 +177,10 @@ with sync_playwright() as playwright:
         page.get_by_role('button', name='Estático', exact=False).first.click()
         page.set_viewport_size({'width': 780, 'height': 1000})
         assert page.locator('body').evaluate('e => e.scrollWidth <= window.innerWidth')
+        page.get_by_role('button', name='Configurar exportação', exact=True).click()
         page.screenshot(path=str(SHOTS / 'iconmaker-static-narrow.png'), full_page=True)
+        page.set_viewport_size({'width': 1360, 'height': 1000})
+        page.screenshot(path=str(SHOTS / 'iconmaker-static.png'), full_page=True)
         assert not network, network
         assert not errors, errors
         print('PASS IconMaker browser: all bodies/eyes, Classic Mode, PNG/SVG/GIF decoded exports, live motion, transparent frames/disposal/loop, local images, unsupported-image rejection, export cancellation, real IndexedDB restoration, responsive layout and offline operation.', flush=True)

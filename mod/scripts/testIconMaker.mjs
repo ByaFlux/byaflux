@@ -15,7 +15,11 @@ import { build } from "esbuild";
 const directory = await mkdtemp(join(tmpdir(), "byaflux-iconmaker-"));
 try {
     await build({
-        entryPoints: { model: "src/shared/iconMaker/index.ts", render: "src/shared/iconMaker/render.ts" },
+        entryPoints: {
+            animation: "src/shared/iconMaker/animation.ts",
+            model: "src/shared/iconMaker/index.ts",
+            render: "src/shared/iconMaker/render.ts"
+        },
         bundle: true,
         format: "esm",
         platform: "node",
@@ -31,6 +35,46 @@ try {
         checks++;
     };
     const original = model.defaultProject();
+    const { catalog, sampleAnimation } = await import(pathToFileURL(join(directory, "animation.mjs")));
+    check(() => assert.equal(Object.keys(model.BODIES).length, 33));
+    check(() => assert.equal(Object.keys(model.EYES).length, 32));
+    check(() => assert.equal(Object.keys(model.MOTIONS).length, 13));
+    check(() => assert.equal(Object.keys(model.EFFECTS).length, 13));
+    for (const style of [catalog.modern, catalog.classic]) {
+        for (const body of Object.keys(model.BODIES)) check(() => assert.ok(style.bodies[body]));
+        for (const eye of Object.keys(model.EYES)) {
+            check(() => assert.ok(style.eyes[eye] && style.cuts[eye]));
+            check(() =>
+                assert.notEqual(
+                    renderIcon({ ...original, eyes: eye, eyeAuto: true }),
+                    renderIcon({ ...original, eyes: eye, eyeAuto: false })
+                )
+            );
+        }
+    }
+    check(() =>
+        assert.ok(
+            !/<script|onload=|https?:|<foreignObject/i.test(
+                JSON.stringify([catalog.modern, catalog.classic, catalog.effects])
+            )
+        )
+    );
+    const migrated = model.validateProject({
+        ...original,
+        schema: 1,
+        body: "cat",
+        eyes: "hearts",
+        motion: "float",
+        effect: "rays",
+        speed: 2
+    });
+    check(() => assert.equal(migrated.schema, 2));
+    check(() => assert.equal(migrated.body, "cat"));
+    check(() => assert.equal(migrated.eyes, "heart-eyes"));
+    check(() => assert.equal(migrated.duration, 1));
+    check(() => assert.equal(migrated.eyeAuto, false));
+    check(() => assert.equal(migrated.bodyColor, original.bodyColor));
+    check(() => assert.equal(sampleAnimation("rotate-linear-animation", 0.5, true).rotate, 180));
     check(() => assert.deepEqual(model.validateProject(JSON.parse(JSON.stringify(original))), original));
     const bodyShapes = new Set();
     for (const body of Object.keys(model.BODIES))
@@ -59,21 +103,21 @@ try {
     check(() => assert.equal(renderIcon(original, 0), renderIcon(original, 0.7)));
     check(() =>
         assert.notEqual(
-            renderIcon({ ...original, effect: "hearts", effectLayer: "front" }),
-            renderIcon({ ...original, effect: "hearts", effectLayer: "behind" })
+            renderIcon({ ...original, mode: "animated", effect: "hearts-effect", effectLayer: "front" }),
+            renderIcon({ ...original, mode: "animated", effect: "hearts-effect", effectLayer: "behind" })
         )
     );
     check(() =>
-        assert.deepEqual(model.animationTiming({ ...original, speed: 1, fps: 20 }), {
-            frames: 40,
+        assert.deepEqual(model.animationTiming({ ...original, duration: 3, fps: 20 }), {
+            frames: 60,
             delay: 50,
-            duration: 2000
+            duration: 3000
         })
     );
-    for (const speed of [0.5, 1, 2])
+    for (const duration of [1, 3, 5])
         for (const fps of [12, 20, 24]) {
-            const timing = model.animationTiming({ ...original, speed, fps });
-            check(() => assert.ok(timing.frames >= 12 && timing.frames <= 72 && timing.delay >= 20));
+            const timing = model.animationTiming({ ...original, duration, fps });
+            check(() => assert.ok(timing.frames >= 12 && timing.frames <= 120 && timing.delay >= 20));
         }
     for (const name of ["../escape", "a/b", "a\\b", "CON", "NUL.txt", "", "arquivo.", "a".repeat(65)])
         check(() => assert.throws(() => model.exportName(name)));
@@ -85,9 +129,9 @@ try {
         { scale: -1 },
         { gifSize: 4096 },
         { motion: "fake" },
-        { speed: NaN },
+        { duration: NaN },
         { classic: "true" },
-        { schema: 2 }
+        { schema: 3 }
     ])
         check(() => assert.throws(() => model.validateProject({ ...original, ...patch })));
     check(() => assert.throws(() => renderIcon(original, 0, 'x" onload="1')));
