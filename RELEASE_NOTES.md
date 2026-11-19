@@ -1,6 +1,8 @@
-# ByaFlux 0.1.1
+# ByaFlux 0.1.2
 
-- A busca manual em Updater também aciona a faixa nativa no topo do Discord, com o botão **Atualizar e reiniciar**.
-- A verificação automática agora ocorre ao abrir o Discord e a cada cinco minutos.
+- FakeDM, FollowMe e FollowUser adicionados como plugins próprios, com descrições em português.
+- Autoria dos plugins próprios atribuída ao ID 1227436212982251533. A lista do autor agora identifica as contribuições pelo ID do Discord.
+- Corrigida a verificação do alvo do FollowMe nos callbacks de troca de canal.
+- SmoothTyping não está incluído.
 
-Quem está em uma versão anterior pode receber esta correção pelo botão **Atualizar e reiniciar** em **ByaFlux → Updater**.
+Atualize pelo botão **Atualizar e reiniciar** no aviso de nova versão ou em **ByaFlux → Updater**. Quem instalou uma build de testes com o atualizador desativado deve usar o instalador desta release e escolher **Reinstall / Repair**.

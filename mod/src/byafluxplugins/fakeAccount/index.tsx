@@ -405,7 +405,7 @@ export default definePlugin({
     name: "FakeAccount",
     enabledByDefault: true,
     description: "Adicione perfis visuais pelo botão direito ou crie um com nome e foto. Escolha a aparência no seletor de contas.",
-    authors: [{ name: "Nightcord", id: 0n }],
+    authors: [{ name: "Haru", id: 1227436212982251533n }],
     dependencies: ["HeaderBarAPI", "ContextMenuAPI"],
     settingsAboutComponent: CustomAccountPanel,
     patches: [{

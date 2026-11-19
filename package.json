@@ -1,19 +1,19 @@
 {
-  "name": "byaflux-dev",
-  "version": "0.1.1",
-  "private": true,
-  "description": "ByaFlux: comandos de desenvolvimento na raiz do projeto",
-  "scripts": {
-    "postinstall": "node scripts/dev.mjs install",
-    "build": "node scripts/dev.mjs build",
-    "inject": "node mod/scripts/runInstaller.mjs -- --install",
-    "uninject": "node mod/scripts/runInstaller.mjs -- --uninstall",
-    "repair": "node mod/scripts/runInstaller.mjs -- --repair",
-    "typecheck": "node scripts/dev.mjs typecheck",
-    "badges:source": "node scripts/badges-source.mjs"
-  },
-  "engines": {
-    "node": ">=24"
-  },
-  "packageManager": "pnpm@12.18.0"
+    "name": "byaflux-dev",
+    "version": "0.1.2",
+    "private": true,
+    "description": "ByaFlux: comandos de desenvolvimento na raiz do projeto",
+    "scripts": {
+        "postinstall": "node scripts/dev.mjs install",
+        "build": "node scripts/dev.mjs build",
+        "inject": "node mod/scripts/runInstaller.mjs -- --install",
+        "uninject": "node mod/scripts/runInstaller.mjs -- --uninstall",
+        "repair": "node mod/scripts/runInstaller.mjs -- --repair",
+        "typecheck": "node scripts/dev.mjs typecheck",
+        "badges:source": "node scripts/badges-source.mjs"
+    },
+    "engines": {
+        "node": ">=24"
+    },
+    "packageManager": "pnpm@12.18.0"
 }

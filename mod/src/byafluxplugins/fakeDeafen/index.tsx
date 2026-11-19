@@ -182,7 +182,7 @@ function handleKeyDown(e: KeyboardEvent) {
 export default definePlugin({
     name: "FakeDeafen",
     description: "Fake Mute e Fake Deafen, com controles no menu de áudio e nas configurações.",
-    authors: [{ id: 1449096170646536233n, name: "Block" }],
+    authors: [{ name: "Haru", id: 1227436212982251533n }],
     settings,
 
     patches: [

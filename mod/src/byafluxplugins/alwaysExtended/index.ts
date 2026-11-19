@@ -9,7 +9,7 @@ import definePlugin from "@utils/types";
 export default definePlugin({
     name: "AlwaysExtended",
     description: "Mantém a área de badges dos perfis expandida, mostrando todas sem agrupar em +N.",
-    authors: [],
+    authors: [{ name: "Haru", id: 1227436212982251533n }],
     enabledByDefault: true,
     patches: [{
         find: "UserProfileBadgeListRows",

@@ -80,7 +80,7 @@ const userContextMenu: NavContextMenuPatchCallback = (children, { user }: { user
 export default definePlugin({
     name: "FakeBadges",
     description: "Escolha badges visuais para o seu perfil, visíveis somente no seu Discord.",
-    authors: [Devs.Ven],
+    authors: [{ name: "Haru", id: 1227436212982251533n }],
     enabledByDefault: true,
     dependencies: ["BadgeAPI"],
     settings,

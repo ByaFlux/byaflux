@@ -93,7 +93,7 @@ function BadgeInfo() {
 export default definePlugin({
     name: "ByaBadges",
     description: "Badges oficiais do ByaFlux, sincronizadas por catálogo público.",
-    authors: [],
+    authors: [{ name: "Haru", id: 1227436212982251533n }],
     required: true,
     enabledByDefault: true,
     dependencies: ["BadgeAPI"],
