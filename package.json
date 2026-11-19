@@ -10,7 +10,8 @@
         "uninject": "node mod/scripts/runInstaller.mjs -- --uninstall",
         "repair": "node mod/scripts/runInstaller.mjs -- --repair",
         "typecheck": "node scripts/dev.mjs typecheck",
-        "badges:source": "node scripts/badges-source.mjs"
+        "badges:source": "node scripts/badges-source.mjs",
+        "test:ctm": "pnpm --dir mod test:ctm"
     },
     "engines": {
         "node": ">=24"

@@ -40,7 +40,8 @@
         "test": "pnpm buildStandalone && pnpm testTsc && pnpm lint:fix && pnpm fmt:check && pnpm lint:intl && pnpm lint:patches && pnpm generatePluginJson",
         "testWeb": "pnpm lint:fix && pnpm buildWeb && pnpm testTsc",
         "testTsc": "tsc --noEmit",
-        "generateByaFluxPluginJson": "node --import tsx scripts/generatePluginList.ts --byaflux"
+        "generateByaFluxPluginJson": "node --import tsx scripts/generatePluginList.ts --byaflux",
+        "test:ctm": "node scripts/testThemeMaker.mjs"
     },
     "dependencies": {
         "@ffmpeg/ffmpeg": "catalog:",
