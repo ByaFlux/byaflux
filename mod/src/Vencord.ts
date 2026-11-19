@@ -37,13 +37,13 @@ import { StartAt } from "@utils/types";
 import { SettingsRouter, showToast } from "@webpack/common";
 
 import { get as dsGet } from "./api/DataStore";
-import { showNotice } from "./api/Notices";
 import { showNotification } from "./api/Notifications";
 import { initPluginManager, PMLogger, startAllPlugins } from "./api/PluginManager";
 import { PlainSettings, Settings, SettingsStore } from "./api/Settings";
 import { areLocalSettingsDirty, getCloudSettings, getCloudSyncDirection, markLocalSettingsDirty, putCloudSettings, shouldCloudSync } from "./api/SettingsSync/cloudSync";
 import { relaunch } from "./utils/native";
 import { checkForUpdates, setUpdateAvailableHandler, updateAndRestart, UpdateLogger } from "./utils/updater";
+import { showUpdateBanner } from "./utils/updateBanner";
 import { onceReady } from "./webpack";
 import { patches } from "./webpack/patchWebpack";
 
@@ -124,17 +124,14 @@ function showUpdateNotice() {
     if (notifiedForUpdatesThisSession) return;
 
     try {
-        showNotice(
-            "Uma nova versão do ByaFlux está disponível!",
-            "Atualizar e reiniciar",
-            () => {
-                showToast({ text: "Baixando atualização do ByaFlux..." });
-                void updateAndRestart().catch(error => {
-                    UpdateLogger.error(error);
-                    showToast({ text: "Falha na atualização. Abra ByaFlux → Updater para tentar novamente.", variant: "critical" });
-                });
+        showUpdateBanner(async () => {
+            try {
+                await updateAndRestart();
+            } catch (error) {
+                UpdateLogger.error(error);
+                throw error;
             }
-        );
+        });
         notifiedForUpdatesThisSession = true;
     } catch (error) {
         UpdateLogger.error("Failed to show update notice", error);

@@ -1,8 +1,7 @@
-# ByaFlux 0.1.2
+# ByaFlux 0.1.3
 
-- FakeDM, FollowMe e FollowUser adicionados como plugins próprios, com descrições em português.
-- Autoria dos plugins próprios atribuída ao ID 1227436212982251533. A lista do autor agora identifica as contribuições pelo ID do Discord.
-- Corrigida a verificação do alvo do FollowMe nos callbacks de troca de canal.
-- SmoothTyping não está incluído.
+- Barra de atualização própria no topo, com visual semelhante aos avisos de reconexão do Discord.
+- Botão **Atualizar e reiniciar**, indicação de download, bloqueio de cliques repetidos e nova tentativa em caso de erro.
+- O aviso não depende mais da fila interna NoticeStore, que podia deixar uma atualização detectada sem barra visível.
 
-Atualize pelo botão **Atualizar e reiniciar** no aviso de nova versão ou em **ByaFlux → Updater**. Quem instalou uma build de testes com o atualizador desativado deve usar o instalador desta release e escolher **Reinstall / Repair**.
+Quem está na 0.1.1 ou 0.1.2 deve atualizar uma vez por **ByaFlux → Updater** ou pelo instalador desta release. O código novo da barra passa a funcionar após essa atualização, quando houver uma versão posterior disponível. Builds de testes com atualizador desativado precisam do instalador, em **Reinstall / Repair**.
