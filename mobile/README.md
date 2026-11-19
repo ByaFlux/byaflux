@@ -1,10 +1,10 @@
-# ByaFlux Mobile 0.2.0-preview.1
+# ByaFlux Mobile 0.2.0-preview.2
 
 Requer Android 9 ou superior. O APK é o instalador. Abra-o, instale o ByaFlux e autorize a instalação quando o Android pedir. O Discord oficial fica separado.
 
-Em Configurações > ByaFlux > Plugins, ative os plugins desejados. AlwaysExtended foi removido.
+Em Configurações > ByaFlux > Plugins, ative os plugins desejados. AlwaysExtended vem ativado por padrão.
 
-Esta prévia inclui ByaBadges, FakeBadges, FakeDeafen, FakeDM, FollowMe, FollowUser, ServerInfo, VolumeBooster, ReadAllNotification, RelationshipNotifier, MessageLoggerEnhanced e IconViewer.
+Esta prévia inclui ByaBadges, FakeBadges, FakeDeafen, FakeDM, FollowMe, FollowUser, ServerInfo, VolumeBooster, ReadAllNotificationsButton, RelationshipNotifier, MessageLoggerEnhanced e IconViewer, além do AlwaysExtended.
 
 As adaptações Android precisam de testes em aparelho real. FollowMe exige Mover membros e usuários em canais de voz do mesmo servidor. VolumeBooster depende dos limites do motor de áudio do Android. FakeDM e FakeBadges são apenas locais. O logger registra mensagens carregadas enquanto está ativo e guarda no aparelho até 500 registros.
 

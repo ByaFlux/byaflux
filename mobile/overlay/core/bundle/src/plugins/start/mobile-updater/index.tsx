@@ -1,6 +1,6 @@
 import { registerInternalPlugin } from '@valenced/plugins/_'
 import { useSyncExternalStore } from 'react'
-import { AppState } from 'react-native'
+import { Alert, AppState } from 'react-native'
 import { Action, notify, Panel } from '~/byaflux/mobile'
 import { updates } from '~/byaflux/updates'
 import manifest from './manifest.json'
@@ -12,10 +12,27 @@ registerInternalPlugin(manifest, {
         async function check() {
             await updates.check()
             const update = updates.current()
-            if (active && update && update.versionCode !== announced) {
+            if (
+                active &&
+                update &&
+                AppState.currentState !== 'background' &&
+                update.versionCode !== announced
+            ) {
                 announced = update.versionCode
-                notify(
-                    `ByaFlux ${update.versionName} disponível. Abra ByaFlux > Atualizações para atualizar.`,
+                Alert.alert(
+                    'Atualização do ByaFlux',
+                    `A versão ${update.versionName} está disponível.`,
+                    [
+                        { text: 'Agora não', style: 'cancel' },
+                        {
+                            text: 'Atualizar',
+                            onPress: () => {
+                                void updates
+                                    .open()
+                                    .catch(error => notify(String(error), true))
+                            },
+                        },
+                    ],
                 )
             }
         }
@@ -24,11 +41,11 @@ registerInternalPlugin(manifest, {
             () => {
                 void check()
             },
-            30 * 60 * 1000,
+            5 * 60 * 1000,
         )
         let last = Date.now()
         const listener = AppState.addEventListener('change', state => {
-            if (state === 'active' && Date.now() - last > 30 * 60 * 1000) {
+            if (state === 'active' && Date.now() - last > 5 * 60 * 1000) {
                 last = Date.now()
                 void check()
             }

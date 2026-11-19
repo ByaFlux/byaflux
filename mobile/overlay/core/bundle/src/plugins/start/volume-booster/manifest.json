@@ -1,7 +1,7 @@
 {
   "id": "byaflux.volume-booster",
   "name": "VolumeBooster",
-  "description": "Define o volume individual acima do limite do controle padrão.",
+  "description": "Allows you to set the user and stream volume above the default maximum",
   "author": "Haru <1227436212982251533>",
   "icon": "PuzzlePieceIcon",
   "enabledByDefault": false

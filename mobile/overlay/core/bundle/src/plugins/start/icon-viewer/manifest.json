@@ -1,7 +1,7 @@
 {
   "id": "byaflux.icon-viewer",
   "name": "IconViewer",
-  "description": "Pesquisa e visualiza ícones e imagens do Discord.",
+  "description": "Adds a new tab to settings to preview all icons.",
   "author": "Haru <1227436212982251533>",
   "icon": "PuzzlePieceIcon",
   "enabledByDefault": false

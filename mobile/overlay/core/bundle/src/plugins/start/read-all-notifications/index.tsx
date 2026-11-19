@@ -69,7 +69,7 @@ function markAll() {
 registerInternalPlugin(manifest, {
     SettingsComponent() {
         return (
-            <Panel title="ReadAllNotification">
+            <Panel title="ReadAllNotificationsButton">
                 <Action
                     label="Marcar tudo como lido"
                     detail="Inclui servidores, tópicos e conversas privadas carregadas."

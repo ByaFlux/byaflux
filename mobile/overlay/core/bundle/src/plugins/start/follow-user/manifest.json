@@ -1,7 +1,7 @@
 {
   "id": "byaflux.follow-user",
   "name": "FollowUser",
-  "description": "Acompanha as mudanças de canal de voz de um usuário.",
+  "description": "Acompanha um usuário nos canais de voz. Botão direito → Follow User. O coração branco indica acompanhamento ativo: clique para entrar na call e botão direito para parar. Interrompe após inatividade.",
   "author": "Haru <1227436212982251533>",
   "icon": "PuzzlePieceIcon",
   "enabledByDefault": false

@@ -1,7 +1,7 @@
 {
   "id": "byaflux.server-info",
   "name": "ServerInfo",
-  "description": "Exibe informações do servidor selecionado.",
+  "description": "Allows you to view info about a server",
   "author": "Haru <1227436212982251533>",
   "icon": "PuzzlePieceIcon",
   "enabledByDefault": false

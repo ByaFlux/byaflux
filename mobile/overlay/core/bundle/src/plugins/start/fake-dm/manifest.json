@@ -1,7 +1,7 @@
 {
   "id": "byaflux.fake-dm",
   "name": "FakeDM",
-  "description": "Cria mensagens e registros de chamadas apenas neste aparelho.",
+  "description": "Adiciona mensagens e registros de chamadas visuais em DMs e grupos. Botão na barra de texto. Os itens são salvos localmente.",
   "author": "Haru <1227436212982251533>",
   "icon": "PuzzlePieceIcon",
   "enabledByDefault": false

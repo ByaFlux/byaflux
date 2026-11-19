@@ -1,7 +1,7 @@
 {
   "id": "byaflux.follow-me",
   "name": "FollowMe",
-  "description": "Move um membro junto com você nos canais de voz, com permissão de mover membros.",
+  "description": "Move um usuário para acompanhar você nos canais de voz, caso tenha permissão. Botão direito em um usuário → Follow Me.",
   "author": "Haru <1227436212982251533>",
   "icon": "PuzzlePieceIcon",
   "enabledByDefault": false

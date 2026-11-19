@@ -1,7 +1,7 @@
 {
   "id": "byaflux.fake-deafen",
   "name": "FakeDeafen",
-  "description": "Fake mute e deafen com controles adaptados para Android.",
+  "description": "Fake Mute e Fake Deafen, com controles no menu de áudio e nas configurações.",
   "author": "Haru <1227436212982251533>",
   "icon": "PuzzlePieceIcon",
   "enabledByDefault": false

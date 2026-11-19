@@ -1,7 +1,7 @@
 {
   "id": "byaflux.message-logger-enhanced",
   "name": "MessageLoggerEnhanced",
-  "description": "Mantém mensagens apagadas e histórico de edições localmente.",
+  "description": "Improves MessageLogger with edited message history, ghost ping detection and more",
   "author": "Haru <1227436212982251533>",
   "icon": "PuzzlePieceIcon",
   "enabledByDefault": false

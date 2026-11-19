@@ -1,7 +1,7 @@
 {
   "id": "byaflux.relationship-notifier",
   "name": "RelationshipNotifier",
-  "description": "Avisa sobre remoção de amigos, grupos e servidores.",
+  "description": "Notifies you when a friend, group chat, or server removes you.",
   "author": "Haru <1227436212982251533>",
   "icon": "PuzzlePieceIcon",
   "enabledByDefault": false

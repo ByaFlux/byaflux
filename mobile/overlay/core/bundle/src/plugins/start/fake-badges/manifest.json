@@ -1,7 +1,7 @@
 {
   "id": "byaflux.fake-badges",
   "name": "FakeBadges",
-  "description": "Altera as badges dos perfis apenas neste aparelho.",
+  "description": "Escolha badges visuais para o seu perfil, visíveis somente no seu Discord.",
   "author": "Haru <1227436212982251533>",
   "icon": "AwardIcon",
   "enabledByDefault": false,

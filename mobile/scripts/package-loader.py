@@ -18,11 +18,9 @@ for name, asset in lock['assets'].items():
 dist = mobile / 'work' / 'core' / 'bundle' / 'dist'
 manifest = json.loads((dist / 'manifest.json').read_text())
 plugins = {p['id']: p for p in manifest['plugins']}
-for plugin in ['byaflux.bya-badges', 'byaflux.fake-badges', 'byaflux.fake-deafen', 'byaflux.fake-dm', 'byaflux.follow-me', 'byaflux.follow-user', 'byaflux.server-info', 'byaflux.volume-booster', 'byaflux.read-all-notifications', 'byaflux.relationship-notifier', 'byaflux.message-logger-enhanced', 'byaflux.icon-viewer', 'byaflux.mobile-updater']:
+for plugin in ['byaflux.bya-badges', 'byaflux.fake-badges', 'byaflux.fake-deafen', 'byaflux.fake-dm', 'byaflux.follow-me', 'byaflux.follow-user', 'byaflux.server-info', 'byaflux.volume-booster', 'byaflux.read-all-notifications', 'byaflux.relationship-notifier', 'byaflux.message-logger-enhanced', 'byaflux.icon-viewer', 'byaflux.mobile-updater', 'byaflux.always-extended']:
     if plugin not in plugins:
         raise RuntimeError(f'Missing bundled plugin: {plugin}')
-if 'byaflux.always-extended' in plugins:
-    raise RuntimeError('AlwaysExtended must not be bundled')
 if not plugins['byaflux.bya-badges'].get('essential'):
     raise RuntimeError('ByaBadges must be required')
 if manifest['version'] != lock['release']:
