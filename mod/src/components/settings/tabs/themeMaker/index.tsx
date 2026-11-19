@@ -25,7 +25,13 @@ import {
     validateChoices,
     validateName
 } from "@shared/themeMaker";
-import { createPreviewController, previewDocument, previewPayload, SERVER_IMAGE } from "@shared/themeMaker/preview";
+import {
+    copyDiscordFonts,
+    createPreviewController,
+    previewDocument,
+    previewPayload,
+    SERVER_IMAGE
+} from "@shared/themeMaker/preview";
 import { React, useEffect, useMemo, useRef, useState } from "@webpack/common";
 
 import { saveAndActivateTheme, ThemeMakerAdapter } from "./service";
@@ -273,10 +279,7 @@ export function ThemeMakerEditor({
             setError("A prévia não pôde ser iniciada. Reabra esta tela.");
             return;
         }
-        // Reuse Discord's already registered font faces without changing the active client's styles.
-        window.document.fonts.forEach(face => {
-            if (/gg sans|Noto Sans/i.test(face.family)) doc.fonts.add(face);
-        });
+        copyDiscordFonts(window.document, doc);
         controller.current = createPreviewController(doc, (kind, text) => {
             if (mounted.current) setResourceErrors(previous => ({ ...previous, [kind]: text }));
         });

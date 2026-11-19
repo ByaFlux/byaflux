@@ -1,6 +1,7 @@
-# ByaFlux 0.1.6
+# ByaFlux 0.1.7
 
-- Novo Criador de temas nas configurações do Desktop, com prévia isolada e comparação Antes/Depois.
-- Personalize a cor de destaque, a barra lateral, o fundo, os formatos dos ícones, o status radial e os packs de emoji.
-- Salve e ative temas locais ou reabra suas criações em Meus temas para editar.
-- Ativar uma criação substitui apenas outro tema do CTM ativo e preserva os demais temas instalados.
+- Criador de temas redesenhado com controles no padrão do Discord e abas de Aparência, Tipografia, Layout e Detalhes.
+- Cinco paletas prontas e controles de cores para mensagens, canais, servidores, campos e textos.
+- Novas opções de fonte, tamanho, peso, altura de linha, espaçamento e largura dos canais.
+- Prévia isolada corrigida, com comparação Antes/Depois e opção de ampliar.
+- CSS atualizado para as cores do Discord atual e preservação da edição dos temas já criados no CTM.

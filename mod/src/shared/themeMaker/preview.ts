@@ -64,6 +64,39 @@ export function previewDocument(): string {
 </style><style id="ctm-theme"></style></head><body><div id="app-mount"><nav class="guilds_preview" aria-label="Servidores">${[1, 2, 3, 4].map(guild).join("")}<div class="separator"></div><button class="server add" aria-label="Adicionar servidor">+</button></nav><aside class="sidebar_preview"><div class="server-title">Estúdio ByaFlux <span style="float:right;color:#999">⌄</span></div><div class="label">CANAIS DE TEXTO</div><div class="channel active"><span>#</span> geral</div><div class="channel"># projetos</div><div class="channel"># referências</div><div class="channel"># off-topic</div><div class="label">CANAIS DE VOZ</div><div class="channel">◖ Reunião</div><div class="channel">◖ Trabalho</div><div class="current-user">${avatar("Haru", "online", 32, "self")}<div><strong>Haru</strong><div class="hint">Disponível</div></div></div></aside><main class="chat_preview"><header class="chat-header"># geral <span style="float:right;color:var(--text-muted,#949ba4)">♧ ···</span></header><div class="chatContent_preview"><div class="welcome">Seu espaço, seu estilo.</div><div class="hint">Compare as escolhas antes de ativar o tema.</div><div class="message">${avatar("Haru", "online", 32, "message1")}<div class="message-body"><strong class="brand">Haru</strong><span class="time">Hoje às 14:27</span><p class="ctm-message-text">Um espaço pensado para suas ideias.</p><div>${emoji()}</div></div></div><div class="message">${avatar("Kaito", "idle", 32, "message2")}<div class="message-body"><strong>Kaito</strong><span class="time">Hoje às 14:31</span><p class="ctm-message-text">Tipografia legível, cores equilibradas e todos os detalhes no lugar.</p><div>${emoji()}</div></div></div><div class="states">${["online", "idle", "dnd", "offline"].map((state, i) => `<div class="state">${avatar(["Haru", "Kaito", "Luna", "Niko"][i], state, 32, "state" + i)}<span>${["Online", "Ausente", "Não perturbe", "Offline"][i]}</span></div>`).join("")}</div><div class="hint" style="margin-top:24px">Código: <code style="font-family:monospace">const tema = "seu estilo";</code></div></div><div class="composer">＋ Conversar em #geral <span style="float:right">☺</span></div></main><aside class="members_preview"><div class="label">MEMBROS — 4</div>${["online", "idle", "dnd", "offline"].map((state, i) => `<div class="member">${avatar(["Haru", "Kaito", "Luna", "Niko"][i], state, 32, "member" + i)}<strong>${["Haru", "Kaito", "Luna", "Niko"][i]}</strong></div>`).join("")}</aside></div></body></html>`;
 }
 
+/** Copy only Discord's font-face rules; importing the host stylesheet would destroy preview isolation. */
+export function copyDiscordFonts(source: Document, target: Document) {
+    const faces = new Set<string>();
+    const collect = (sheet: CSSStyleSheet, depth = 0) => {
+        if (depth > 3 || faces.size > 100) return;
+        try {
+            for (const rule of Array.from(sheet.cssRules)) {
+                if (rule.type === CSSRule.IMPORT_RULE) {
+                    const imported = (rule as CSSImportRule).styleSheet;
+                    if (imported) collect(imported, depth + 1);
+                }
+                if (rule.type !== CSSRule.FONT_FACE_RULE) continue;
+                const face = rule as CSSFontFaceRule;
+                if (!/gg sans|Noto Sans/i.test(face.style.getPropertyValue("font-family"))) continue;
+                const css = face.cssText.replace(
+                    /url\((?:"([^"\n]+)"|'([^'\n]+)'|([^)'"\n]+))\)/g,
+                    (_match, quoted, single, bare) =>
+                        `url(${JSON.stringify(new URL(quoted ?? single ?? bare.trim(), sheet.href ?? source.baseURI).href)})`
+                );
+                faces.add(css);
+            }
+        } catch {
+            /* Cross-origin theme stylesheets are not part of the native font set. */
+        }
+    };
+    for (const sheet of Array.from(source.styleSheets)) collect(sheet);
+    const style = target.createElement("style");
+    style.id = "ctm-native-fonts";
+    style.textContent = Array.from(faces).join("\n");
+    target.getElementById(style.id)?.remove();
+    target.head.prepend(style);
+}
+
 export type PreviewPayload = ReturnType<typeof previewPayload>;
 /** No scripts execute inside the preview. Only this renderer controls its inert document. */
 export function createPreviewController(document: Document, report: (kind: string, text: string) => void) {

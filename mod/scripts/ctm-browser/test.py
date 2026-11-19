@@ -102,6 +102,7 @@ with sync_playwright() as playwright:
         page.screenshot(path=str(screenshot), full_page=True)
         assert page.locator('iframe').get_attribute('sandbox') == 'allow-same-origin'
         assert frame.locator('script').count() == 0
+        expect(frame.locator('#ctm-native-fonts')).to_contain_text('gg sans')
         for name, color in [('Discord', 'rgb(49, 51, 56)'), ('Meia-noite', 'rgb(19, 21, 28)'), ('Oceano', 'rgb(23, 42, 50)'), ('Claro', 'rgb(255, 255, 255)'), ('Grafite', 'rgb(36, 36, 41)')]:
             page.get_by_role('group', name='Paletas prontas').get_by_role('button', name=name, exact=True).click()
             expect(frame.locator('.chatContent_preview')).to_have_css('background-color', color)
