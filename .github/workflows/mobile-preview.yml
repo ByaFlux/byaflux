@@ -50,7 +50,7 @@ jobs:
           sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
           keytool -genkeypair -keystore "$RUNNER_TEMP/mobile-preview.jks" -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=ByaFlux Mobile Preview,O=ByaFlux,C=BR'
           assets=mobile/work/manager/app/src/main/assets
-          "$tools/zipalign" -f -p 4 "$assets/byaflux-loader-unsigned.apk" "$RUNNER_TEMP/loader-aligned.apk"
+          "$tools/zipalign" -f -P 16 4 "$assets/byaflux-loader-unsigned.apk" "$RUNNER_TEMP/loader-aligned.apk"
           "$tools/apksigner" sign --ks "$RUNNER_TEMP/mobile-preview.jks" --ks-pass pass:android --key-pass pass:android --out "$assets/byaflux-loader.apk" "$RUNNER_TEMP/loader-aligned.apk"
           "$tools/apksigner" verify "$assets/byaflux-loader.apk"
           rm "$assets/byaflux-loader-unsigned.apk"
@@ -63,7 +63,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p mobile-output
-          apk=mobile/work/manager/app/build/outputs/apk/debug/app-debug.apk
+          mapfile -t apks < <(find mobile/work/manager/app/build/outputs/apk/debug -type f -name '*.apk')
+          test "${#apks[@]}" -eq 1
+          apk="${apks[0]}"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk"
           cp "$apk" mobile-output/ByaFluxMobile-0.1.0-preview.1.apk
           cp mobile/work/core/bundle/dist/valenced.bundle mobile-output/byaflux-mobile.bundle

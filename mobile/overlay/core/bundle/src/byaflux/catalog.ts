@@ -8,7 +8,8 @@ export interface BadgeCatalog {
     badges: Record<string, BadgeDefinition>
     users: Record<string, string[]>
 }
-const own = (object: object, key: string) => Object.hasOwn(object, key)
+const own = (object: object, key: string) =>
+    Object.getOwnPropertyDescriptor(object, key) !== undefined
 const record = (value: unknown): value is Record<string, unknown> =>
     !!value && typeof value === 'object' && !Array.isArray(value)
 export const validUserId = (id: string) => /^\d{17,20}$/.test(id)
