@@ -239,6 +239,7 @@ with sync_playwright() as playwright:
         assert len(api('/ctm-themes')) == 2
         assert api('/settings')['enabledThemes'] == ['Other.theme.css', 'CTM Playwright.theme.css']
         page.screenshot(path=str(SCREENSHOTS / 'ctm-restored-and-edited.png'), full_page=True)
+        frame = page.frame_locator('iframe[title="Prévia isolada do tema"]')
         page.set_viewport_size({'width': 1120, 'height': 900})
         page.get_by_role('tab', name='Aparência', exact=True).click()
         expect(frame.get_by_text('Seu espaço, seu estilo.')).to_be_visible()
