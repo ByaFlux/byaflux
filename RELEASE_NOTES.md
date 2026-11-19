@@ -1,7 +1,5 @@
-# ByaFlux 0.1.10
+# ByaFlux 0.1.11
 
-- IconMaker com interface próxima ao Discord Avatar Maker: prévia central, seletores circulares, modos Estático e Animado, Classic Mode e aparência clara ou escura.
-- Catálogo ampliado para 33 corpos, 32 olhos, 12 movimentos e 12 efeitos, incluindo Terra, chuva, notas musicais, corações e serra circular.
-- Olhos recortados ou coloridos, cores automáticas e controle de velocidade e camadas.
-- Exportação local em PNG, SVG e GIF. Compartilhe e importe projetos em JSON; os projetos salvos na versão anterior continuam disponíveis.
-- Créditos do catálogo visual: Discord Avatar Maker / Nerd Or Die.
+- Corrigida a reprodução automática das prévias do IconMaker no modo Animado, inclusive quando o sistema está configurado para reduzir movimentos.
+- As miniaturas de efeitos e movimentos continuam animadas ao pausar ou ajustar um quadro da prévia principal.
+- Ao abrir o modo Animado sem movimento ou efeito selecionado, o corpo começa a flutuar para demonstrar a animação. A opção Nenhum continua disponível.

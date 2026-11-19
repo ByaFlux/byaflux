@@ -119,10 +119,26 @@ with sync_playwright() as playwright:
         page.get_by_label('Tipo de fundo', exact=True).select_option('transparent')
         page.get_by_role('button', name='Animado', exact=True).click()
         page.get_by_role('radio', name='Movimento Flutuar', exact=True).check()
-        expect(page.get_by_role('button', name='Reproduzir', exact=True)).to_be_visible()
-        page.get_by_role('button', name='Reproduzir', exact=True).click()
+        expect(page.get_by_role('button', name='Pausar', exact=True)).to_be_visible()
         frame0 = preview.inner_html()
         page.wait_for_function("(old) => document.querySelector('.bf-im-stage').innerHTML !== old", arg=frame0)
+        # Reduced-motion OS settings must not freeze this explicit animation editor.
+        animated_pixels = preview.screenshot()
+        page.wait_for_timeout(400)
+        assert preview.screenshot() != animated_pixels
+        page.get_by_role('button', name='Pausar', exact=True).click()
+        paused = preview.inner_html()
+        motion_thumb = page.get_by_role('radio', name='Movimento Flutuar', exact=True).locator('..').locator('[data-im-motion]')
+        effect_thumb = page.get_by_role('radio', name='Efeito Raios giratórios', exact=True).locator('..').locator('[data-im-layer]')
+        motion_before = motion_thumb.get_attribute('transform')
+        effect_before = effect_thumb.get_attribute('transform')
+        page.wait_for_timeout(400)
+        assert preview.inner_html() == paused, 'Pause must hold the main preview'
+        assert motion_thumb.get_attribute('transform') != motion_before, 'Motion thumbnails must keep animating'
+        assert effect_thumb.get_attribute('transform') != effect_before, 'Effect thumbnails must keep animating'
+        page.get_by_role('button', name='Estático', exact=True).click()
+        page.get_by_role('button', name='Animado', exact=True).click()
+        expect(page.get_by_role('button', name='Pausar', exact=True)).to_be_visible()
         page.get_by_role('button', name='Pausar', exact=True).click()
         for label in ['Pular', 'Zoom elástico', 'Giro contínuo', 'Girar e parar', 'Dançar', 'Elástico', 'Dar a volta', 'Giro no eixo Y', 'Teletransporte', 'Escapar', 'Zoom e desaparecer', 'Flutuar']:
             page.get_by_role('radio', name='Movimento ' + label, exact=True).check()
@@ -162,6 +178,7 @@ with sync_playwright() as playwright:
         page.reload(wait_until='networkidle')
         expect(page.get_by_role('button', name='Baixar GIF animado', exact=True)).to_be_enabled()
         expect(page.get_by_role('switch', name='Classic Mode', exact=True)).to_be_checked()
+        expect(page.get_by_role('button', name='Pausar', exact=True)).to_be_visible()
         page.get_by_role('button', name='Configurar exportação', exact=True).click()
         assert page.get_by_label('Nome do arquivo', exact=True).input_value() == 'Animado teste'
         assert page.get_by_label('Tamanho GIF', exact=True).input_value() == '128'

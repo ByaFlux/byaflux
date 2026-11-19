@@ -280,8 +280,9 @@ export function IconMakerEditor() {
     const [loaded, setLoaded] = useState(false),
         [busyImage, setBusyImage] = useState(false),
         [saving, setSaving] = useState(false);
-    const [playing, setPlaying] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches),
-        [phase, setPhase] = useState(0);
+    const [playing, setPlaying] = useState(true),
+        [phase, setPhase] = useState(0),
+        [thumbnailPhase, setThumbnailPhase] = useState(0);
     const [exporting, setExporting] = useState<"" | "png" | "gif" | "svg">(""),
         [progress, setProgress] = useState(0);
     const [settingsOpen, setSettingsOpen] = useState(false),
@@ -348,15 +349,16 @@ export function IconMakerEditor() {
         };
     }, []);
     useEffect(() => {
-        if (project.mode !== "animated" || !playing || exporting) return;
+        if (project.mode !== "animated" || exporting) return;
         let raf = 0,
-            previous = 0;
-        const start = performance.now(),
-            {duration} = animationTiming(project);
+            previous = performance.now();
+        const { duration } = animationTiming(project);
         const tick = (now: number) => {
             if (now - previous >= 1000 / 30) {
+                const elapsed = (now - previous) / duration;
                 previous = now;
-                setPhase(((now - start) % duration) / duration);
+                setThumbnailPhase(value => (value + elapsed) % 1);
+                if (playing) setPhase(value => (value + elapsed) % 1);
             }
             raf = requestAnimationFrame(tick);
         };
@@ -476,7 +478,6 @@ export function IconMakerEditor() {
     };
     const pickBody = (body: string) => patch({ body: body as IconProject["body"], foregroundImage: "" });
     const pickEye = (eyes: string) => patch({ eyes: eyes as IconProject["eyes"] });
-    const thumbnailPhase = playing ? phase : 0.25;
     const palette = project.classic ? CLASSIC_PALETTE : PALETTE;
     return (
         <div className={`bf-im bf-im-site${darkUi ? " dark" : " light"}`}>
@@ -498,7 +499,16 @@ export function IconMakerEditor() {
                         aria-label="Animado"
                         aria-pressed={project.mode === "animated"}
                         disabled={busy}
-                        onClick={() => patch({ mode: "animated" })}
+                        onClick={() => {
+                            patch({
+                                mode: "animated",
+                                motion:
+                                    project.motion === "none" && project.effect === "none"
+                                        ? "floating-animation"
+                                        : project.motion
+                            });
+                            setPlaying(true);
+                        }}
                     >
                         <Glyph name="film" />
                         Animado
