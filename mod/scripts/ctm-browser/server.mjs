@@ -33,6 +33,19 @@ const server = createServer(async (req, res) => {
         for await (const chunk of req) data += chunk;
         const body = data ? JSON.parse(data) : undefined;
         let value;
+        if (req.url === "/native-client") {
+            const info = JSON.parse(await readFile(root + "/.runtime/native-info.json", "utf8"));
+            res.setHeader("Content-Type", "text/html");
+            res.end(
+                `<!doctype html><html class="theme-dark"><head><link rel="stylesheet" href="/native-tokens.css"><link rel="stylesheet" href="/native-button.css"><style>body{padding:16px;color:white;background:#25252c}button{padding:10px 16px;cursor:pointer}#native-switch{display:inline-block;width:32px;height:18px;background:var(--switch-background-selected-default)}#native-link{color:var(--text-link)}</style><style id="legacy-proof"></style><style id="client-theme"></style></head><body><button id="native-primary" class="${info.classes}">Ação primária</button><button id="native-critical" class="${info.classes.replace("colorBrand_", "colorRed_")}">Ação destrutiva</button><span id="native-switch"></span><a id="native-link">Link</a></body></html>`
+            );
+            return;
+        }
+        if (["/native-button.css", "/native-tokens.css"].includes(req.url)) {
+            res.setHeader("Content-Type", "text/css");
+            res.end(await readFile(root + "/.runtime" + req.url, "utf8"));
+            return;
+        }
         if (req.url.startsWith("/theme/")) {
             const fileName = decodeURIComponent(req.url.slice(7).split("?")[0]);
             if (

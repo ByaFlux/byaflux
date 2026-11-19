@@ -316,24 +316,106 @@ export function themeModules(choices: ThemeChoices): { id: "radial" | "emoji" | 
     if (FONTS[choices.typography.font].url) result.push({ id: "font", url: FONTS[choices.typography.font].url });
     return result;
 }
-export function themeRules(input: ThemeChoices): string {
-    const c = validateChoices(input);
-    const p = c.palette;
-    const vars = [
-        `--byaflux-ctm-accent: ${c.accent}`,
-        ...[
+function mixHex(hex: string, factor: number): string {
+    return (
+        "#" +
+        [1, 3, 5]
+            .map(index =>
+                Math.round(parseInt(hex.slice(index, index + 2), 16) * factor)
+                    .toString(16)
+                    .padStart(2, "0")
+            )
+            .join("")
+    );
+}
+export function accentText(hex: string): string {
+    const rgb = [1, 3, 5]
+        .map(index => parseInt(color(hex).slice(index, index + 2), 16) / 255)
+        .map(channel => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
+    const luminance = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+    return (luminance + 0.05) / 0.05 > 1.05 / (luminance + 0.05) ? "#000000" : "#ffffff";
+}
+function hsl(hex: string): string {
+    const [r, g, b] = [1, 3, 5].map(index => parseInt(hex.slice(index, index + 2), 16) / 255);
+    const max = Math.max(r, g, b),
+        min = Math.min(r, g, b),
+        delta = max - min,
+        lightness = (max + min) / 2;
+    let hue = 0;
+    if (delta) hue = max === r ? ((g - b) / delta) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
+    const saturation = delta ? delta / (1 - Math.abs(2 * lightness - 1)) : 0;
+    return `${Math.round((hue * 60 + 360) % 360)} ${Math.round(saturation * 100)}% ${Math.round(lightness * 100)}%`;
+}
+/** Map Discord's current semantic controls as well as legacy brand tokens. */
+export function accentVariables(input: string): string[] {
+    const accent = color(input),
+        hover = mixHex(accent, 0.9),
+        active = mixHex(accent, 0.8);
+    const values: Record<string, string> = {};
+    const set = (keys: string[], value: string) => {
+        for (const key of keys) values[key] = value;
+    };
+    set(
+        [
+            "--byaflux-ctm-accent",
             "--brand-500",
             "--brand-experiment",
+            "--brand-360",
+            "--brand-400",
+            "--brand-460",
+            "--blurple-50",
             "--text-brand",
+            "--icon-brand",
             "--text-link",
             "--control-brand-foreground",
             "--control-brand-foreground-new",
             "--button-filled-brand-background",
-            "--background-brand"
-        ].map(key => `${key}: ${c.accent} !important`),
-        `--brand-560: color-mix(in srgb, ${c.accent} 80%, black) !important`,
-        `--brand-600: color-mix(in srgb, ${c.accent} 65%, black) !important`,
-        `--button-filled-brand-background-hover: color-mix(in srgb, ${c.accent} 80%, black) !important`,
+            "--background-brand",
+            "--focus-primary",
+            "--mention-foreground"
+        ],
+        accent
+    );
+    set(["--brand-560", "--blurple-60", "--button-filled-brand-background-hover"], hover);
+    set(["--brand-600", "--blurple-65", "--button-filled-brand-background-active"], active);
+    for (const [token, value] of [
+        ["--brand-500", accent],
+        ["--brand-560", hover],
+        ["--brand-600", active],
+        ["--blurple-50", accent],
+        ["--blurple-60", hover],
+        ["--blurple-65", active]
+    ])
+        values[token + "-hsl"] = hsl(value);
+    for (const [state, background] of [
+        ["default", accent],
+        ["hover", hover],
+        ["active", active]
+    ]) {
+        set([`--control-primary-background-${state}`, `--control-primary-border-${state}`], background);
+        set([`--control-primary-text-${state}`, `--control-primary-icon-${state}`], accentText(background));
+    }
+    for (const control of ["switch", "checkbox", "radio"]) {
+        for (const [state, background] of [
+            ["default", accent],
+            ["hover", hover]
+        ])
+            set([`--${control}-background-selected-${state}`, `--${control}-border-selected-${state}`], background);
+    }
+    values["--switch-thumb-background-selected-default"] = accentText(accent);
+    values["--checkbox-icon-active"] = accentText(accent);
+    values["--radio-thumb-background-active"] = accentText(accent);
+    values["--mention-background"] = `color-mix(in srgb, ${accent} 15%, transparent)`;
+    for (const opacity of [15, 30])
+        values[`--brand-experiment-${opacity}a`] = `color-mix(in srgb, ${accent} ${opacity}%, transparent)`;
+    return Object.entries(values).map(([key, value]) => `${key}: ${value} !important`);
+}
+
+export function themeRules(input: ThemeChoices): string {
+    const c = validateChoices(input);
+    const p = c.palette;
+    const vars = [
+        ...accentVariables(c.accent),
         ...["--background-primary", "--background-base-low", "--bg-base-primary"].map(
             key => `${key}: ${p.chat} !important`
         ),
@@ -390,7 +472,8 @@ export function themeRules(input: ThemeChoices): string {
         );
     }
     let css = `:root, .theme-dark, .theme-light, .theme-darker, .theme-midnight {\n  ${vars.join(";\n  ")};\n}\n`;
-    css += "#app-mount { font-family: var(--font-primary); color: var(--text-normal); }\n#app-mount :is([class*=\"messageContent_\"], .ctm-message-text) { font-family: var(--font-primary) !important; font-size: var(--byaflux-ctm-font-size) !important; line-height: var(--byaflux-ctm-line-height) !important; font-weight: var(--byaflux-ctm-font-weight) !important; }\n#app-mount :is([class*=\"messageListItem_\"], .message) { margin-top: var(--byaflux-ctm-message-gap) !important; }\n#app-mount :is([class*=\"channelTextArea_\"], [class*=\"embedFull_\"], .composer) { border-radius: var(--byaflux-ctm-radius) !important; }\n";
+    css +=
+        '#app-mount { font-family: var(--font-primary); color: var(--text-normal); }\n#app-mount :is([class*="messageContent_"], .ctm-message-text) { font-family: var(--font-primary) !important; font-size: var(--byaflux-ctm-font-size) !important; line-height: var(--byaflux-ctm-line-height) !important; font-weight: var(--byaflux-ctm-font-weight) !important; }\n#app-mount :is([class*="messageListItem_"], .message) { margin-top: var(--byaflux-ctm-message-gap) !important; }\n#app-mount :is([class*="channelTextArea_"], [class*="embedFull_"], .composer) { border-radius: var(--byaflux-ctm-radius) !important; }\n';
 
     if (c.icons.shape !== "native") {
         const guild =
@@ -401,7 +484,8 @@ export function themeRules(input: ThemeChoices): string {
     if (c.background.enabled) {
         const alpha = c.background.opacity / 100;
         css += `#app-mount { background: linear-gradient(rgb(18 19 23 / ${alpha}), rgb(18 19 23 / ${alpha})), url(${JSON.stringify(c.background.url)}) center / cover fixed !important; }\n`;
-        css += "#app-mount :is([class*=\"bg_\"], [class*=\"base_\"], [class*=\"sidebar_\"], [class*=\"sidebarList_\"], [class*=\"chat_\"], [class*=\"chatContent_\"], [class*=\"members_\"], [class*=\"container_\"]:has(> [class*=\"members_\"])) { background-color: transparent !important; }\n";
+        css +=
+            '#app-mount :is([class*="bg_"], [class*="base_"], [class*="sidebar_"], [class*="sidebarList_"], [class*="chat_"], [class*="chatContent_"], [class*="members_"], [class*="container_"]:has(> [class*="members_"])) { background-color: transparent !important; }\n';
     }
     return css;
 }

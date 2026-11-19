@@ -19,13 +19,18 @@ async function api(path, body) {
     return data;
 }
 const state = await api("/settings");
-document.getElementById("client-theme").textContent = await (await fetch("/active-css")).text();
+async function applyThemes() {
+    const css = await (await fetch("/active-css")).text();
+    document.getElementById("client-theme").textContent = css;
+    const nativeStyle = document.getElementById("native-client")?.contentDocument?.getElementById("client-theme");
+    if (nativeStyle) nativeStyle.textContent = css;
+}
+document.getElementById("native-client").addEventListener("load", () => void applyThemes());
+await applyThemes();
 const settings = new Proxy(state, {
     set(target, key, value) {
         target[key] = value;
-        void api("/settings", target).then(async () => {
-            document.getElementById("client-theme").textContent = await (await fetch("/active-css")).text();
-        });
+        void api("/settings", target).then(applyThemes);
         return true;
     }
 });

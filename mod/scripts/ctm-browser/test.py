@@ -26,7 +26,7 @@ def fetch_asset(url):
         try:
             request = urllib.request.Request(url, headers={'User-Agent': 'ByaFlux-CTM-validation'})
             with urllib.request.urlopen(request, timeout=35) as response:
-                return url, response.read(1000000)
+                return url, response.read(5000000)
         except Exception as error:
             if attempt == 3:
                 raise RuntimeError('Resource unavailable after retries: ' + url) from error
@@ -37,6 +37,31 @@ urls = [RADIAL] + [BASE + 'base/' + pack + '.css' for pack in PACKS] + [BASE + '
 for url, data in ThreadPoolExecutor(max_workers=6).map(fetch_asset, urls):
     CACHE[url] = data
 print('Verified remote resources:', len(CACHE), flush=True)
+
+# Load the current public Discord styles, not a mock of its button tokens.
+# The downloaded CSS stays in the ignored runtime directory and is never shipped.
+html = fetch_asset('https://discord.com/app')[1].decode()
+assets = re.findall(r'href="([^"\s]+\.css)"', html)
+button_css = token_css = None
+button_classes = None
+for path in assets[:4]:
+    css = fetch_asset('https://discord.com' + path)[1].decode()
+    match = re.search(r'\.(lookFilled_[a-zA-Z0-9]+)\.(colorBrand_[a-zA-Z0-9]+)\{', css)
+    if match and '--control-primary-background-default' in css:
+        button_css = css
+        button_classes = match.group(1) + ' ' + match.group(2)
+        break
+for path in reversed(assets[-4:]):
+    css = fetch_asset('https://discord.com' + path)[1].decode()
+    if '--control-primary-background-default:' in css:
+        token_css = css
+        break
+assert button_css and token_css and button_classes, 'Current native Discord button styles were not located'
+(RUNTIME / 'native-button.css').write_text(button_css)
+(RUNTIME / 'native-tokens.css').write_text(token_css)
+(RUNTIME / 'native-info.json').write_text(json.dumps({'classes': button_classes}))
+print('Verified native Discord button and token styles', flush=True)
+
 
 
 def start_server():
@@ -100,7 +125,7 @@ with sync_playwright() as playwright:
         baseline = page.locator('html').evaluate("e => getComputedStyle(e).getPropertyValue('--brand-500')")
         screenshot = SCREENSHOTS / 'ctm-default.png'
         page.screenshot(path=str(screenshot), full_page=True)
-        assert page.locator('iframe').get_attribute('sandbox') == 'allow-same-origin'
+        assert page.locator('iframe[title="Prévia isolada do tema"]').get_attribute('sandbox') == 'allow-same-origin'
         assert frame.locator('script').count() == 0
         assert 'gg sans' in frame.locator('#ctm-native-fonts').evaluate('e => e.textContent')
         for name, color in [('Discord', 'rgb(49, 51, 56)'), ('Meia-noite', 'rgb(19, 21, 28)'), ('Oceano', 'rgb(23, 42, 50)'), ('Claro', 'rgb(255, 255, 255)'), ('Grafite', 'rgb(36, 36, 41)')]:
@@ -124,8 +149,22 @@ with sync_playwright() as playwright:
         page.keyboard.press('Escape')
         expect(page.get_by_role('dialog', name='Prévia do tema')).to_have_count(0)
         page.get_by_role('tab', name='Aparência', exact=True).click()
+        native = page.frame_locator('iframe[title="Controles nativos do Discord"]')
+        native_button = native.locator('#native-primary')
+        native_default = native_button.evaluate('e => getComputedStyle(e).backgroundColor')
+        native_critical = native.locator('#native-critical').evaluate('e => getComputedStyle(e).backgroundColor')
+        # Reproduce the old bug: changing brand-500 leaves modern primary buttons unchanged.
+        native.locator('#legacy-proof').evaluate("e => e.textContent = '.theme-dark { --brand-500: #2bbd89 !important; }'")
+        expect(native_button).to_have_css('background-color', native_default)
+        native.locator('#legacy-proof').evaluate("e => e.textContent = ''")
         page.get_by_label('Cor de destaque', exact=True).fill('#2bbd89')
         expect(frame.locator('html')).to_have_css('--byaflux-ctm-accent', '#2bbd89')
+        expect(frame.locator('.ctm-primary')).to_have_css('background-color', 'rgb(43, 189, 137)')
+        expect(frame.locator('.ctm-primary')).to_have_css('color', 'rgb(0, 0, 0)')
+        expect(frame.locator('.ctm-toggle')).to_have_css('background-color', 'rgb(43, 189, 137)')
+        # Preview changes stay isolated until a successful save.
+        expect(native_button).to_have_css('background-color', native_default)
+
         assert page.locator('html').evaluate("e => getComputedStyle(e).getPropertyValue('--brand-500')") == baseline
         page.get_by_role('tab', name='Layout', exact=True).click()
         page.get_by_label('Largura dos canais', exact=True).press('End')
@@ -197,6 +236,17 @@ with sync_playwright() as playwright:
         expect(page.locator('.messageContent_live')).to_have_css('font-size', '22px')
         expect(page.locator('.messageContent_live')).to_have_css('line-height', '44px')
         expect(page.locator('.messageContent_live')).to_have_css('font-weight', '500')
+        expect(native_button).to_have_css('background-color', 'rgb(43, 189, 137)')
+        expect(native_button).to_have_css('color', 'rgb(0, 0, 0)')
+        expect(native.locator('#native-switch')).to_have_css('background-color', 'rgb(43, 189, 137)')
+        expect(native.locator('#native-link')).to_have_css('color', 'rgb(43, 189, 137)')
+        expect(native.locator('#native-critical')).to_have_css('background-color', native_critical)
+        native_button.hover()
+        expect(native_button).to_have_css('background-color', 'rgb(39, 170, 123)')
+        # Hold the pointer to exercise the real :active selector.
+        page.mouse.down()
+        expect(native_button).to_have_css('background-color', 'rgb(34, 151, 110)')
+        page.mouse.up()
         state = api('/settings')
         assert state['enabledThemes'] == ['Other.theme.css', 'CTM Playwright.theme.css']
         assert state['themeActivationModes']['Other.theme.css'] == 'dark'
@@ -248,7 +298,7 @@ with sync_playwright() as playwright:
         assert page.locator('body').evaluate('e => e.scrollWidth <= window.innerWidth')
         page.screenshot(path=str(SCREENSHOTS / 'ctm-native-width.png'), full_page=True)
         assert not errors, errors
-        print('PASS CTM browser: presets, typography, current Discord tokens, actual CSS activation, no iframe scripts, responsive preview, shapes, radius, radial measures, Before/After, 13 emoji packs, failed-pack fallback, isolation, real files, name collisions, restart, editing and activation.', flush=True)
+        print('PASS CTM browser: actual current Discord buttons (default/hover/active), accent contrast, selected switches, links, unchanged critical controls, presets, typography, current Discord tokens, actual CSS activation, no iframe scripts, responsive preview, shapes, radius, radial measures, Before/After, 13 emoji packs, failed-pack fallback, isolation, real files, name collisions, restart, editing and activation.', flush=True)
     except Exception:
         if browser.is_connected():
             try:

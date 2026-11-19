@@ -488,6 +488,10 @@ export function ThemeMakerEditor({
                                         value={draft.accent}
                                         onChange={accent => setDraft(d => ({ ...d, accent }))}
                                     />
+                                    <small>
+                                        Botões, links e controles selecionados. Use Salvar e ativar para aplicar ao
+                                        Discord.
+                                    </small>
                                 </section>
                                 <section {...focus("palette")} className="bf-ctm-palette-fields">
                                     {(Object.keys(paletteLabels) as (keyof Palette)[]).map(key => (

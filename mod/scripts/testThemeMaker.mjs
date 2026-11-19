@@ -73,6 +73,25 @@ try {
             check(() => assert.ok(css.includes("--rs-large-width: 4px")));
         }
     }
+    // Semantic controls are independent of legacy --brand-500 in current Discord styles.
+    const accent = model.accentVariables("#2bbd89").join(";\n");
+    for (const declaration of [
+        "--control-primary-background-default: #2bbd89 !important",
+        "--control-primary-background-hover: #27aa7b !important",
+        "--control-primary-background-active: #22976e !important",
+        "--control-primary-text-default: #000000 !important",
+        "--switch-background-selected-default: #2bbd89 !important",
+        "--checkbox-background-selected-default: #2bbd89 !important",
+        "--radio-background-selected-default: #2bbd89 !important",
+        "--text-link: #2bbd89 !important"
+    ])
+        check(() => assert.ok(accent.includes(declaration), declaration));
+    check(() => assert.equal(model.accentText("#ffffff"), "#000000"));
+    check(() => assert.equal(model.accentText("#000000"), "#ffffff"));
+    check(() => assert.equal(model.accentText("#112244"), "#ffffff"));
+    check(() => assert.ok(!accent.includes("--control-critical")));
+    check(() => assert.ok(!accent.includes("--rs-online")));
+    check(() => assert.throws(() => model.accentVariables("#fff; color:red")));
     // New controls must survive round-trip and old saved themes must still open.
     for (const font of Object.keys(model.FONTS)) {
         const choices = model.defaults();

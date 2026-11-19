@@ -1,7 +1,7 @@
-# ByaFlux 0.1.7
+# ByaFlux 0.1.8
 
-- Criador de temas redesenhado com controles no padrão do Discord e abas de Aparência, Tipografia, Layout e Detalhes.
-- Cinco paletas prontas e controles de cores para mensagens, canais, servidores, campos e textos.
-- Novas opções de fonte, tamanho, peso, altura de linha, espaçamento e largura dos canais.
-- Prévia isolada corrigida, com comparação Antes/Depois e opção de ampliar.
-- CSS atualizado para as cores do Discord atual e preservação da edição dos temas já criados no CTM.
+- Corrigida a cor de destaque do Criador de temas nos botões e controles atuais do Discord.
+- Incluídos estados de hover e pressionado, links e controles selecionados, com texto claro ou escuro conforme a cor escolhida.
+- A prévia agora inclui um botão, um link e um controle selecionado para mostrar o efeito.
+
+Para corrigir um tema criado antes desta versão, abra-o em Meus temas e clique em Salvar e ativar novamente.
