@@ -30,7 +30,12 @@ assets.mkdir(parents=True, exist_ok=True)
 output = assets / 'byaflux-loader-unsigned.apk'
 with ZipFile(cache / 'app-release.apk') as original, ZipFile(output, 'w', ZIP_DEFLATED) as patched:
     for info in original.infolist():
-        if info.filename.upper().startswith('META-INF/'):
+        upper = info.filename.upper()
+        signature = upper == 'META-INF/MANIFEST.MF' or (
+            upper.startswith('META-INF/') and upper.count('/') == 1
+            and (upper.endswith(('.SF', '.RSA', '.DSA', '.EC')) or upper.startswith('META-INF/SIG-'))
+        )
+        if signature:
             continue
         if info.filename in ('assets/valenced.bundle', 'assets/manifest.json'):
             continue
