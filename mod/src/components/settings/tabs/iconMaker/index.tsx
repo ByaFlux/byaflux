@@ -120,7 +120,7 @@ export function IconMakerEditor() {
         let raf = 0,
             previous = 0;
         const start = performance.now(),
-            {duration} = animationTiming(project);
+            { duration } = animationTiming(project);
         const tick = (now: number) => {
             if (now - previous >= 1000 / 30) {
                 previous = now;

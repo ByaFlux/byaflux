@@ -1,6 +1,6 @@
 {
     "name": "byaflux",
-    "version": "0.1.8",
+    "version": "0.1.9",
     "private": "true",
     "description": "ByaFlux — plugins para Discord",
     "homepage": "https://github.com/Equicord/Equicord#readme",
@@ -41,7 +41,8 @@
         "testWeb": "pnpm lint:fix && pnpm buildWeb && pnpm testTsc",
         "testTsc": "tsc --noEmit",
         "generateByaFluxPluginJson": "node --import tsx scripts/generatePluginList.ts --byaflux",
-        "test:ctm": "node scripts/testThemeMaker.mjs"
+        "test:ctm": "node scripts/testThemeMaker.mjs",
+        "test:iconmaker": "node scripts/testIconMaker.mjs"
     },
     "dependencies": {
         "@ffmpeg/ffmpeg": "catalog:",

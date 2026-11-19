@@ -1,6 +1,6 @@
 {
     "name": "byaflux-dev",
-    "version": "0.1.8",
+    "version": "0.1.9",
     "private": true,
     "description": "ByaFlux: comandos de desenvolvimento na raiz do projeto",
     "scripts": {
@@ -11,7 +11,8 @@
         "repair": "node mod/scripts/runInstaller.mjs -- --repair",
         "typecheck": "node scripts/dev.mjs typecheck",
         "badges:source": "node scripts/badges-source.mjs",
-        "test:ctm": "pnpm --dir mod test:ctm"
+        "test:ctm": "pnpm --dir mod test:ctm",
+        "test:iconmaker": "pnpm --dir mod test:iconmaker"
     },
     "engines": {
         "node": ">=24"

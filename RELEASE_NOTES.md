@@ -1,7 +1,6 @@
-# ByaFlux 0.1.8
+# ByaFlux 0.1.9
 
-- Corrigida a cor de destaque do Criador de temas nos botões e controles atuais do Discord.
-- Incluídos estados de hover e pressionado, links e controles selecionados, com texto claro ou escuro conforme a cor escolhida.
-- A prévia agora inclui um botão, um link e um controle selecionado para mostrar o efeito.
-
-Para corrigir um tema criado antes desta versão, abra-o em Meus temas e clique em Salvar e ativar novamente.
+- Novo IconMaker nas configurações do ByaFlux Desktop, com modos Estático e Animado, Classic Mode e prévia ao vivo.
+- Personalize corpos, olhos, cores e fundos. Use imagens locais, movimentos e efeitos em camadas.
+- Exporte PNG, SVG ou GIF animado, com tamanhos selecionáveis, transparência e opção de cancelar a geração.
+- Salve o projeto neste dispositivo para continuar a edição depois.

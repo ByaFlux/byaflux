@@ -397,6 +397,10 @@
     cursor: not-allowed;
 }
 .bf-im-preview-panel {
+    max-height: calc(100vh - 96px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
     position: sticky;
     top: 16px;
     padding: 20px;
@@ -487,11 +491,12 @@
     font-size: 10px;
 }
 .bf-im-export-options {
+    flex-wrap: wrap;
     display: flex;
     gap: 10px;
 }
 .bf-im-export-options label {
-    flex: 1;
+    flex: 1 1 100px;
     min-width: 0;
 }
 .bf-im-export-extra {
@@ -565,6 +570,8 @@
     }
     .bf-im-preview-panel {
         grid-row: 1;
+        max-height: none;
+        overflow: visible;
         position: static;
     }
     .bf-im-modebar {
