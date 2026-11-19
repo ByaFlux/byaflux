@@ -34,7 +34,109 @@ export const STATUS_COLORS = {
     invisible: "#747f8d",
     speaking: "#57d39b"
 };
+export const FONTS = {
+    Discord: { label: "Discord (gg sans)", family: '"gg sans", "Noto Sans", sans-serif', url: "" },
+    Inter: {
+        label: "Inter",
+        family: '"Inter", sans-serif',
+        url: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    },
+    Roboto: {
+        label: "Roboto",
+        family: '"Roboto", sans-serif',
+        url: "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap"
+    },
+    Manrope: {
+        label: "Manrope",
+        family: '"Manrope", sans-serif',
+        url: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+    },
+    System: { label: "Sistema", family: 'system-ui, "Segoe UI", sans-serif', url: "" },
+    Arial: { label: "Arial", family: "Arial, Helvetica, sans-serif", url: "" },
+    Georgia: { label: "Georgia", family: 'Georgia, "Times New Roman", serif', url: "" },
+    Mono: { label: "Monoespaçada", family: '"Cascadia Code", Consolas, monospace', url: "" }
+} as const;
+export type FontChoice = keyof typeof FONTS;
+export interface Palette {
+    chat: string;
+    sidebar: string;
+    servers: string;
+    surface: string;
+    text: string;
+    muted: string;
+}
+export const PALETTES = [
+    {
+        id: "discord",
+        name: "Discord",
+        accent: "#5865f2",
+        colors: {
+            chat: "#313338",
+            sidebar: "#2b2d31",
+            servers: "#1e1f22",
+            surface: "#383a40",
+            text: "#dbdee1",
+            muted: "#949ba4"
+        }
+    },
+    {
+        id: "graphite",
+        name: "Grafite",
+        accent: "#ff8038",
+        colors: {
+            chat: "#242429",
+            sidebar: "#1d1d22",
+            servers: "#17171b",
+            surface: "#303037",
+            text: "#ececf0",
+            muted: "#a2a2af"
+        }
+    },
+    {
+        id: "midnight",
+        name: "Meia-noite",
+        accent: "#a99aff",
+        colors: {
+            chat: "#13151c",
+            sidebar: "#101117",
+            servers: "#0b0c11",
+            surface: "#20222d",
+            text: "#e3e5ef",
+            muted: "#989db3"
+        }
+    },
+    {
+        id: "ocean",
+        name: "Oceano",
+        accent: "#53c7c2",
+        colors: {
+            chat: "#172a32",
+            sidebar: "#13232a",
+            servers: "#0d191f",
+            surface: "#243a44",
+            text: "#d9e9ed",
+            muted: "#97afb8"
+        }
+    },
+    {
+        id: "light",
+        name: "Claro",
+        accent: "#4752c4",
+        colors: {
+            chat: "#ffffff",
+            sidebar: "#f2f3f5",
+            servers: "#e3e5e8",
+            surface: "#ebedef",
+            text: "#313338",
+            muted: "#5c6068"
+        }
+    }
+] as const;
+export const defaultPalette = (): Palette => ({ ...PALETTES[1].colors });
 export interface ThemeChoices {
+    palette: Palette;
+    typography: { font: FontChoice; size: number; lineHeight: number; weight: number };
+    layout: { sidebarWidth: number; messageGap: number; radius: number };
     accent: string;
     compact: boolean;
     background: { enabled: boolean; url: string; opacity: number };
@@ -64,6 +166,9 @@ export interface SaveCtmRequest {
     editing?: { fileName: string; id: string; revision: string };
 }
 export const defaults = (): ThemeChoices => ({
+    palette: defaultPalette(),
+    typography: { font: "Discord", size: 16, lineHeight: 1.5, weight: 400 },
+    layout: { sidebarWidth: 272, messageGap: 16, radius: 8 },
     accent: "#ff8038",
     compact: false,
     background: { enabled: false, url: "", opacity: 75 },
@@ -156,7 +261,28 @@ export function validateChoices(value: ThemeChoices): ThemeChoices {
             throw new Error("O fundo deve usar uma URL HTTPS de imagem, sem credenciais.");
         }
     }
+    // Older CTM files remain editable; only absent sections receive the new defaults.
+    const palette = value.palette === undefined ? defaultPalette() : value.palette;
+    const typography = value.typography === undefined ? defaults().typography : value.typography;
+    const layout = value.layout === undefined ? defaults().layout : value.layout;
+    if (!palette || !typography || !layout || !Object.hasOwn(FONTS, typography.font))
+        throw new Error("Configuração de cores, fonte ou layout inválida.");
+    const validatedPalette = defaultPalette();
+    for (const key of Object.keys(validatedPalette) as (keyof Palette)[]) validatedPalette[key] = color(palette[key]);
+    if (![400, 500, 600].includes(typography.weight)) throw new Error("Peso de fonte inválido.");
     return {
+        palette: validatedPalette,
+        typography: {
+            font: typography.font,
+            size: number(typography.size, 12, 22),
+            lineHeight: number(typography.lineHeight, 1.2, 2),
+            weight: typography.weight
+        },
+        layout: {
+            sidebarWidth: number(layout.sidebarWidth, 220, 360),
+            messageGap: number(layout.messageGap, 0, 32),
+            radius: number(layout.radius, 0, 24)
+        },
         accent: color(value.accent),
         compact: flag(value.compact),
         background: {
@@ -183,22 +309,74 @@ export function iconClip(shape: IconShape, radius: number): string {
         rounded: `inset(0 round ${radius}px)`
     }[shape];
 }
-export function themeModules(choices: ThemeChoices): { id: "radial" | "emoji"; url: string }[] {
-    const result: { id: "radial" | "emoji"; url: string }[] = [];
+export function themeModules(choices: ThemeChoices): { id: "radial" | "emoji" | "font"; url: string }[] {
+    const result: { id: "radial" | "emoji" | "font"; url: string }[] = [];
     if (choices.status.mode === "radial") result.push({ id: "radial", url: RADIAL_URL });
     if (choices.emoji !== "Discord") result.push({ id: "emoji", url: `${EMOJI_BASE}/base/${choices.emoji}.css` });
+    if (FONTS[choices.typography.font].url) result.push({ id: "font", url: FONTS[choices.typography.font].url });
     return result;
 }
 export function themeRules(input: ThemeChoices): string {
     const c = validateChoices(input);
+    const p = c.palette;
     const vars = [
         `--byaflux-ctm-accent: ${c.accent}`,
-        `--brand-500: ${c.accent}`,
-        `--brand-experiment: ${c.accent}`,
-        `--brand-560: color-mix(in srgb, ${c.accent} 80%, black)`,
-        `--brand-600: color-mix(in srgb, ${c.accent} 65%, black)`
+        ...[
+            "--brand-500",
+            "--brand-experiment",
+            "--text-brand",
+            "--text-link",
+            "--control-brand-foreground",
+            "--control-brand-foreground-new",
+            "--button-filled-brand-background",
+            "--background-brand"
+        ].map(key => `${key}: ${c.accent} !important`),
+        `--brand-560: color-mix(in srgb, ${c.accent} 80%, black) !important`,
+        `--brand-600: color-mix(in srgb, ${c.accent} 65%, black) !important`,
+        `--button-filled-brand-background-hover: color-mix(in srgb, ${c.accent} 80%, black) !important`,
+        ...["--background-primary", "--background-base-low", "--bg-base-primary"].map(
+            key => `${key}: ${p.chat} !important`
+        ),
+        ...[
+            "--background-secondary",
+            "--background-base-lower",
+            "--background-surface-high",
+            "--bg-base-secondary"
+        ].map(key => `${key}: ${p.sidebar} !important`),
+        ...[
+            "--background-tertiary",
+            "--background-secondary-alt",
+            "--background-base-lowest",
+            "--background-surface-higher",
+            "--background-surface-highest",
+            "--bg-base-tertiary"
+        ].map(key => `${key}: ${p.servers} !important`),
+        ...[
+            "--channeltextarea-background",
+            "--input-background",
+            "--background-mod-subtle",
+            "--background-modifier-selected"
+        ].map(key => `${key}: ${p.surface} !important`),
+        ...[
+            "--text-normal",
+            "--text-primary",
+            "--header-primary",
+            "--interactive-active",
+            "--channels-default-selected"
+        ].map(key => `${key}: ${p.text} !important`),
+        ...["--text-muted", "--text-secondary", "--header-secondary", "--channels-default", "--interactive-normal"].map(
+            key => `${key}: ${p.muted} !important`
+        ),
+        `--font-primary: ${FONTS[c.typography.font].family} !important`,
+        `--font-display: ${FONTS[c.typography.font].family} !important`,
+        `--byaflux-ctm-font-size: ${c.typography.size}px`,
+        `--byaflux-ctm-line-height: ${c.typography.lineHeight}`,
+        `--byaflux-ctm-font-weight: ${c.typography.weight}`,
+        `--byaflux-ctm-message-gap: ${c.layout.messageGap}px`,
+        `--byaflux-ctm-radius: ${c.layout.radius}px`,
+        `--custom-guild-sidebar-width: ${c.compact ? 240 : c.layout.sidebarWidth}px`
     ];
-    if (c.compact) vars.push("--custom-guild-list-width: 64px", "--custom-guild-sidebar-width: 240px");
+    if (c.compact) vars.push("--custom-guild-list-width: 64px");
     if (c.status.mode === "radial") {
         for (const [i, size] of ["small", "medium", "large"].entries())
             vars.push(`--rs-${size}-spacing: ${c.status.gaps[i]}px`, `--rs-${size}-width: ${c.status.widths[i]}px`);
@@ -211,14 +389,20 @@ export function themeRules(input: ThemeChoices): string {
             "--rs-phone-visible: block"
         );
     }
-    let css = `:root {\n  ${vars.join(";\n  ")};\n}\n`;
+    let css = `:root, .theme-dark, .theme-light, .theme-darker, .theme-midnight {\n  ${vars.join(";\n  ")};\n}\n`;
+    css += "#app-mount { font-family: var(--font-primary); color: var(--text-normal); }\n#app-mount :is([class*=\"messageContent_\"], .ctm-message-text) { font-family: var(--font-primary) !important; font-size: var(--byaflux-ctm-font-size) !important; line-height: var(--byaflux-ctm-line-height) !important; font-weight: var(--byaflux-ctm-font-weight) !important; }\n#app-mount :is([class*=\"messageListItem_\"], .message) { margin-top: var(--byaflux-ctm-message-gap) !important; }\n#app-mount :is([class*=\"channelTextArea_\"], [class*=\"embedFull_\"], .composer) { border-radius: var(--byaflux-ctm-radius) !important; }\n";
+
     if (c.icons.shape !== "native") {
-        const guild = 'nav[class*="guilds_"] :is([data-list-item-id^="guildsnav___"], [class*="blobContainer_"])';
+        const guild =
+            ':is(nav[class*="guilds_"], [data-list-id="guildsnav"]) :is([data-list-item-id^="guildsnav___"], [class*="blobContainer_"])';
         css += `${guild} foreignObject:has(img[class*="icon_"]) { mask: none !important; -webkit-mask: none !important; }\n${guild} img[class*="icon_"] { border-radius: 0 !important; clip-path: ${iconClip(c.icons.shape, c.icons.radius)} !important; }\n`;
     }
     if (c.compact) css += 'nav[class*="guilds_"] { width: var(--custom-guild-list-width) !important; }\n';
-    if (c.background.enabled)
-        css += `#app-mount { background: linear-gradient(rgb(18 19 23 / ${c.background.opacity / 100}), rgb(18 19 23 / ${c.background.opacity / 100})), url(${JSON.stringify(c.background.url)}) center / cover fixed !important; }\n#app-mount :is([class*="chat_"], [class*="chatContent_"], [class*="sidebar_"], [class*="sidebarList_"], [class*="members_"], [class*="container_"]:has(> [class*="members_"])) { background-color: transparent !important; }\n`;
+    if (c.background.enabled) {
+        const alpha = c.background.opacity / 100;
+        css += `#app-mount { background: linear-gradient(rgb(18 19 23 / ${alpha}), rgb(18 19 23 / ${alpha})), url(${JSON.stringify(c.background.url)}) center / cover fixed !important; }\n`;
+        css += "#app-mount :is([class*=\"bg_\"], [class*=\"base_\"], [class*=\"sidebar_\"], [class*=\"sidebarList_\"], [class*=\"chat_\"], [class*=\"chatContent_\"], [class*=\"members_\"], [class*=\"container_\"]:has(> [class*=\"members_\"])) { background-color: transparent !important; }\n";
+    }
     return css;
 }
 export function generateTheme(document: CtmDocument): string {

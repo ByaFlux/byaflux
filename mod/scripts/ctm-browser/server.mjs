@@ -25,10 +25,26 @@ try {
 let queue = Promise.resolve();
 const server = createServer(async (req, res) => {
     try {
+        res.setHeader(
+            "Content-Security-Policy",
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://*.github.io https://fonts.googleapis.com; img-src 'self' data: https://*.github.io https://discord.com https://images.example.test; font-src 'self' https://fonts.gstatic.com; frame-src 'self'; connect-src 'self';"
+        );
         let data = "";
         for await (const chunk of req) data += chunk;
         const body = data ? JSON.parse(data) : undefined;
         let value;
+        if (req.url.startsWith("/theme/")) {
+            const fileName = decodeURIComponent(req.url.slice(7).split("?")[0]);
+            if (
+                fileName.includes("/") ||
+                fileName.includes(String.fromCharCode(92)) ||
+                !fileName.endsWith(".theme.css")
+            )
+                throw Error("Invalid theme filename");
+            res.setHeader("Content-Type", "text/css");
+            res.end(await readFile(dir + "/" + fileName, "utf8"));
+            return;
+        }
         if (req.url === "/ctm-themes") value = await listCtmThemes(dir);
         else if (req.url === "/ctm-save") value = await saveCtmTheme(dir, body);
         else if (req.url === "/themes")
@@ -48,9 +64,9 @@ const server = createServer(async (req, res) => {
         } else if (req.url === "/active-css") {
             res.setHeader("Content-Type", "text/css");
             res.end(
-                (
-                    await Promise.all(settings.enabledThemes.map(f => readFile(dir + "/" + f, "utf8").catch(() => "")))
-                ).join("\n")
+                settings.enabledThemes
+                    .map(file => `@import url("/theme/${encodeURIComponent(file)}?v=${Date.now()}");`)
+                    .join("\n")
             );
             return;
         } else {

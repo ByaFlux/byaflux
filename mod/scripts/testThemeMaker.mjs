@@ -73,6 +73,32 @@ try {
             check(() => assert.ok(css.includes("--rs-large-width: 4px")));
         }
     }
+    // New controls must survive round-trip and old saved themes must still open.
+    for (const font of Object.keys(model.FONTS)) {
+        const choices = model.defaults();
+        choices.typography = { font, size: 20, lineHeight: 1.8, weight: 500 };
+        choices.palette.chat = "#121820";
+        choices.layout = { sidebarWidth: 320, messageGap: 24, radius: 12 };
+        const css = model.generateTheme(doc(choices));
+        check(() => assert.deepEqual(model.parseTheme(css), doc(choices)));
+        check(() => assert.ok(css.includes("--byaflux-ctm-font-size: 20px")));
+        check(() => assert.ok(css.includes("--background-base-low: #121820 !important")));
+        check(() => assert.equal(css.includes("fonts.googleapis.com"), !!model.FONTS[font].url));
+    }
+    const legacy = model.defaults();
+    delete legacy.palette;
+    delete legacy.typography;
+    delete legacy.layout;
+    const legacyCss = "/**\n * @byafluxCTM " + encodeURIComponent(JSON.stringify(doc(legacy))) + "\n */";
+    check(() => assert.deepEqual(model.parseTheme(legacyCss).choices, model.defaults()));
+    for (const patch of [
+        { typography: { ...model.defaults().typography, font: "invalid; color: red" } },
+        { typography: { ...model.defaults().typography, size: 99 } },
+        { typography: { ...model.defaults().typography, lineHeight: 0 } },
+        { layout: { ...model.defaults().layout, sidebarWidth: -10 } },
+        { palette: { ...model.defaults().palette, chat: "red; background:url(x)" } }
+    ])
+        check(() => assert.throws(() => model.validateChoices({ ...model.defaults(), ...patch })));
     const combo = model.defaults();
     combo.emoji = "Microsoft-3D";
     combo.status.mode = "radial";

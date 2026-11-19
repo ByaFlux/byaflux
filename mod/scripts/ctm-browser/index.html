@@ -37,13 +37,26 @@
                 padding: 12px 8px;
             }
             #root {
-                padding: 32px;
-                max-width: 1400px;
+                padding: 24px;
+                max-width: 1250px;
             }
         </style>
         <style id="client-theme"></style>
+        <style>
+            .theme-dark {
+                --background-primary: #313338;
+                --background-secondary: #2b2d31;
+                --text-normal: #dbdee1;
+                --font-primary: Arial, sans-serif;
+            }
+            #client-proof {
+                background: var(--background-primary);
+                color: var(--text-normal);
+                font-family: var(--font-primary);
+            }
+        </style>
     </head>
-    <body>
+    <body class="theme-dark">
         <div id="app-mount">
             <aside class="client-sidebar">
                 <strong>⬡ ByaFlux</strong>
@@ -52,7 +65,10 @@
                 <p>Temas</p>
                 <p class="selected">Criador de temas</p>
             </aside>
-            <main id="root"></main>
+            <main>
+                <div id="root"></div>
+                <div id="client-proof"><p class="messageContent_live">Mensagem real fora da prévia.</p></div>
+            </main>
         </div>
         <script type="module" src="/app.js"></script>
     </body>
