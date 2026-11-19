@@ -273,6 +273,10 @@ export function ThemeMakerEditor({
             setError("A prévia não pôde ser iniciada. Reabra esta tela.");
             return;
         }
+        // Reuse Discord's already registered font faces without changing the active client's styles.
+        window.document.fonts.forEach(face => {
+            if (/gg sans|Noto Sans/i.test(face.family)) doc.fonts.add(face);
+        });
         controller.current = createPreviewController(doc, (kind, text) => {
             if (mounted.current) setResourceErrors(previous => ({ ...previous, [kind]: text }));
         });
@@ -343,7 +347,7 @@ export function ThemeMakerEditor({
                 setMessage("O domínio já está permitido. Confira se o link aponta diretamente para uma imagem.");
                 return;
             }
-            const result = await VencordNative.csp.requestAddOverride(url, ["img-src"], "Criador de temas");
+            const result = await VencordNative.csp.requestAddOverride(url, ["img-src"], "Settings");
             if (result === "ok")
                 setMessage("Domínio permitido. Feche completamente e abra o Discord para carregar esse fundo.");
             else if (result !== "cancelled") setError("A permissão do domínio não foi alterada.");
@@ -864,7 +868,7 @@ export function ThemeMakerEditor({
                                 sandbox="allow-same-origin"
                                 srcDoc={document}
                                 onLoad={previewLoad}
-                                style={{ width: 960, height: 600, transform: `scale(${scale})` }}
+                                style={{ width: 960, height: 600, zoom: scale }}
                             />
                         </div>
                         {!previewReady && (

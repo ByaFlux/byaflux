@@ -243,7 +243,7 @@ with sync_playwright() as playwright:
         page.set_viewport_size({'width': 1120, 'height': 900})
         page.get_by_role('tab', name='Aparência', exact=True).click()
         expect(frame.get_by_text('Seu espaço, seu estilo.')).to_be_visible()
-        assert page.locator('.bf-ctm-frame').evaluate('e => e.scrollWidth <= e.clientWidth + 1')
+        page.wait_for_function("() => { const e = document.querySelector('.bf-ctm-frame'); return e.scrollWidth <= e.clientWidth + 1; }")
         assert page.locator('body').evaluate('e => e.scrollWidth <= window.innerWidth')
         page.screenshot(path=str(SCREENSHOTS / 'ctm-native-width.png'), full_page=True)
         assert not errors, errors
