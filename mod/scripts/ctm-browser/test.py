@@ -22,8 +22,15 @@ URL = 'http://127.0.0.1:4173'
 
 
 def fetch_asset(url):
-    with urllib.request.urlopen(url, timeout=35) as response:
-        return url, response.read(1000000)
+    for attempt in range(4):
+        try:
+            request = urllib.request.Request(url, headers={'User-Agent': 'ByaFlux-CTM-validation'})
+            with urllib.request.urlopen(request, timeout=35) as response:
+                return url, response.read(1000000)
+        except Exception as error:
+            if attempt == 3:
+                raise RuntimeError('Resource unavailable after retries: ' + url) from error
+            time.sleep(attempt + 1)
 
 
 urls = [RADIAL] + [BASE + 'base/' + pack + '.css' for pack in PACKS] + [BASE + 'emojis/' + pack + '/people/' + emoji + '.png' for pack in PACKS for emoji in EMOJIS]
