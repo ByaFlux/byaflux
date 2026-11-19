@@ -27,6 +27,19 @@ await build({
     loader: { ".css": "css" }
 });
 await build({
+    entryPoints: [root + "/iconmaker-entry.jsx"],
+    bundle: true,
+    format: "esm",
+    target: "chrome120",
+    outfile: root + "/.runtime/iconmaker.js",
+    nodePaths: [root + "/node_modules"],
+    alias: { "@webpack/common": root + "/react-shim.js", "@components/settings/tabs/BaseTab": root + "/base.jsx" },
+    define: { IS_REPORTER: "false" },
+    jsx: "transform",
+    tsconfig: project + "/tsconfig.json",
+    loader: { ".css": "css" }
+});
+await build({
     entryPoints: {
         storage: project + "/src/main/themes/themeMaker.ts",
         headers: project + "/src/main/themes/index.ts"

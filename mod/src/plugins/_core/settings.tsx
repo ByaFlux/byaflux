@@ -6,10 +6,11 @@
 
 import { definePluginSettings } from "@api/Settings";
 import { ByaFluxSettingsIcon } from "@components/ByaFluxIcon";
-import { BackupRestoreIcon, LogIcon, PaintbrushIcon, PatchHelperIcon, PluginsIcon, UpdaterIcon } from "@components/Icons";
+import { BackupRestoreIcon, ImageIcon, LogIcon, PaintbrushIcon, PatchHelperIcon, PluginsIcon, UpdaterIcon } from "@components/Icons";
 import {
     BackupAndRestoreTab,
     ChangelogTab,
+    IconMakerTab,
     PatchHelperTab,
     PluginsTab,
     ThemeMakerTab,
@@ -209,6 +210,12 @@ export default definePlugin({
                 title: "Criador de temas",
                 Component: ThemeMakerTab,
                 Icon: PaintbrushIcon
+            }),
+            !IS_WEB && !IS_USERSCRIPT && buildEntry({
+                key: "byaflux_icon_maker",
+                title: "IconMaker",
+                Component: IconMakerTab,
+                Icon: ImageIcon
             }),
             !IS_UPDATER_DISABLED && UpdaterTab && buildEntry({
                 key: "equicord_updater",

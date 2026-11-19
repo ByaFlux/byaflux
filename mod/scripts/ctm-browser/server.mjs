@@ -27,7 +27,7 @@ const server = createServer(async (req, res) => {
     try {
         res.setHeader(
             "Content-Security-Policy",
-            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://*.github.io https://fonts.googleapis.com; img-src 'self' data: https://*.github.io https://discord.com https://images.example.test; font-src 'self' https://fonts.gstatic.com; frame-src 'self'; connect-src 'self';"
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://*.github.io https://fonts.googleapis.com; img-src 'self' data: blob: https://*.github.io https://discord.com https://images.example.test; font-src 'self' https://fonts.gstatic.com; frame-src 'self'; connect-src 'self';"
         );
         let data = "";
         for await (const chunk of req) data += chunk;
@@ -83,7 +83,14 @@ const server = createServer(async (req, res) => {
             );
             return;
         } else {
-            const files = { "/": "index.html", "/app.js": "app.js", "/app.css": "app.css" };
+            const files = {
+                "/": "index.html",
+                "/app.js": "app.js",
+                "/app.css": "app.css",
+                "/iconmaker": "iconmaker.html",
+                "/iconmaker.js": "iconmaker.js",
+                "/iconmaker.css": "iconmaker.css"
+            };
             if (!files[req.url]) {
                 res.statusCode = 404;
                 res.end();
@@ -93,7 +100,7 @@ const server = createServer(async (req, res) => {
                 "Content-Type",
                 req.url.endsWith(".js") ? "text/javascript" : req.url.endsWith(".css") ? "text/css" : "text/html"
             );
-            res.end(await readFile(root + (req.url === "/" ? "/" : "/.runtime/") + files[req.url]));
+            res.end(await readFile(root + (files[req.url].endsWith(".html") ? "/" : "/.runtime/") + files[req.url]));
             return;
         }
         res.setHeader("Content-Type", "application/json");
