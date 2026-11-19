@@ -1,5 +1,4 @@
-# ByaFlux 0.1.4
+# ByaFlux 0.1.5
 
-Atualização publicada somente para testar a detecção de nova versão, a barra no topo e o botão **Atualizar e reiniciar** da 0.1.3.
-
-Nenhuma alteração nos plugins, na interface ou no funcionamento. Apenas a versão e estas notas foram atualizadas.
+- Novas instalações começam somente com os plugins obrigatórios ativados.
+- Os plugins opcionais podem ser ativados nas configurações. As escolhas já salvas são preservadas.
