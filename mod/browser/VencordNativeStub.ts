@@ -44,6 +44,8 @@ let win: Window;
 // probably should make this less cursed at some point
 window.VencordNative = {
     themes: {
+        getCtmThemes: async () => { throw new Error("O Criador de temas exige o aplicativo desktop."); },
+        saveCtmTheme: async () => { throw new Error("O Criador de temas exige o aplicativo desktop."); },
         uploadTheme: (fileName: string, fileData: string) => DataStore.set(fileName, fileData, themeStore),
         deleteTheme: (fileName: string) => DataStore.del(fileName, themeStore),
         getThemesList: () => DataStore.entries(themeStore).then(entries =>

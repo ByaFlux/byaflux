@@ -22,6 +22,7 @@ import "./settings";
 
 import { debounce } from "@shared/debounce";
 import { IpcEvents } from "@shared/IpcEvents";
+import type { SaveCtmRequest } from "@shared/themeMaker";
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell, systemPreferences } from "electron";
 import { FSWatcher, mkdirSync, readFileSync, watch, writeFileSync } from "fs";
 import { open, readdir, readFile, unlink } from "fs/promises";
@@ -30,6 +31,7 @@ import { join } from "path";
 
 import { registerCspIpcHandlers } from "./csp/manager";
 import { getThemeInfo, stripBOM, UserThemeHeader } from "./themes";
+import { listCtmThemes, saveCtmTheme } from "./themes/themeMaker";
 import { ALLOWED_PROTOCOLS, QUICK_CSS_PATH, SETTINGS_DIR, THEMES_DIR } from "./utils/constants";
 import { ensureSafePath } from "./utils/ensureSafePath";
 import { makeLinksOpenExternally } from "./utils/externalLinks";
@@ -87,6 +89,9 @@ ipcMain.handle(IpcEvents.GET_QUICK_CSS, () => readCss());
 ipcMain.handle(IpcEvents.SET_QUICK_CSS, (_, css) =>
     writeFileSync(QUICK_CSS_PATH, css)
 );
+
+ipcMain.handle(IpcEvents.GET_CTM_THEMES, () => listCtmThemes(THEMES_DIR));
+ipcMain.handle(IpcEvents.SAVE_CTM_THEME, (_, request: SaveCtmRequest) => saveCtmTheme(THEMES_DIR, request));
 
 ipcMain.handle(IpcEvents.GET_THEMES_LIST, () => listThemes());
 ipcMain.handle(IpcEvents.GET_THEME_DATA, (_, fileName) => getThemeData(fileName));

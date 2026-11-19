@@ -13,6 +13,8 @@ concurrency:
   group: byaflux-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  theme-maker:
+    uses: ./.github/workflows/theme-maker.yml
   mod:
     runs-on: ubuntu-latest
     steps:
@@ -74,7 +76,7 @@ jobs:
           if-no-files-found: error
   release:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-    needs: [mod, installer]
+    needs: [mod, installer, theme-maker]
     runs-on: ubuntu-latest
     permissions:
       contents: write

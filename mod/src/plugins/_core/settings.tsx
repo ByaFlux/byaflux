@@ -12,6 +12,7 @@ import {
     ChangelogTab,
     PatchHelperTab,
     PluginsTab,
+    ThemeMakerTab,
     ThemesTab,
     UpdaterTab,
     VencordTab,
@@ -201,6 +202,12 @@ export default definePlugin({
                 key: "equicord_themes",
                 title: "Themes",
                 Component: ThemesTab,
+                Icon: PaintbrushIcon
+            }),
+            !IS_WEB && !IS_USERSCRIPT && buildEntry({
+                key: "byaflux_theme_maker",
+                title: "Criador de temas",
+                Component: ThemeMakerTab,
                 Icon: PaintbrushIcon
             }),
             !IS_UPDATER_DISABLED && UpdaterTab && buildEntry({

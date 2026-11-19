@@ -1,0 +1,40 @@
+name: Validate Custom Theme Maker
+on:
+  push:
+    branches: [ctm-desktop]
+    paths: ['mod/src/shared/themeMaker/**', 'mod/src/main/themes/themeMaker.ts', 'mod/src/components/settings/tabs/themeMaker/**', 'mod/scripts/testThemeMaker.mjs', 'mod/scripts/ctm-browser/**', '.github/workflows/theme-maker.yml']
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  ctm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: npm install --global pnpm@12.18.0
+      - run: pnpm --dir mod install --frozen-lockfile
+      - run: pnpm --dir mod testTsc
+      - run: node scripts/testThemeMaker.mjs
+        working-directory: mod
+      - run: npm ci --no-audit --no-fund
+        working-directory: mod/scripts/ctm-browser
+      - run: node scripts/ctm-browser/build.mjs
+        working-directory: mod
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install playwright==1.65.2
+      - run: python -m playwright install --with-deps chromium
+      - run: python scripts/ctm-browser/test.py
+        working-directory: mod
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: CTM-visual-validation
+          path: mod/scripts/ctm-browser/.runtime/screenshots/
+          if-no-files-found: ignore

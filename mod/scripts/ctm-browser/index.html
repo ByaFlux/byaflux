@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>ByaFlux · Criador de temas</title>
+        <link rel="stylesheet" href="/app.css" />
+        <style>
+            body {
+                margin: 0;
+                background: #18181e;
+                color: #eee;
+                font-family: Arial, sans-serif;
+            }
+            #app-mount {
+                display: grid;
+                grid-template-columns: 200px minmax(0, 1fr);
+                min-height: 100vh;
+            }
+            .client-sidebar {
+                border-right: 1px solid #36363e;
+                padding: 26px 18px;
+                background: #1c1c22;
+            }
+            .client-sidebar strong {
+                font-size: 24px;
+                color: #ff8038;
+            }
+            .client-sidebar p {
+                font-size: 13px;
+                margin: 26px 0;
+                color: #aaa;
+            }
+            .client-sidebar .selected {
+                color: #ff8038;
+                background: #ff803818;
+                border-radius: 7px;
+                padding: 12px 8px;
+            }
+            #root {
+                padding: 32px;
+                max-width: 1400px;
+            }
+        </style>
+        <style id="client-theme"></style>
+    </head>
+    <body>
+        <div id="app-mount">
+            <aside class="client-sidebar">
+                <strong>⬡ ByaFlux</strong>
+                <p>Geral</p>
+                <p>Plugins</p>
+                <p>Temas</p>
+                <p class="selected">Criador de temas</p>
+            </aside>
+            <main id="root"></main>
+        </div>
+        <script type="module" src="/app.js"></script>
+    </body>
+</html>

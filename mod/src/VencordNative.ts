@@ -10,6 +10,7 @@ import type { PluginIpcMappings } from "@main/ipcPlugins";
 import { UserThemeHeader } from "@main/themes";
 import { UpdateData } from "@main/updater";
 import { IpcEvents } from "@shared/IpcEvents";
+import type { SaveCtmRequest, SavedCtmTheme } from "@shared/themeMaker";
 import type { IpcRes } from "@utils/types";
 import { ipcRenderer } from "electron/renderer";
 
@@ -33,6 +34,8 @@ for (const [plugin, methods] of Object.entries(pluginIpcMap)) {
 
 export default {
     themes: {
+        getCtmThemes: () => invoke<SavedCtmTheme[]>(IpcEvents.GET_CTM_THEMES),
+        saveCtmTheme: (request: SaveCtmRequest) => invoke<SavedCtmTheme>(IpcEvents.SAVE_CTM_THEME, request),
         uploadTheme: async (fileName: string, fileData: string): Promise<void> => {
             throw new Error("uploadTheme is WEB only");
         },
