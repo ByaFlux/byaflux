@@ -2,7 +2,7 @@ import Page from '@valenced/components/Page'
 import { Design } from '@valenced/discord/design'
 import { getStore } from '@valenced/discord/flux'
 import { registerInternalPlugin } from '@valenced/plugins/_'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { validUserId } from '~/byaflux/catalog'
 import { boostLevels, nitroLevels, staticBadges } from '~/byaflux/definitions'
@@ -18,23 +18,35 @@ const {
     TableRadioGroup,
     TableRadioRow,
 } = Design
+let pendingWrites = 0
+let writes = Promise.resolve()
 const defaults: FakeSettings = { target: '', users: {} }
 
 const Settings: PluginSettingsComponent<{ jsonStorage: FakeSettings }> = ({
-    api: { jsonStorage },
+    api: { jsonStorage, plugin },
 }) => {
     const saved = jsonStorage.use() ?? defaults
     const [target, setTarget] = useState(saved.target)
-    const selection = saved.users[target] ?? emptySelection()
+    useSyncExternalStore(badgeState.subscribe, badgeState.snapshot)
+    const current = badgeState.getFake() ?? saved
+    const selection = current.users[target] ?? emptySelection()
     const valid = validUserId(target)
     function save(value: Selection) {
         if (!valid) return
         badgeState.setFake({
-            ...saved,
+            ...current,
             target,
-            users: { ...saved.users, [target]: value },
+            users: { ...current.users, [target]: value },
         })
-        void jsonStorage.set({ target, users: { [target]: value } })
+        pendingWrites++
+        writes = writes
+            .then(() => jsonStorage.set({ target, users: { [target]: value } }))
+            .catch(error => {
+                plugin.reportError(error)
+            })
+            .finally(() => {
+                pendingWrites--
+            })
     }
     function move(index: number, direction: number) {
         const order = [...selection.badges]
@@ -198,8 +210,10 @@ const Settings: PluginSettingsComponent<{ jsonStorage: FakeSettings }> = ({
 registerInternalPlugin<{ jsonStorage: FakeSettings }>(manifest, {
     jsonStorage: { load: true, default: defaults },
     start({ jsonStorage, cleanup }) {
-        const sync = () =>
-            badgeState.setFake(readFakeSettings(jsonStorage.cache))
+        const sync = () => {
+            if (!pendingWrites)
+                badgeState.setFake(readFakeSettings(jsonStorage.cache))
+        }
         sync()
         cleanup(jsonStorage.subscribe(sync), () =>
             badgeState.setFake(undefined),

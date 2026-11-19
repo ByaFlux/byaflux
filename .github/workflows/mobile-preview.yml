@@ -23,6 +23,8 @@ jobs:
           distribution: temurin
           java-version: '25'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
       - name: Prepare pinned upstream sources
         run: python3 mobile/scripts/prepare.py
       - name: Install bundle dependencies

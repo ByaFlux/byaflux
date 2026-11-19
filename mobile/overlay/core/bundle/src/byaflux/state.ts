@@ -47,6 +47,7 @@ export const badgeState = {
         official = value
         this.changed()
     },
+    getFake: () => fake,
     setFake(value: FakeSettings | undefined) {
         fake = value
         this.changed()
