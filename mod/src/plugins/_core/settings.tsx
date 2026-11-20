@@ -18,6 +18,7 @@ import {
     UpdaterTab,
     VencordTab,
 } from "@components/settings";
+import { ByaFluxName } from "@shared/linuxBrand";
 import { gitHashShort } from "@shared/vencordUserAgent";
 import { Devs } from "@utils/constants";
 import { isTruthy } from "@utils/guards";
@@ -188,8 +189,8 @@ export default definePlugin({
         const equicordEntries: SettingsLayoutNode[] = [
             buildEntry({
                 key: "equicord_main",
-                title: "ByaFlux",
-                panelTitle: "ByaFlux Settings",
+                title: ByaFluxName,
+                panelTitle: ByaFluxName,
                 Component: VencordTab,
                 Icon: ByaFluxSettingsIcon
             }),
@@ -248,7 +249,7 @@ export default definePlugin({
         const equicordSection: SettingsLayoutNode = {
             key: "equicord_section",
             type: LayoutTypes.SECTION,
-            useTitle: () => "ByaFlux Settings",
+            useTitle: () => ByaFluxName,
             buildLayout: () => equicordEntries
         };
 
@@ -314,7 +315,7 @@ export default definePlugin({
     getInfoRows() {
         const { electronVersion, chromiumVersion, getVersionInfo } = this;
 
-        const rows = [`ByaFlux ${gitHashShort}${getVersionInfo()}`];
+        const rows = [`${ByaFluxName} ${gitHashShort}${getVersionInfo()}`];
 
         if (electronVersion) rows.push(`Electron ${electronVersion}`);
         if (chromiumVersion) rows.push(`Chromium ${chromiumVersion}`);

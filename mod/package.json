@@ -1,8 +1,8 @@
 {
     "name": "byaflux",
-    "version": "0.1.12",
+    "version": "0.1.12-linux.dev.1",
     "private": "true",
-    "description": "ByaFlux — plugins para Discord",
+    "description": "ByaFlux \u2014 plugins para Discord",
     "homepage": "https://github.com/Equicord/Equicord#readme",
     "bugs": {
         "url": "https://github.com/Equicord/Equicord/issues"

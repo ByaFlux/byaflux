@@ -17,6 +17,7 @@
 */
 
 import { fetchBuffer, fetchJson } from "@main/utils/http";
+import { ByaFluxName } from "@shared/linuxBrand";
 import { VENCORD_USER_AGENT } from "@shared/vencordUserAgent";
 import { createHash } from "crypto";
 import { writeFileSync } from "original-fs";
@@ -26,7 +27,7 @@ import gitRemote from "~git-remote";
 
 import { Updater } from ".";
 import { ASAR_FILE } from "./common";
-import { ByaFluxRelease, selectRelease } from "./byafluxRelease";
+import { ByaFluxRelease, selectLinuxRelease, selectRelease } from "./byafluxRelease";
 
 const API_BASE = `https://api.github.com/repos/${gitRemote}`;
 let PendingUpdate: ReturnType<typeof selectRelease> = null;
@@ -44,14 +45,16 @@ async function githubGet<T = any>(endpoint: string) {
 
 async function listUpdates() {
     if (!await fetchUpdate() || !PendingUpdate) return [];
-    return [{ hash: PendingUpdate.hash, author: "ByaFlux", message: "Nova versão do ByaFlux disponível" }];
+    return [{ hash: PendingUpdate.hash, author: ByaFluxName, message: "Nova versão do ByaFlux disponível" }];
 }
 
 async function fetchUpdate() {
     PendingUpdate = null;
     if (gitRemote.startsWith("unconfigured/")) throw new Error("Configure o repositório do ByaFlux antes de publicar.");
-    const data = await githubGet<ByaFluxRelease>("/releases/latest");
-    PendingUpdate = selectRelease(data, gitHash, gitRemote, ASAR_FILE);
+    const releases = await githubGet<ByaFluxRelease[]>("/releases?per_page=50");
+    const data = selectLinuxRelease(releases);
+    if (!data) return false;
+    PendingUpdate = selectRelease(data, gitHash, gitRemote, ASAR_FILE, true);
     return PendingUpdate !== null;
 }
 

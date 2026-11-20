@@ -19,10 +19,13 @@ import (
 )
 
 type GithubRelease struct {
-	Name    string `json:"name"`
-	TagName string `json:"tag_name"`
-	Assets  []struct {
+	Name       string `json:"name"`
+	TagName    string `json:"tag_name"`
+	Draft      bool   `json:"draft"`
+	Prerelease bool   `json:"prerelease"`
+	Assets     []struct {
 		Name        string `json:"name"`
+		Size        int64  `json:"size"`
 		DownloadURL string `json:"browser_download_url"`
 	} `json:"assets"`
 }
@@ -60,14 +63,14 @@ func GetGithubRelease(url, fallbackUrl string) (*GithubRelease, error) {
 		return nil, err
 	}
 
-	var data GithubRelease
+	var releases []GithubRelease
 
-	if err = json.NewDecoder(res.Body).Decode(&data); err != nil {
+	if err = json.NewDecoder(res.Body).Decode(&releases); err != nil {
 		Log.Error("Failed to decode GitHub JSON Response", err)
 		return nil, err
 	}
 
-	return &data, nil
+	return selectLinuxRelease(releases)
 }
 
 func InitGithubDownloader() {
@@ -195,4 +198,18 @@ func installLatestBuilds() (retErr error) {
 
 	InstalledHash = LatestHash
 	return
+}
+
+func selectLinuxRelease(releases []GithubRelease) (*GithubRelease, error) {
+	for i := range releases {
+		r := &releases[i]
+		if !r.Draft && r.Prerelease && strings.HasPrefix(r.TagName, LinuxReleasePrefix) {
+			for _, asset := range r.Assets {
+				if asset.Name == "desktop.asar" && asset.Size > 0 {
+					return r, nil
+				}
+			}
+		}
+	}
+	return nil, errors.New("No complete ByaFlux for Linux dev release found")
 }

@@ -14,10 +14,12 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strings"
 	"time"
 )
 
 var IsSelfOutdated = false
+var InstallerLatestTag string
 var SelfUpdateCheckDoneChan = make(chan bool, 1)
 
 func init() {
@@ -37,6 +39,7 @@ func init() {
 			Log.Warn("Failed to check for self updates:", err)
 			SelfUpdateCheckDoneChan <- false
 		} else {
+			InstallerLatestTag = res.TagName
 			IsSelfOutdated = res.TagName != buildinfo.InstallerTag
 			Log.Debug("Is self outdated?", IsSelfOutdated)
 			SelfUpdateCheckDoneChan <- true
@@ -45,11 +48,14 @@ func init() {
 }
 
 func GetInstallerDownloadLink() string {
-	if runtime.GOOS != "windows" || runtime.GOARCH != "amd64" {
+	if runtime.GOOS != "linux" || !strings.HasPrefix(InstallerLatestTag, LinuxReleasePrefix) {
 		return ""
 	}
-	filename := Ternary(buildinfo.UiType == buildinfo.UiTypeCli, "ByaFluxInstallerCli.exe", "ByaFluxInstaller.exe")
-	return "https://github.com/" + ByaFluxRepository + "/releases/latest/download/" + filename
+	arch := map[string]string{"amd64": "x86_64", "arm64": "aarch64"}[runtime.GOARCH]
+	if arch == "" {
+		return ""
+	}
+	return "https://github.com/" + ByaFluxRepository + "/releases/download/" + InstallerLatestTag + "/ByaFluxInstallerCli-Linux-" + arch
 }
 
 func CanUpdateSelf() bool {

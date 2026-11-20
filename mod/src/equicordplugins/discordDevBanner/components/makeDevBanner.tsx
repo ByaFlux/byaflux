@@ -28,7 +28,7 @@ export function makeDevBanner(state?: string): string | JSX.Element {
         .replace(/{buildChannel}/g, buildChannel)
         .replace(/{buildNumber}/g, BUILD_NUMBER)
         .replace(/{buildHash}/g, VERSION_HASH.slice(0, 9))
-        .replace(/{(?:equicord|byaflux)Name}/g, "ByaFlux")
+        .replace(/{(?:equicord|byaflux)Name}/g, "ByaFlux for Linux (dev-version)")
         .replace(/{(?:equicord|byaflux)Version}/g, VERSION)
         .replace(/{(?:equicord|byaflux)Hash}/g, gitHashShort)
         .replace(/{(?:equicord|byaflux)Platform}/g, getVersionInfo(false))

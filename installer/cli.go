@@ -49,6 +49,7 @@ func die(msg string) {
 }
 
 func main() {
+	fmt.Println(ProductName)
 	InitGithubDownloader()
 	discords = FindDiscords()
 
@@ -73,7 +74,7 @@ func main() {
 	}
 
 	if *versionFlag {
-		fmt.Println("ByaFluxInstaller CLI", buildinfo.InstallerTag, "("+buildinfo.InstallerGitHash+")")
+		fmt.Println(ProductName+" CLI", buildinfo.InstallerTag, "("+buildinfo.InstallerGitHash+")")
 		fmt.Println("Copyright (C) 2026 Vendicated, thororen1234, Vencord, Equicord, and ByaFlux contributors")
 		fmt.Println("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.")
 		return
@@ -159,7 +160,7 @@ func main() {
 		errSilent = PromptDiscord("unpatch", *locationFlag, *branchFlag).unpatch()
 	} else if update {
 		Log.Info("Downloading latest ByaFlux files...")
-		err := installLatestBuilds()
+		err = installLatestBuilds()
 		Log.Info("Done!")
 		if err == nil {
 			errSilent = PromptDiscord("repair", *locationFlag, *branchFlag).patch()

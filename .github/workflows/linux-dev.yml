@@ -1,0 +1,87 @@
+name: ByaFlux for Linux (dev-version)
+on:
+  push:
+    branches: [linux-dev]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: byaflux-linux-dev
+  cancel-in-progress: false
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: installer/go.mod
+          cache-dependency-path: installer/go.sum
+      - run: npm install --global pnpm@12.18.0
+      - run: node scripts/configure.mjs
+      - run: pnpm --dir mod install --frozen-lockfile
+      - run: pnpm --dir mod testTsc
+      - name: Test Linux update channel and plugin models
+        working-directory: mod
+        run: |
+          node scripts/testLinuxRelease.mjs
+          node scripts/testThemeMaker.mjs
+          node scripts/testIconMaker.mjs
+          node scripts/testFakeRoles.mjs
+      - name: Build Linux desktop bundle
+        run: pnpm --dir mod buildStandalone
+      - run: node scripts/testLinuxBundle.mjs
+        working-directory: mod
+      - name: Test Linux discovery and installer
+        working-directory: installer
+        run: |
+          gofmt -w constants.go cli.go patcher.go find_discord_linux.go github_downloader.go self_updater.go linux_test.go
+          go test -tags cli ./...
+      - name: Compile native Linux CLI installers
+        working-directory: installer
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('../package.json').version")"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-linux\.dev\.[0-9]+$ ]]
+          tag="linux-dev-v${version/-linux.dev./.}"
+          echo "LINUX_RELEASE_TAG=$tag" >> "$GITHUB_ENV"
+          mkdir -p ../linux-release
+          for target in amd64:x86_64 arm64:aarch64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH="${target%:*}" go build -tags cli -ldflags "-s -w -X equilotl/buildinfo.InstallerGitHash=$GITHUB_SHA -X equilotl/buildinfo.InstallerTag=$tag" -o "../linux-release/ByaFluxInstallerCli-Linux-${target#*:}"
+          done
+          file ../linux-release/ByaFluxInstallerCli-Linux-*
+      - name: Verify install and removal on a temporary Discord fixture
+        run: bash scripts/test-linux-install.sh linux-release/ByaFluxInstallerCli-Linux-x86_64 mod/dist/desktop.asar
+      - name: Collect Linux release files
+        run: |
+          set -euo pipefail
+          cp mod/dist/desktop.asar linux-release/desktop.asar
+          cp mod/LICENSE linux-release/LICENSE
+          cd linux-release
+          sha256sum ByaFluxInstallerCli-Linux-* desktop.asar > SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ByaFlux-Linux-dev
+          path: linux-release/
+          if-no-files-found: error
+      - name: Publish isolated Linux prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          title="ByaFlux for Linux (dev-version) $GITHUB_SHA"
+          if gh release view "$LINUX_RELEASE_TAG" > /dev/null 2>&1; then
+            gh release upload "$LINUX_RELEASE_TAG" linux-release/* --clobber
+          else
+            gh release create "$LINUX_RELEASE_TAG" linux-release/* --target "$GITHUB_SHA" --draft --prerelease --title "$title" --notes-file RELEASE_NOTES.md --latest=false
+          fi
+          gh release edit "$LINUX_RELEASE_TAG" --draft=false --prerelease --latest=false --title "$title" --notes-file RELEASE_NOTES.md

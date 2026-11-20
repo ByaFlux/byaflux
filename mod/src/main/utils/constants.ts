@@ -24,8 +24,8 @@ const suffix = IS_DEV ? "dev" : "";
 
 export const DATA_DIR = process.env.EQUICORD_USER_DATA_DIR ?? (
     process.env.DISCORD_USER_DATA_DIR
-        ? join(process.env.DISCORD_USER_DATA_DIR, "..", "ByaFluxData", suffix)
-        : join(app.getPath("userData"), "..", "ByaFlux", suffix)
+        ? join(process.env.DISCORD_USER_DATA_DIR, "..", "ByaFluxLinuxDevData", suffix)
+        : join(app.getPath("userData"), "..", "ByaFluxLinuxDev", suffix)
 );
 
 export const SETTINGS_DIR = join(DATA_DIR, "settings");

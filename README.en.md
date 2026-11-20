@@ -1,29 +1,20 @@
-# ByaFlux
+# ByaFlux for Linux (dev-version)
 
-[Português](README.md)
+Experimental Linux build based on ByaFlux Desktop 0.1.12. Requires an existing Discord Desktop installation and x86_64 or ARM64 Linux.
 
-Plugins and customization for the Discord desktop app.
+Close Discord, then run:
 
-**[Download for Windows x64](https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstaller.exe)**
+```bash
+mkdir -p ~/ByaFlux-Linux && cd ~/ByaFlux-Linux
+curl -fL "https://github.com/ByaFlux/byaflux/releases/download/linux-dev-v0.1.12.1/ByaFluxInstallerCli-Linux-$(uname -m)" -o ByaFluxInstaller
+chmod +x ByaFluxInstaller
+./ByaFluxInstaller --install
+```
 
-## Requirements
+Choose Discord in the terminal. If access is denied, repeat the last command with `sudo`. Do not start a root login shell.
 
-Windows x64, Discord installed, and an internet connection.
+Remove with `./ByaFluxInstaller --uninstall`. Custom location: `./ByaFluxInstaller --install --location /path/to/Discord`.
 
-## Installation
+Updates stay on the Linux dev channel. Settings use ByaFluxLinuxDev, separate from stable ByaFlux settings. Regular Discord installations are the primary target. Flatpak support is experimental. Snap and read-only AppImages are unsupported. Extract an AppImage into a writable location before attempting installation.
 
-1. Fully close Discord, including its system tray icon.
-2. Open the installer, select your Discord installation, and click **Install**.
-3. Open Discord and go to **User Settings → ByaFlux**.
-
-## Update, repair, or uninstall
-
-Click **Atualizar e reiniciar** (Update and restart) when the new-version banner appears.
-
-In the installer, **Reinstall / Repair** repairs the installation and **Uninstall** removes ByaFlux. Close Discord before using either option.
-
-## Credits and license
-
-Based on [Equicord](https://github.com/Equicord/Equicord), [Vencord](https://github.com/Vendicated/Vencord), and [Equilotl](https://github.com/Equicord/Equilotl). Licenses: [mod](mod/LICENSE) and [installer](installer/LICENSE).
-
-ByaFlux is not an official Discord product.
+The existing ByaFlux, Vencord and Equicord plugin catalog is included. Audio, screen sharing, shortcuts and external integrations still require testing on your Discord/Linux setup. Not every plugin feature has been verified in a live X11 or Wayland session.

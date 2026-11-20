@@ -1,5 +1,6 @@
 {
-  "name": "ByaFlux",
+  "name": "ByaFlux for Linux (dev-version)",
   "repository": "ByaFlux/byaflux",
-  "badgesUrl": "https://raw.githubusercontent.com/ByaFlux/byabadges/main/badges.json"
+  "badgesUrl": "https://raw.githubusercontent.com/ByaFlux/byabadges/main/badges.json",
+  "releasePrefix": "linux-dev-v"
 }

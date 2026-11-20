@@ -29,10 +29,10 @@ func init() {
 		BaseDir = dir
 	} else if dir = os.Getenv("DISCORD_USER_DATA_DIR"); dir != "" {
 		Log.Debug("Using DISCORD_USER_DATA_DIR/../ByaFluxData")
-		BaseDir = path.Join(dir, "..", "ByaFluxData")
+		BaseDir = path.Join(dir, "..", "ByaFluxLinuxDevData")
 	} else {
 		Log.Debug("Using UserConfig")
-		BaseDir = appdir.New("ByaFlux").UserConfig()
+		BaseDir = appdir.New("ByaFluxLinuxDev").UserConfig()
 	}
 	dir := os.Getenv("EQUICORD_DIRECTORY")
 	if dir == "" {

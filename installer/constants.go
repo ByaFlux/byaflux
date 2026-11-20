@@ -11,7 +11,9 @@ import (
 	"image/color"
 )
 
-const ReleaseUrl = "https://api.github.com/repos/" + ByaFluxRepository + "/releases/latest"
+const ProductName = "ByaFlux for Linux (dev-version)"
+const LinuxReleasePrefix = "linux-dev-v"
+const ReleaseUrl = "https://api.github.com/repos/" + ByaFluxRepository + "/releases?per_page=50"
 const ReleaseUrlFallback = ReleaseUrl
 const InstallerReleaseUrl = ReleaseUrl
 const InstallerReleaseUrlFallback = ReleaseUrl
