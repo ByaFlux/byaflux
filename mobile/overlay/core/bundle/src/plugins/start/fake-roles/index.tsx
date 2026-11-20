@@ -335,6 +335,7 @@ function ProfileAction({ guildId, id }: { guildId: string; id: string }) {
 const ProfileContext = React.createContext<{
     id: string
     guildId: string
+    entryShown?: boolean
 } | null>(null)
 let renderingNative = false
 function nativeProfile(Component: ComponentType<Props>, props: Props) {
@@ -365,17 +366,31 @@ function wrapProfile(Component: ComponentType<Props>) {
                 selectedGuild()
             if (!active || !guildId || !id || id !== userId())
                 return nativeProfile(Component, props)
-            if (/Roles(?:Section|List)?$/.test(Component.name))
+            const nativeType =
+                (Component as unknown as { type?: ComponentType<Props> })
+                    .type ?? Component
+            const name = nativeType.name
+            if (/Roles(?:Section|List)?$/.test(name))
                 return (
                     <View style={{ paddingHorizontal: 16 }}>
                         <ChipList guildId={guildId} id={id} />
-                        <ProfileAction guildId={guildId} id={id} />
+                        {!parent?.entryShown && (
+                            <ProfileAction guildId={guildId} id={id} />
+                        )}
                     </View>
                 )
             return (
-                <ProfileContext.Provider value={{ id, guildId }}>
+                <ProfileContext.Provider
+                    value={{
+                        id,
+                        guildId,
+                        entryShown: parent?.entryShown || /Header/.test(name),
+                    }}
+                >
                     {nativeProfile(Component, props)}
-                    {!parent && <ProfileAction guildId={guildId} id={id} />}
+                    {/Header/.test(name) && !parent?.entryShown && (
+                        <ProfileAction guildId={guildId} id={id} />
+                    )}
                 </ProfileContext.Provider>
             )
         }

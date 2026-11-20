@@ -1,4 +1,4 @@
-# ByaFlux Mobile 0.2.2
+# ByaFlux Mobile 0.2.3
 
 Requer Android 9 ou superior. O APK é o instalador. Abra-o, instale o ByaFlux e autorize a instalação quando o Android pedir. O Discord oficial fica separado.
 
