@@ -5,6 +5,10 @@ import subprocess
 
 mobile = Path(__file__).resolve().parents[1]
 lock = json.loads((mobile / 'base-lock.json').read_text())
+version = lock['version']
+major, minor, patch = map(int, version.split('-')[0].split('.'))
+preview = int(version.split('-preview.')[1]) if '-preview.' in version else 99
+code = major * 1000000 + minor * 10000 + patch * 100 + preview
 work = mobile / 'work'
 work.mkdir(exist_ok=True)
 for name in ('core', 'manager'):
@@ -19,4 +23,12 @@ for name in ('core', 'manager'):
         raise RuntimeError(f'Unexpected upstream revision: {name}')
     shutil.copytree(mobile / 'overlay' / name, destination, dirs_exist_ok=True)
     (destination / 'gradlew').chmod(0o755)
+(work / 'core/bundle/src/byaflux/version.ts').write_text(
+    f"export const MobileVersionName = '{version}'\nexport const MobileVersionCode = {code}\n"
+)
+properties = work / 'manager/gradle.properties'
+lines = properties.read_text().splitlines()
+properties.write_text('\n'.join(
+    f'version = {version}' if line.startswith('version = ') else line for line in lines
+) + '\n')
 print('Pinned sources prepared.')

@@ -1,6 +1,7 @@
 import { Linking } from 'react-native'
+import { MobileVersionCode } from './version'
 
-export const MobileVersionCode = 20199
+export { MobileVersionCode } from './version'
 export const MobileChannel =
     'https://raw.githubusercontent.com/ByaFlux/byaflux/mobile-updates/android.json'
 export type MobileUpdate = {
@@ -50,6 +51,7 @@ export const updates = {
                     ? `ByaFlux ${update.versionName} disponível`
                     : 'ByaFlux atualizado'
             } catch {
+                update = undefined
                 status =
                     'Não foi possível consultar atualizações. Tente novamente.'
             } finally {

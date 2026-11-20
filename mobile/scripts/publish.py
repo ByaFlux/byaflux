@@ -28,6 +28,14 @@ notes = Path('mobile-output/RELEASE_NOTES.txt')
 notes.write_text(f'ByaFlux Mobile {version}\nByaFlux para Android 9 ou superior.\nInstale o APK do instalador. Após atualizar, reinstale o ByaFlux pelo instalador.\nSomente os plugins obrigatórios são ativados por padrão. Aviso de atualização com botão Atualizar.\n')
 assets = [str(apk), 'mobile-output/SHA256SUMS', 'mobile-output/byaflux-mobile.bundle', 'mobile-output/manifest.json']
 gh('release','create',tag,*assets,'--target',os.environ['GITHUB_SHA'],'--title',f'ByaFlux Mobile {version}','--notes-file',str(notes),'--latest=false')
+# Keep the desktop release title intact: its commit hash drives desktop updates.
+principal = json.loads(gh('api', f'repos/{repo}/releases/latest').stdout)
+asset_names = {asset['name'] for asset in principal['assets']}
+if principal['draft'] or principal['prerelease'] or not {
+    'desktop.asar', 'ByaFluxInstaller.exe', 'ByaFluxInstallerCli.exe'
+}.issubset(asset_names):
+    raise RuntimeError('Main Windows release is unavailable')
+gh('release', 'upload', principal['tag_name'], str(apk), '--clobber')
 branch = 'mobile-updates'
 ref = gh('api',f'repos/{repo}/git/ref/heads/{branch}',check=False)
 if ref.returncode != 0:
