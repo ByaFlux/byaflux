@@ -1,6 +1,6 @@
 {
     "name": "byaflux-dev",
-    "version": "0.1.12-linux.dev.1",
+    "version": "0.1.13-linux.dev.1",
     "private": true,
     "description": "ByaFlux: comandos de desenvolvimento na raiz do projeto",
     "scripts": {
