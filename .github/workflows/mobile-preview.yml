@@ -93,7 +93,7 @@ jobs:
           test "${#apks[@]}" -eq 1
           apk="${apks[0]}"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk"
-          cp "$apk" mobile-output/ByaFluxMobile-0.2.1.apk
+          cp "$apk" mobile-output/ByaFluxMobile-0.2.2.apk
           cp mobile/work/core/bundle/dist/valenced.bundle mobile-output/byaflux-mobile.bundle
           cp mobile/work/core/bundle/dist/manifest.json mobile-output/manifest.json
           cp mobile/README.md mobile-output/LEIA-ME.md
@@ -102,7 +102,7 @@ jobs:
           sha256sum mobile-output/*.apk > mobile-output/SHA256SUMS
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ByaFluxMobile-0.2.1
+          name: ByaFluxMobile-0.2.2
           path: mobile-output/
           if-no-files-found: error
       - name: Publish ByaFlux Mobile
