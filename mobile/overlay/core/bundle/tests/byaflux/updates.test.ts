@@ -38,7 +38,7 @@ describe('Mobile update channel', () => {
 describe('Installed mobile version', () => {
     afterEach(() => vi.unstubAllGlobals())
     it('uses the current build version instead of the old 0.2.1 code', () => {
-        expect(MobileVersionCode).toBe(20499)
+        expect(MobileVersionCode).toBe(20599)
     })
     it('only offers newer versions and clears stale results on failure', async () => {
         const fetch = vi.fn()
