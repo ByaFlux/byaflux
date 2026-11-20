@@ -1,0 +1,18 @@
+import React from "react";
+export { React };
+const account="1227436212982251533", guild="2227436212982251533", role="3227436212982251533", bot="4227436212982251533", real="5227436212982251533";
+const all=Object.freeze([{id:guild,name:"@everyone",position:0},{id:role,name:"Owner",position:100,color:16746496},{id:bot,name:"Integração",position:50,color:5635925,managed:true},{id:real,name:"Membro",position:1,color:10070709}]);
+export const GuildRoleStore={getSortedRoles:()=>all};
+export const GuildMemberStore={getMember:()=>({userId:account,roles:[real]})};
+export const GuildStore={getGuild:()=>({id:guild,name:"Servidor de testes"})};
+export const UserStore={getCurrentUser:()=>({id:account})};
+export const SelectedGuildStore={getGuildId:()=>guild};
+export const ChannelStore={getChannel:()=>({guild_id:guild})};
+export const useStateFromStores=(_,fn)=>fn();
+export const Button=props=><button {...props}/>;
+export const Menu={MenuGroup:()=>null,MenuItem:()=>null};
+export const Modal=({children})=><div>{children}</div>;
+export const openModal=()=>{};
+export const definePluginSettings=()=>({withPrivateSettings(){return {store:new Proxy(JSON.parse(localStorage.getItem("fake-roles-settings")||"{}"),{set(target,key,value){target[key]=value;localStorage.setItem("fake-roles-settings",JSON.stringify(target));return true;}})}}});
+export default Object.assign(value=>value,{wrap:Component=>Component});
+window.roleFixture={account,guild,role,bot,real,realMember:()=>GuildMemberStore.getMember()};

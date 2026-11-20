@@ -87,6 +87,9 @@ const server = createServer(async (req, res) => {
                 "/": "index.html",
                 "/app.js": "app.js",
                 "/app.css": "app.css",
+                "/fake-roles": "fake-roles.html",
+                "/fake-roles.js": "fake-roles.js",
+                "/fake-roles.css": "fake-roles.css",
                 "/iconmaker": "iconmaker.html",
                 "/iconmaker.js": "iconmaker.js",
                 "/iconmaker.css": "iconmaker.css"

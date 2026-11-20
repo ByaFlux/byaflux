@@ -1,0 +1,58 @@
+.bf-roles-editor {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    color: var(--text-normal);
+}
+.bf-roles-editor p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+}
+.bf-roles-search {
+    background: var(--input-background);
+    color: var(--text-normal);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 10px;
+    font: inherit;
+}
+.bf-roles-list {
+    max-height: 360px;
+    overflow: auto;
+}
+.bf-role-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 7px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.bf-role-row:hover {
+    background: var(--background-modifier-hover);
+}
+.bf-role-row > span:nth-child(2) {
+    flex: 1;
+    overflow-wrap: anywhere;
+}
+.bf-role-row small {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+.bf-role-row input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--brand-500, #f58b3b);
+    cursor: pointer;
+}
+.bf-role-dot {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #99aab5;
+}

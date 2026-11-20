@@ -50,3 +50,10 @@ await build({
     outdir: root + "/.runtime",
     outExtension: { ".js": ".mjs" }
 });
+
+await build({
+    entryPoints: [root + "/fake-roles-entry.jsx"], bundle: true, format: "esm", target: "chrome120",
+    outfile: root + "/.runtime/fake-roles.js", nodePaths: [root + "/node_modules"],
+    alias: Object.fromEntries(["@webpack/common", "@api/Settings", "@components/Button", "@components/ErrorBoundary", "@utils/types"].map(key => [key, root + "/fake-roles-shim.jsx"])),
+    jsx: "transform", tsconfig: project + "/tsconfig.json", loader: {".css":"css"}
+});

@@ -1,5 +1,6 @@
-# ByaFlux 0.1.11
+# ByaFlux 0.1.12
 
-- Corrigida a reprodução automática das prévias do IconMaker no modo Animado, inclusive quando o sistema está configurado para reduzir movimentos.
-- As miniaturas de efeitos e movimentos continuam animadas ao pausar ou ajustar um quadro da prévia principal.
-- Ao abrir o modo Animado sem movimento ou efeito selecionado, o corpo começa a flutuar para demonstrar a animação. A opção Nenhum continua disponível.
+- Novo plugin opcional FakeRoles: escolha cargos visuais no seu próprio perfil de cada servidor.
+- Abra seu usuário com o botão direito e selecione Cargos visuais para buscar, marcar e desmarcar cargos, incluindo cargos de integrações.
+- As escolhas ficam salvas por conta e servidor. Restaure os cargos originais pelo seletor ou desative o plugin.
+- As alterações aparecem somente no seu cliente e não concedem permissões.
