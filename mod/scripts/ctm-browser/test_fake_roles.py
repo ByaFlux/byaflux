@@ -56,6 +56,12 @@ with sync_playwright() as playwright:
         expect(page.get_by_label('Perfil nativo')).to_contain_text('Membro')
         owner.check()
         expect(page.get_by_label('Perfil nativo')).to_contain_text('Owner')
+        expect(page.get_by_label('Autor da mensagem')).to_have_css('color', 'rgb(255, 136, 0)')
+        expect(page.get_by_label('Ícone do cargo na mensagem')).to_have_text('👑')
+        owner.uncheck()
+        assert page.get_by_label('Lista de membros').inner_text().splitlines() == ['3227436212982251533', 'Alice', 'Zoe', 'online', 'Haru']
+        owner.check()
+
         assert page.get_by_label('Lista de membros').inner_text().splitlines() == ['3227436212982251533', 'Alice', 'Haru', 'Zoe']
         assert page.evaluate('window.roleFixture.originalRows().length') == 5
         profile = page.get_by_label('Cargos no perfil')
@@ -80,6 +86,8 @@ with sync_playwright() as playwright:
         expect(profile).not_to_contain_text('3227436212982251533')
         assert page.evaluate('window.roleFixture.realMember().roles') == ['5227436212982251533']
         expect(page.get_by_label('Perfil nativo')).not_to_contain_text('Owner')
+        expect(page.get_by_label('Autor da mensagem')).to_have_css('color', 'rgb(153, 170, 181)')
+        expect(page.get_by_label('Ícone do cargo na mensagem')).to_have_text('')
         assert page.get_by_label('Lista de membros').inner_text().splitlines() == ['3227436212982251533', 'Alice', 'Zoe', 'online', 'Haru']
         print('PASS FakeRoles browser: immediate checkbox and profile rendering, native member isolation, search, managed roles, persistence, reset and disable restoration.', flush=True)
     finally:

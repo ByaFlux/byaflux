@@ -192,6 +192,121 @@ try {
         "PASS FakeRoles: hierarchy, native tie break, hoisted groups, online/offline, live removal, counts, immutable real roles, stable snapshots and cleanup."
     );
 
+    const modern = {
+        id: b,
+        name: "Owner",
+        position: 100,
+        hoist: true,
+        color: 0,
+        colors: { primary_color: 0xff6600, secondary_color: 0xffcc00 },
+        unicodeEmoji: "👑"
+    };
+    const realMember = Object.freeze({
+        userId: self,
+        roles: Object.freeze([c]),
+        hoistRoleId: c,
+        highestRoleId: c,
+        colorRoleId: c,
+        iconRoleId: c,
+        colorString: "#123456",
+        colorStrings: { primaryColor: "#123456" }
+    });
+    const appearance = m.projectMember(
+        realMember,
+        selected,
+        [modern, { id: c, name: "Member", position: 1 }],
+        guild
+    );
+    assert.equal(appearance.hoistRoleId, b);
+    assert.equal(appearance.highestRoleId, b);
+    assert.equal(appearance.colorRoleId, b);
+    assert.equal(appearance.iconRoleId, b);
+    assert.equal(appearance.colorRoleName, "Owner");
+    assert.equal(appearance.colorString, "#ff6600");
+    assert.deepEqual(appearance.colorStrings, {
+        primaryColor: "#ff6600",
+        secondaryColor: "#ffcc00",
+        tertiaryColor: undefined
+    });
+    assert.equal(realMember.iconRoleId, c);
+    const cleared = m.projectMember(
+        realMember,
+        { added: [], hidden: [c] },
+        [modern, { id: c, name: "Member", position: 1 }],
+        guild
+    );
+    assert.equal(cleared.iconRoleId, undefined);
+    assert.equal(cleared.hoistRoleId, undefined);
+    assert.equal(cleared.colorStrings, null);
+    const nativeSelf = { ...selfRow, id: "native-row-key", member: realMember, groupId: "online" };
+    const keyed = {
+        ...source,
+        rowCount: 100,
+        rows: source.rows.map(row => (row === selfRow ? nativeSelf : row))
+    };
+    const keyedProjection = m.projectMemberList(
+        keyed,
+        guild,
+        self,
+        selected,
+        [modern, { id: c, name: "Member", position: 1 }],
+        realMember,
+        user,
+        "online"
+    );
+    const own = keyedProjection.rows.find(row => m.memberRowId(row) === self);
+    assert.equal(own.id, "native-row-key");
+    assert.equal(own.groupId, b);
+    assert.equal(own.member.hoistRoleId, b);
+    assert.equal(own.iconRoleId, b);
+    assert.equal(keyedProjection.rowCount, 99);
+    const unread = { ...source, rows: source.rows.filter(row => row !== selfRow) };
+    assert.equal(m.projectMemberList(unread, guild, self, selected, catalog, member, user, "online"), unread);
+    let cachedRevision = 10,
+        cachedSelection = selected;
+    const virtualStore = { getProps: () => source, getRows: () => source.rows };
+    const unbindVirtual = m.bindMemberListStore(virtualStore, () => ({
+        guildId: guild,
+        userId: self,
+        selection: cachedSelection,
+        roles: catalog,
+        member,
+        user,
+        status: "online",
+        revision: cachedRevision
+    }));
+    const firstVirtual = virtualStore.getProps();
+    assert.equal(virtualStore.getProps(), firstVirtual);
+    cachedRevision++;
+    cachedSelection = { added: [], hidden: [c] };
+    const nextVirtual = virtualStore.getProps();
+    assert.ok(nextVirtual.version > firstVirtual.version);
+    assert.equal(virtualStore.getProps(), nextVirtual);
+    cachedRevision++;
+    cachedSelection = selected;
+    assert.ok(virtualStore.getProps().version > nextVirtual.version);
+    unbindVirtual();
+    assert.equal(virtualStore.getProps(), source);
+    console.log(
+        "PASS native FakeRoles: current metadata, gradients, icon selection/clearing, native row keys, row counts, unloaded rows and monotonic virtual-list versions."
+    );
+
+    const freshStore = {
+        getProps: () => ({ ...source, rows: [...source.rows] }),
+        getRows: () => [...source.rows]
+    };
+    const unbindFresh = m.bindMemberListStore(freshStore, () => ({
+        guildId: guild,
+        userId: self,
+        selection: selected,
+        roles: catalog,
+        member,
+        user,
+        status: "online",
+        revision: 200
+    }));
+    assert.equal(freshStore.getProps(), freshStore.getProps());
+    unbindFresh();
     const pluginSource = await readFile("src/byafluxplugins/fakeRoles/index.tsx", "utf8");
     assert.ok(
         !/GuildMemberStore\.[\w]+\s*=|PermissionStore|\.dispatch\(|\.patch\(|\.put\(/.test(pluginSource)

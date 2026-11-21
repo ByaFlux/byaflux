@@ -7,7 +7,7 @@ const account = "1227436212982251533",
     real = "5227436212982251533";
 const all = Object.freeze([
     { id: guild, name: "@everyone", position: 0 },
-    { id: role, name: "Owner", position: 100, hoist: true, color: 16746496 },
+    { id: role, name: "Owner", position: 100, hoist: true, unicodeEmoji: "👑", color: 16746496 },
     { id: bot, name: "Integração", position: 50, color: 5635925, managed: true },
     { id: real, name: "Membro", position: 1, color: 10070709 }
 ]);

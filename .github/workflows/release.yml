@@ -6,10 +6,6 @@ on:
     paths:
       - package.json
       - mod/package.json
-      - mod/src/byafluxplugins/fakeRoles/**
-      - mod/scripts/testFakeRoles.mjs
-      - mod/scripts/ctm-browser/**
-      - .github/workflows/release.yml
   workflow_dispatch:
 permissions:
   contents: read

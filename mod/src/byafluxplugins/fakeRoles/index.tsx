@@ -45,6 +45,7 @@ import {
 } from "./model";
 
 import {
+    appearanceExports,
     createProfileBridge,
     profileExports,
     roleSectionExports,
@@ -173,7 +174,13 @@ function open(guildId = SelectedGuildStore.getGuildId()) {
 }
 const contextMenu: NavContextMenuPatchCallback = (children, props) => {
     if (props.user?.id !== UserStore.getCurrentUser()?.id) return;
+    const channelId =
+        props.message?.channel_id ?? props.message?.channelId ?? props.channelId ?? props.channel_id;
+    const channel = props.channel ?? (channelId ? ChannelStore.getChannel(channelId) : undefined);
+    if ((channel || channelId) && !(channel?.guild_id ?? channel?.guildId)) return;
     const guildId =
+        channel?.guild_id ??
+        channel?.guildId ??
         props.guildId ??
         props.guild?.id ??
         props.channel?.guild_id ??
@@ -230,8 +237,16 @@ function resolveContext(
         props.displayProfile?.userId ??
         props.userProfile?.userId ??
         props.profile?.userId ??
+        props.message?.author?.id ??
+        props.author?.id ??
         parent?.userId;
+    const channelId =
+        props.message?.channel_id ?? props.message?.channelId ?? props.channelId ?? props.channel_id;
+    const channel = props.channel ?? (channelId ? ChannelStore.getChannel(channelId) : undefined);
+    if ((channel || channelId) && !(channel?.guild_id ?? channel?.guildId)) return;
     const guildId =
+        channel?.guild_id ??
+        channel?.guildId ??
         props.guildId ??
         props.guild?.id ??
         props.member?.guildId ??
@@ -244,7 +259,19 @@ function resolveContext(
 function projectedProps(props: Record<string, any>, ctx: ProfileRoleContext) {
     const available = roles(ctx.guildId),
         selected = selection(ctx.guildId, ctx.userId);
-    const next = { ...props };
+    const real = GuildMemberStore.getMember(ctx.guildId, ctx.userId);
+    const appearance = projectMember(real ?? { roles: [] }, selected, available, ctx.guildId);
+    const fields = {
+        colorString: appearance.colorString,
+        colorStrings: appearance.colorStrings,
+        colorRoleName: appearance.colorRoleName,
+        colorRoleId: appearance.colorRoleId,
+        iconRoleId: appearance.iconRoleId,
+        highestRoleId: appearance.highestRoleId,
+        hoistRoleId: appearance.hoistRoleId
+    };
+    const next: Record<string, any> = { ...props, ...fields };
+    if (props.author) next.author = { ...props.author, ...fields };
     for (const key of ["member", "guildMember"])
         if (props[key]) next[key] = projectMember(props[key], selected, available, ctx.guildId);
     for (const key of ["roles", "roleIds"])
@@ -353,7 +380,8 @@ function bindRuntime() {
     });
     for (const [names, mode] of [
         [profileExports, "profile"],
-        [roleSectionExports, "roles"]
+        [roleSectionExports, "roles"],
+        [appearanceExports, "display"]
     ] as const)
         for (const name of names)
             waitFor([name], module => {
@@ -394,6 +422,13 @@ export default definePlugin({
     contextMenus: { "user-context": contextMenu, "user-profile": contextMenu },
     patches: [
         {
+            find: '="SYSTEM_TAG"',
+            replacement: {
+                match: /(?<=colorString:\i,colorStrings:\i,colorRoleName:\i.*?}=)(\i),/,
+                replace: "$self.useMessageAppearance($1, arguments[0]),"
+            }
+        },
+        {
             find: ".id,spacing:14,",
             replacement: {
                 match: /(let\{member:\i[^}]*\}=)(\i)(?=[,;])/,
@@ -412,6 +447,27 @@ export default definePlugin({
         displayStores.clear();
         bridge = undefined;
         notify();
+    },
+    useMessageAppearance<T extends Record<string, any>>(author: T, props: Record<string, any>): T {
+        useChanges();
+        const ctx = resolveContext(props, null);
+        if (!active || !ctx || !settings.store.profiles?.[roleKey(ctx.userId, ctx.guildId)]) return author;
+        const member = GuildMemberStore.getMember(ctx.guildId, ctx.userId);
+        if (!member) return author;
+        const visual = projectMember(
+            member,
+            selection(ctx.guildId, ctx.userId),
+            roles(ctx.guildId),
+            ctx.guildId
+        );
+        return {
+            ...author,
+            colorString: visual.colorString,
+            colorStrings: visual.colorStrings,
+            colorRoleName: visual.colorRoleName,
+            colorRoleId: visual.colorRoleId,
+            iconRoleId: visual.iconRoleId
+        };
     },
     useVisualProfile<
         T extends {

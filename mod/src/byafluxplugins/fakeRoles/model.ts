@@ -17,6 +17,9 @@ export interface VisualRole {
     managed?: boolean;
     hoist?: boolean;
     icon?: string | null;
+    unicodeEmoji?: string | null;
+    colorStrings?: { primaryColor?: string; secondaryColor?: string; tertiaryColor?: string } | null;
+    colors?: { primary_color?: number; secondary_color?: number; tertiary_color?: number };
 }
 export const emptyRoles = (): RoleSelection => ({ added: [], hidden: [] });
 const ids = (value: unknown): string[] =>
@@ -64,12 +67,24 @@ export function toggleRole(
     if (!checked && real.includes(roleId)) hidden.add(roleId);
     return { added: [...added], hidden: [...hidden] };
 }
+function hex(value: unknown): string | undefined {
+    if (typeof value === "string" && /^#[a-f\d]{6}$/i.test(value)) return value;
+    if (typeof value === "number" && Number.isInteger(value) && value > 0 && value <= 0xffffff)
+        return `#${value.toString(16).padStart(6, "0")}`;
+}
+export function roleColors(role: VisualRole) {
+    return {
+        primaryColor:
+            hex(role.colorStrings?.primaryColor) ??
+            hex(role.colorString) ??
+            hex(role.colors?.primary_color) ??
+            hex(role.color),
+        secondaryColor: hex(role.colorStrings?.secondaryColor) ?? hex(role.colors?.secondary_color),
+        tertiaryColor: hex(role.colorStrings?.tertiaryColor) ?? hex(role.colors?.tertiary_color)
+    };
+}
 export function roleColour(role: VisualRole): string {
-    return role.colorString && /^#[a-f\d]{6}$/i.test(role.colorString)
-        ? role.colorString
-        : role.color
-          ? `#${(role.color & 0xffffff).toString(16).padStart(6, "0")}`
-          : "#99aab5";
+    return roleColors(role).primaryColor ?? "#99aab5";
 }
 
 export function compareSnowflakes(a: string, b: string) {
@@ -123,16 +138,22 @@ export function projectMember<T extends MemberRecord>(
     selection: RoleSelection | undefined,
     roles: readonly VisualRole[],
     guildId: string
-): T {
+): T & MemberRecord {
     if (!selection) return member;
     const selected = sortedVisibleRoles(member.roles ?? [], selection, roles, guildId);
-    const colour = selected.find(r => r.color || r.colorString),
+    const colour = selected.find(r => roleColors(r).primaryColor),
         hoist = selected.find(r => r.hoist);
     return {
         ...member,
         roles: selected.map(r => r.id),
         colorString: colour ? roleColour(colour) : undefined,
-        color: colour?.color ?? 0,
+        colorStrings: colour ? roleColors(colour) : null,
+        color: colour ? parseInt(roleColour(colour).slice(1), 16) : 0,
+        colorRoleId: colour?.id,
+        colorRoleName: colour?.name,
+        highestRoleId: selected[0]?.id,
+        hoistRoleId: hoist?.id,
+        iconRoleId: selected.find(r => r.icon || r.unicodeEmoji)?.id,
         hoistRole: hoist?.id ?? null,
         hoistedRole: hoist?.id ?? null
     };
@@ -192,27 +213,37 @@ export function projectMemberList<T extends MemberListSnapshot>(
     const nativeHoist = ordered.find(r => r.hoist && (member.roles ?? []).includes(r.id));
     originalId ??= offline ? "offline" : (nativeHoist?.id ?? "online");
     const visual = projectMember(member, selection, ordered, guildId);
-    const template = originalRow ?? (source.rows.find(row => !!memberRowId(row)) as MemberRecord | undefined);
-    if (!template) return source;
+    // Unloaded virtual rows have native keys and heights that cannot be reconstructed safely.
+    if (!originalRow) return source;
+    const template = originalRow;
     const row: MemberRecord = {
         ...template,
-        id: userId,
         userId,
-        user,
-        nick: member.nick ?? null,
+        user: originalRow.user ?? user,
+        nick: member.nick ?? originalRow.nick ?? null,
         roles: visual.roles,
         color: visual.color,
         colorString: visual.colorString,
+        colorStrings: visual.colorStrings,
+        colorRoleId: visual.colorRoleId,
+        colorRoleName: visual.colorRoleName,
+        highestRoleId: visual.highestRoleId,
+        hoistRoleId: visual.hoistRoleId,
+        iconRoleId: visual.iconRoleId,
+        ...(Object.hasOwn(template, "groupId") ? { groupId: targetId } : {}),
         hoistRole: visual.hoistRole,
         hoistedRole: visual.hoistRole,
         status,
-        activities: originalRow?.activities ?? []
+        ...(Object.hasOwn(originalRow, "activities") ? { activities: originalRow.activities } : {})
     };
-    if (template.member) row.member = { ...member, ...visual, userId, user };
-    if (!originalRow) {
-        row.comparator = undefined;
-        row.sortKey = undefined;
-    }
+    if (template.member)
+        row.member = {
+            ...template.member,
+            ...visual,
+            userId,
+            ...(template.member.user ? { user: template.member.user } : {})
+        };
+    if (template.guildMember) row.guildMember = { ...template.guildMember, ...visual, userId };
     let groups = source.groups.map(g => ({ ...g }));
     if (originalId !== targetId) {
         groups = groups.map(g => ({
@@ -221,13 +252,20 @@ export function projectMemberList<T extends MemberListSnapshot>(
         }));
         if (!groups.some(g => g.id === targetId)) groups.push({ id: targetId, count: 1 });
     }
-    const priority = (id: string) =>
-        id === "offline"
-            ? ordered.length + 2
-            : id === "online"
-              ? ordered.length + 1
-              : ordered.findIndex(r => r.id === id);
-    groups.sort((a, b) => priority(a.id) - priority(b.id));
+    if (!groups.some(g => g.id === targetId)) return source;
+    if (!source.groups.some(g => g.id === targetId)) {
+        const index = groups.findIndex(g => g.id === targetId);
+        const [targetGroup] = groups.splice(index, 1);
+        const rank = ordered.findIndex(r => r.id === targetId);
+        const before = groups.findIndex(g =>
+            targetId === "offline"
+                ? false
+                : targetId === "online"
+                  ? g.id === "offline"
+                  : g.id === "online" || g.id === "offline" || ordered.findIndex(r => r.id === g.id) > rank
+        );
+        groups.splice(before < 0 ? groups.length : before, 0, targetGroup);
+    }
     if (!sections.has(targetId)) {
         const header = [...sections.values()].find(s => s.header)?.header;
         if (!header) return source;
@@ -238,6 +276,8 @@ export function projectMemberList<T extends MemberListSnapshot>(
                 id: targetId,
                 count: meta.count,
                 name: hoist?.name ?? targetId,
+                ...(Object.hasOwn(header, "groupId") ? { groupId: targetId } : {}),
+                ...(Object.hasOwn(header, "role") ? { role: hoist } : {}),
                 ...(header.group ? { group: { ...header.group, id: targetId, count: meta.count } } : {})
             },
             rows: []
@@ -249,7 +289,13 @@ export function projectMemberList<T extends MemberListSnapshot>(
     );
     target.splice(insert < 0 ? target.length : insert, 0, row);
     const rows: unknown[] = [];
-    groups = groups.filter(g => g.count > 0 || (sections.get(g.id)?.rows.length ?? 0) > 0);
+    groups = groups.filter(
+        g =>
+            g.id !== originalId ||
+            originalId === targetId ||
+            g.count > 0 ||
+            (sections.get(g.id)?.rows.length ?? 0) > 0
+    );
     for (const meta of groups) {
         const section = sections.get(meta.id);
         if (!section) continue;
@@ -265,6 +311,9 @@ export function projectMemberList<T extends MemberListSnapshot>(
         ...source,
         rows,
         groups,
+        ...(typeof source.rowCount === "number"
+            ? { rowCount: source.rowCount + rows.length - source.rows.length }
+            : {}),
         version: typeof source.version === "number" ? source.version + 1 : source.version
     };
 }
@@ -285,8 +334,10 @@ export function bindMemberListStore(
     if (typeof store.getProps !== "function") return () => {};
     const originalProps = store.getProps,
         originalRows = store.getRows;
-    let reading = false;
+    let reading = false,
+        presentationVersion = 0;
     const cache = new WeakMap<object, { key: string; result: unknown }>();
+    const versioned = new Map<string, { key: string; result: MemberListSnapshot }>();
     const props = function (this: unknown, ...args: unknown[]) {
         if (reading) return originalProps.apply(store, args);
         let source: MemberListSnapshot;
@@ -300,9 +351,12 @@ export function bindMemberListStore(
         const ctx = context(args[0] as string | undefined, args[1] as string | undefined);
         if (!ctx?.selection) return source;
         const key = `${ctx.guildId}:${ctx.userId}:${ctx.revision}:${source.version ?? ""}`;
+        const listKey = `${ctx.guildId}:${ctx.userId}:${source.listId ?? args[1] ?? ""}`;
+        const known = versioned.get(listKey);
+        if (typeof source.version === "number" && known?.key === key) return known.result;
         const hit = cache.get(source.rows);
         if (hit?.key === key) return hit.result;
-        const result = projectMemberList(
+        let result = projectMemberList(
             source,
             ctx.guildId,
             ctx.userId,
@@ -312,7 +366,18 @@ export function bindMemberListStore(
             ctx.user,
             ctx.status
         );
+        if (result !== source) {
+            presentationVersion = Math.max(
+                presentationVersion + 1,
+                typeof source.version === "number" ? source.version + 1 : 1
+            );
+            result = { ...result, version: presentationVersion };
+        }
         cache.set(source.rows, { key, result });
+        if (typeof source.version === "number") {
+            versioned.set(listKey, { key, result });
+            if (versioned.size > 32) versioned.delete(versioned.keys().next().value!);
+        }
         return result;
     };
     const rows = function (...args: unknown[]) {
@@ -335,13 +400,14 @@ export function bindSectionListStore(
     for (const key of ["getSections", "getMemberListSections"]) {
         const original = store[key];
         if (typeof original !== "function") continue;
-        const cache = new WeakMap<object, { revision: number; result: unknown }>();
+        const cache = new WeakMap<object, { key: string; result: unknown }>();
         const wrapped = function (...args: unknown[]) {
             const sections = original.apply(store, args);
             const ctx = context(args[0] as string | undefined, args[1] as string | undefined);
             if (!Array.isArray(sections) || !sections.length || !ctx?.selection) return sections;
+            const cacheKey = `${ctx.guildId}:${ctx.userId}:${ctx.revision}`;
             const hit = cache.get(sections);
-            if (hit?.revision === ctx.revision) return hit.result;
+            if (hit?.key === cacheKey) return hit.result;
             const field = Array.isArray(sections[0]?.data)
                 ? "data"
                 : Array.isArray(sections[0]?.members)
@@ -389,7 +455,7 @@ export function bindSectionListStore(
                     result.push(current!);
                 } else current?.[field].push(row);
             }
-            cache.set(sections, { revision: ctx.revision, result });
+            cache.set(sections, { key: cacheKey, result });
             return result;
         };
         store[key] = wrapped;
