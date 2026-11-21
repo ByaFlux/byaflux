@@ -10,6 +10,7 @@ const f = vi.hoisted(() => {
         useContext: () => null,
     }
     return {
+        modules: {} as Record<string, unknown>,
         self,
         guild,
         jsx,
@@ -18,6 +19,18 @@ const f = vi.hoisted(() => {
         options: null as any,
     }
 })
+vi.mock('@valenced/discord/design', () => ({
+    Design: { TableCheckboxRow: 'checkbox' },
+}))
+vi.mock('@valenced/modules/finders', () => ({
+    getModules: (key: string, callback: any) => {
+        if (key in f.modules) callback(f.modules)
+        return () => {}
+    },
+}))
+vi.mock('@valenced/modules/finders/filters', () => ({
+    withProps: (key: string) => key,
+}))
 vi.mock('react', () => ({
     useSyncExternalStore: () => 0,
     useState: () => [false, () => {}],
@@ -68,8 +81,12 @@ vi.mock('@valenced/patcher', () => ({
 
 import { patchProfileArgs } from '../../src/plugins/start/fake-roles'
 
-function UserProfileHeader() { return null }
-function UserProfileModal() { return null }
+function UserProfileHeader() {
+    return null
+}
+function UserProfileModal() {
+    return null
+}
 describe('FakeRoles profile bridge', () => {
     it('preserves native rendering without recursively wrapping profiles', () => {
         const cleanups: (() => void)[] = []
@@ -87,10 +104,41 @@ describe('FakeRoles profile bridge', () => {
         const rendered = args[0](props)
         expect(rendered.props.children[0].type).toBe(UserProfileHeader)
         const root = patchProfileArgs([UserProfileModal, props]) as any
-        expect(root[0](props).props.children[1]).toBe(false)
+        expect(root[0](props).props.children[1]).toBe(null)
         const other = args[0]({ ...props, userId: '3227436212982251533' })
         expect(other.type).toBe(UserProfileHeader)
         for (const cleanup of cleanups.reverse()) cleanup()
         expect(args[0](props).type).toBe(UserProfileHeader)
     })
+})
+
+it('matches minified role exports and restores saved selections before rendering', () => {
+    function a() {
+        return null
+    }
+    f.modules.UserProfileRoles = a
+    const cleanups: (() => void)[] = []
+    f.options.start({
+        jsonStorage: {
+            cache: {
+                profiles: {
+                    [`${f.self}:${f.guild}`]: {
+                        added: ['3227436212982251533'],
+                        hidden: [],
+                    },
+                },
+            },
+            set: () => Promise.resolve(),
+        },
+        plugin: { reportError: vi.fn() },
+        cleanup: (...values: (() => void)[]) => cleanups.push(...values),
+    })
+    const props = { userId: f.self, guildId: f.guild }
+    const args = patchProfileArgs([a, props]) as any
+    expect(args[0]).not.toBe(a)
+    expect(args[0](props).type).toBe('view')
+    expect(args[0]({ ...props, userId: '3227436212982251533' }).type).toBe(a)
+    for (const cleanup of cleanups.reverse()) cleanup()
+    expect(patchProfileArgs([a, props])[0]).toBe(a)
+    f.modules = {}
 })

@@ -1,4 +1,7 @@
+import { Design } from '@valenced/discord/design'
 import { getStore } from '@valenced/discord/flux'
+import { getModules } from '@valenced/modules/finders'
+import { withProps } from '@valenced/modules/finders/filters'
 import { before } from '@valenced/patcher'
 import { registerInternalPlugin } from '@valenced/plugins/_'
 import { React, ReactJSXRuntime } from '@valenced/react'
@@ -14,34 +17,37 @@ import {
 import { Action, Panel, store } from '~/byaflux/mobile'
 import manifest from './manifest.json'
 import {
+    bindMemberListStore,
+    bindSectionListStore,
     orderedRoles,
+    projectMember,
     readSelection,
     roleColour,
     roleKey,
+    sortedVisibleRoles,
     toggleRole,
     visibleRoles,
 } from './model'
-import type { ComponentType } from 'react'
+import {
+    createProfileBridge,
+    profileExports,
+    roleSectionExports,
+} from './profileBridge'
 import type { RoleSelection, VisualRole } from './model'
+import type { ProfileRoleContext } from './profileBridge'
 
 type Settings = { profiles: Record<string, RoleSelection> }
-type Props = Record<string, unknown> & {
-    userId?: string
-    guildId?: string
-    user?: { id: string }
-    guild?: { id: string }
-    member?: { userId?: string; guildId?: string }
-    type?: ComponentType<Props>
-}
 const listeners = new Set<() => void>()
 let revision = 0,
     active = false
 let profiles: Settings['profiles'] = {}
 let persist: ((value: Settings) => Promise<void>) | undefined
 let matched = 0
-const changed = () => {
+const displayStores = new Set<any>()
+const changed = (repaint = false) => {
     revision++
     for (const listener of listeners) listener()
+    if (repaint) for (const source of displayStores) source.emitChange?.()
 }
 const subscribe = (fn: () => void) => {
     listeners.add(fn)
@@ -105,7 +111,7 @@ function save(guildId: string, id: string, selection?: RoleSelection) {
         next[key] = selection
     else delete next[key]
     profiles = next
-    changed()
+    changed(true)
     const writer = persist
     if (writer)
         writes = writes.then(() => writer({ profiles: next })).catch(() => {})
@@ -228,13 +234,21 @@ export function RolePicker({
                             .includes(query.toLocaleLowerCase()),
                     )
                     .map(role => (
-                        <Pressable
+                        <Design.TableCheckboxRow
                             key={role.id}
-                            accessibilityRole="checkbox"
-                            accessibilityLabel={role.name}
-                            accessibilityState={{
-                                checked: selected.includes(role.id),
-                            }}
+                            value={role.id}
+                            label={role.name}
+                            checked={selected.includes(role.id)}
+                            icon={
+                                <View
+                                    style={{
+                                        width: 12,
+                                        height: 12,
+                                        borderRadius: 6,
+                                        backgroundColor: roleColour(role),
+                                    }}
+                                />
+                            }
                             onPress={() =>
                                 save(
                                     guildId,
@@ -249,39 +263,7 @@ export function RolePicker({
                                     ),
                                 )
                             }
-                            style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                padding: 13,
-                                gap: 10,
-                                borderRadius: 6,
-                                backgroundColor: selected.includes(role.id)
-                                    ? '#36393f'
-                                    : 'transparent',
-                            }}
-                        >
-                            <View
-                                style={{
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: 6,
-                                    backgroundColor: roleColour(role),
-                                }}
-                            />
-                            <Text style={{ flex: 1, color: '#fff' }}>
-                                {role.name}
-                            </Text>
-                            <Text
-                                style={{
-                                    color: selected.includes(role.id)
-                                        ? '#ff9c56'
-                                        : '#80848e',
-                                    fontSize: 20,
-                                }}
-                            >
-                                {selected.includes(role.id) ? '☑' : '☐'}
-                            </Text>
-                        </Pressable>
+                        />
                     ))}
             </ScrollView>
             <Pressable
@@ -315,9 +297,6 @@ function ProfileAction({ guildId, id }: { guildId: string; id: string }) {
                     Cargos visuais
                 </Text>
             </Pressable>
-            {!!profiles[roleKey(id, guildId)] && (
-                <ChipList guildId={guildId} id={id} />
-            )}
             <Modal
                 visible={open}
                 animationType="slide"
@@ -332,95 +311,92 @@ function ProfileAction({ guildId, id }: { guildId: string; id: string }) {
         </View>
     )
 }
-const ProfileContext = React.createContext<{
-    id: string
-    guildId: string
-    entryShown?: boolean
-} | null>(null)
-let renderingNative = false
-function nativeProfile(Component: ComponentType<Props>, props: Props) {
-    renderingNative = true
-    try {
-        return React.createElement(Component, props)
-    } finally {
-        renderingNative = false
-    }
+let bridge: ReturnType<typeof createProfileBridge> | undefined
+function resolveContext(
+    props: Record<string, any>,
+    parent: ProfileRoleContext | null,
+): ProfileRoleContext | undefined {
+    const id =
+        props.userId ??
+        props.user?.id ??
+        props.member?.userId ??
+        props.member?.user?.id ??
+        props.guildMember?.userId ??
+        props.displayProfile?.userId ??
+        props.userProfile?.userId ??
+        props.profile?.userId ??
+        parent?.userId
+    const guildId =
+        props.guildId ??
+        props.guild?.id ??
+        props.member?.guildId ??
+        props.displayProfile?.guildId ??
+        parent?.guildId ??
+        selectedGuild()
+    if (id === userId() && guildId) return { userId: id, guildId }
 }
-const wrappers = new WeakMap<ComponentType<Props>, ComponentType<Props>>()
-function wrapProfile(Component: ComponentType<Props>) {
-    let wrapper = wrappers.get(Component)
-    if (!wrapper) {
-        wrapper = function FakeRolesProfile(props: Props) {
-            useSyncExternalStore(subscribe, snapshot)
-            const parent = React.useContext(ProfileContext)
-            const id =
-                props.userId ??
-                props.user?.id ??
-                props.member?.userId ??
-                parent?.id
-            const guildId =
-                props.guildId ??
-                props.guild?.id ??
-                props.member?.guildId ??
-                parent?.guildId ??
-                selectedGuild()
-            if (!active || !guildId || !id || id !== userId())
-                return nativeProfile(Component, props)
-            const nativeType =
-                (Component as unknown as { type?: ComponentType<Props> })
-                    .type ?? Component
-            const name = nativeType.name
-            if (/Roles(?:Section|List)?$/.test(name))
-                return (
-                    <View style={{ paddingHorizontal: 16 }}>
-                        <ChipList guildId={guildId} id={id} />
-                        {!parent?.entryShown && (
-                            <ProfileAction guildId={guildId} id={id} />
-                        )}
-                    </View>
-                )
-            return (
-                <ProfileContext.Provider
-                    value={{
-                        id,
-                        guildId,
-                        entryShown: parent?.entryShown || /Header/.test(name),
-                    }}
-                >
-                    {nativeProfile(Component, props)}
-                    {/Header/.test(name) && !parent?.entryShown && (
-                        <ProfileAction guildId={guildId} id={id} />
-                    )}
-                </ProfileContext.Provider>
+function projectedProps(props: Record<string, any>, ctx: ProfileRoleContext) {
+    const available = roles(ctx.guildId),
+        selection = profiles[roleKey(ctx.userId, ctx.guildId)]
+    const next = { ...props }
+    for (const key of ['member', 'guildMember'])
+        if (props[key])
+            next[key] = projectMember(
+                props[key],
+                selection,
+                available,
+                ctx.guildId,
             )
+    for (const key of ['roles', 'roleIds'])
+        if (Array.isArray(props[key])) {
+            const selected = sortedVisibleRoles(
+                realRoles(ctx.guildId, ctx.userId),
+                selection,
+                available,
+                ctx.guildId,
+            )
+            next[key] = props[key].some((r: any) => typeof r === 'object')
+                ? selected
+                : selected.map(r => r.id)
         }
-        wrappers.set(Component, wrapper)
+    return next
+}
+function projectionContext(guildArg?: string, channelArg?: string) {
+    if (
+        (guildArg !== undefined && typeof guildArg !== 'string') ||
+        (channelArg !== undefined && typeof channelArg !== 'string')
+    )
+        return
+    if (!active) return
+    const guilds = store<any>('GuildStore'),
+        channels = store<any>('ChannelStore')
+    const guildId =
+        (guildArg && guilds?.getGuild(guildArg)
+            ? guildArg
+            : channels?.getChannel(channelArg ?? guildArg)?.guild_id) ??
+        (!guildArg ? selectedGuild() : undefined)
+    const id = userId()
+    if (!guildId || !id) return
+    return {
+        guildId,
+        userId: id,
+        selection: profiles[roleKey(id, guildId)],
+        roles: roles(guildId),
+        member: store<any>('GuildMemberStore')?.getMember(guildId, id),
+        user:
+            store<any>('UserStore')?.getUser?.(id) ??
+            store<any>('UserStore')?.getCurrentUser(),
+        status: store<any>('PresenceStore')?.getStatus(id) ?? 'offline',
+        revision,
     }
-    return wrapper
 }
 export function patchProfileArgs<
     Args extends [unknown, unknown?, ...unknown[]],
 >(args: Args): Args {
-    if (renderingNative) return args
-    const component = args[0] as ComponentType<Props>
-    const type =
-        typeof component === 'object' && component !== null
-            ? (component as Props).type
-            : component
-    const name = typeof type === 'function' ? type.name : ''
-    const props = args[1] as Props | undefined
-    if (
-        !props ||
-        !name ||
-        !/^(?:UserProfile|GuildMemberProfile|GuildMemberRoles|ProfileRoles|ProfileHeader|ProfileBody)/.test(
-            name,
-        ) ||
-        /Badge|Avatar|Banner|Button|FakeRoles/.test(name)
-    )
-        return args
-    args[0] = wrapProfile(component)
-    matched++
-    return args
+    const original = args[0]
+    const patched = bridge?.patchArgs(args) ?? args
+    if (patched[0] !== original) matched++
+    return patched
 }
 registerInternalPlugin<{ jsonStorage: Settings }>(manifest, {
     jsonStorage: { load: true, default: { profiles: {} } },
@@ -435,7 +411,53 @@ registerInternalPlugin<{ jsonStorage: Settings }>(manifest, {
                     plugin.reportError(error)
                     throw error
                 })
+        bridge = createProfileBridge(React, {
+            enabled: () => active,
+            useChanges: () => {
+                useSyncExternalStore(subscribe, snapshot)
+            },
+            resolve: resolveContext,
+            hasSelection: ctx => !!profiles[roleKey(ctx.userId, ctx.guildId)],
+            project: projectedProps,
+            renderRoles: ctx => (
+                <View style={{ paddingHorizontal: 16 }}>
+                    <Text style={{ color: '#b5bac1', fontWeight: 'bold' }}>
+                        Cargos
+                    </Text>
+                    <ChipList guildId={ctx.guildId} id={ctx.userId} />
+                </View>
+            ),
+            renderAction: ctx => (
+                <ProfileAction guildId={ctx.guildId} id={ctx.userId} />
+            ),
+        })
+        for (const [names, mode] of [
+            [profileExports, 'profile'],
+            [roleSectionExports, 'roles'],
+        ] as const)
+            for (const name of names)
+                cleanup(
+                    getModules(withProps(name), module => {
+                        bridge?.register((module as any)[name], mode, name)
+                    }),
+                )
         for (const name of [
+            'ChannelMemberStore',
+            'GuildMemberListStore',
+            'MemberListStore',
+        ])
+            cleanup(
+                getStore(name, source => {
+                    displayStores.add(source)
+                    cleanup(
+                        bindMemberListStore(source, projectionContext),
+                        bindSectionListStore(source, projectionContext),
+                    )
+                }),
+            )
+        const sourceChanged = () => changed()
+        for (const name of [
+            'PresenceStore',
             'GuildRoleStore',
             'GuildMemberStore',
             'SelectedGuildStore',
@@ -443,8 +465,8 @@ registerInternalPlugin<{ jsonStorage: Settings }>(manifest, {
         ])
             cleanup(
                 getStore(name, source => {
-                    source.addChangeListener(changed)
-                    cleanup(() => source.removeChangeListener(changed))
+                    source.addChangeListener(sourceChanged)
+                    cleanup(() => source.removeChangeListener(sourceChanged))
                 }),
             )
         cleanup(
@@ -453,6 +475,8 @@ registerInternalPlugin<{ jsonStorage: Settings }>(manifest, {
             before(React, 'createElement', patchProfileArgs),
             () => {
                 active = false
+                bridge = undefined
+                displayStores.clear()
                 persist = undefined
                 profiles = {}
                 changed()
