@@ -83,25 +83,25 @@ class BundleManager(
         val release = repo.getLatestRelease(BuildConfig.REPO).dataOrNull
         if (release == null || (release.tagName == prefs.moduleVersion && file.exists())) return cached()
         return runCatching { download(release) }.getOrElse { error ->
-            Log.w(TAG, "Can't use Valenced ${release.tagName}", error)
+            Log.w(TAG, "Can't use ByaFlux ${release.tagName}", error)
             runCatching { cached() }.getOrNull() ?: throw error
         }
     }
 
     private fun cached(): PatchBundle {
-        check(file.exists() && prefs.moduleVersion.isNotEmpty()) { "Couldn't download Valenced patches" }
+        check(file.exists() && prefs.moduleVersion.isNotEmpty()) { "Couldn't download ByaFlux patches" }
         return read(file, prefs.moduleVersion)
     }
 
     /** Downloads [release]'s bundle and, if it can be used, makes it and its module current. */
     private suspend fun download(release: Release): PatchBundle {
         val url = release.assets.find { it.name == BUNDLE_ASSET }?.browserDownloadUrl
-            ?: error("Valenced ${release.tagName} has no patch bundle")
+            ?: error("ByaFlux ${release.tagName} has no patch bundle")
         val download = file.resolveSibling("$BUNDLE_ASSET.download")
         try {
             when (val result = downloadManager.download(url, download) {}) {
-                is DownloadResult.Error -> error("Couldn't download Valenced patches: ${result.debugReason}")
-                DownloadResult.Cancelled -> error("Downloading Valenced patches was cancelled")
+                is DownloadResult.Error -> error("Couldn't download ByaFlux patches: ${result.debugReason}")
+                DownloadResult.Cancelled -> error("Downloading ByaFlux patches was cancelled")
                 DownloadResult.Success -> {}
             }
             val bundle = read(download, release.tagName)
@@ -117,7 +117,7 @@ class BundleManager(
 
     /** @param release [file]'s release, or null for a custom bundle. */
     private fun read(file: File, release: String?): PatchBundle {
-        val name = release?.let { "Valenced $it" } ?: file.name
+        val name = release?.let { "ByaFlux $it" } ?: file.name
         val inspection = inspect(
             InspectRequest(
                 splitPaths = emptyList(),
@@ -131,7 +131,7 @@ class BundleManager(
             is Problem.BundleTooOld ->
                 error("$name was built for Reseam ${problem.built}, this Manager runs ${problem.running}")
             is Problem.EngineTooOld ->
-                error("$name needs Reseam ${problem.built}, update Valenced Manager")
+                error("$name needs Reseam ${problem.built}, update ByaFlux Mobile")
             else -> error("$name's patches can't be read: $problem")
         }
         check(metadata.trusted || release == null) { "$name's patches are signed by an unknown key ${metadata.publicKey}" }
