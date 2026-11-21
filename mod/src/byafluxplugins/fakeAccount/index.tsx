@@ -369,18 +369,10 @@ function addToSwitcher(userId: string) {
 }
 
 // ── UI ─────────────────────────────────────────────────────────────────────
-function RestoreIcon() {
-    return (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
-        </svg>
-    );
-}
-
 function RestoreButton() {
     return (
         <HeaderBarButton
-            icon={RestoreIcon}
+            icon={FakeAccountIcon}
             tooltip="Abrir FakeAccount"
             onClick={openAccountPicker}
         />
@@ -429,7 +421,7 @@ const selfPatch: NavContextMenuPatchCallback = children => {
 export default definePlugin({
     name: "FakeAccount",
     enabledByDefault: false,
-    description: "Adicione perfis visuais pelo botão direito ou crie um com nome e foto. Escolha a aparência no seletor de contas.",
+    description: "Adicione perfis visuais pelo botão direito ou crie um com nome e foto. Abra o FakeAccount no seu perfil, na barra superior ou nas informações do plugin.",
     authors: [{ name: "Haru", id: 1227436212982251533n }],
     dependencies: ["HeaderBarAPI", "ContextMenuAPI"],
     settingsAboutComponent: CustomAccountPanel,
@@ -446,7 +438,20 @@ export default definePlugin({
         return (user, ...args) => {
             if (!running) return original(user, ...args);
             const custom = customAccounts.find(p => p.id === user.id || p.id === activeFakeId && user.id === UserStore.getCurrentUser()?.id);
-            return custom?.avatarUrl ?? original(user, ...args);
+            if (custom) return custom.avatarUrl;
+            const copied = fakeAccounts.find(account => account.id === activeFakeId);
+            if (copied && user.id === UserStore.getCurrentUser()?.id) {
+                const source = UserStore.getUser(copied.id) ?? new Proxy(user, {
+                    get(target, key, receiver) {
+                        if (key === "id") return copied.id;
+                        if (key === "avatar") return copied.avatar ?? null;
+                        if (key === "discriminator") return copied.discriminator ?? "0";
+                        return Reflect.get(target, key, receiver);
+                    }
+                });
+                return original(source, ...args);
+            }
+            return original(user, ...args);
         };
     },
 

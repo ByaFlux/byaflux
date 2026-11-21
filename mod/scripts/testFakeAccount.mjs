@@ -7,13 +7,13 @@ import { pathToFileURL } from "node:url";
 const dir = await mkdtemp(join(tmpdir(), "byaflux-fake-account-"));
 const real = { id: "1227436212982251533", username: "Real", globalName: "Real", avatar: "real-avatar", discriminator: "0" };
 const custom = { id: "1337436212982251533", username: "Visual Linux", avatarUrl: "https://example.com/avatar.png" };
-const other = { id: "1447436212982251533", username: "Other", avatar: null };
+const other = { id: "1447436212982251533", username: "Other", avatar: "copied-avatar" };
 const H = globalThis.__fakeAccountTest = {
     real: { ...real }, other, data: new Map([["FakeSwitcher_customAccounts", [custom]], ["fakeAccount_switcher", [other.id]]]),
     contexts: new Map(), actions: [], headers: new Map(), modal: null,
     UserStore: null,
 };
-H.UserStore = { getCurrentUser: () => H.real, getUser: id => id === H.real.id ? H.real : id === other.id ? other : undefined };
+H.UserStore = { getCurrentUser: () => H.real, getUser: id => id === H.real.id ? H.real : id === other.id && !H.hideOther ? other : undefined };
 const shim = `
 const H = globalThis.__fakeAccountTest;
 export const DataStore = { get: async key => H.data.get(key), set: async (key, value) => H.data.set(key, value) };
@@ -67,6 +67,13 @@ try {
     header.type(header.props).props.onClick();
     assert.ok(H.modal, "Header shortcut must work without the native switcher");
     const buttons = nodes(panel).filter(n => n.type === "button" && text(n) === "Usar aparência");
+    buttons[0].props.onClick();
+    assert.equal(H.real.username, other.username);
+    assert.equal(plugin.getAvatarHook(user => `${user.id}/${user.avatar}`)(H.real), `${other.id}/${other.avatar}`, "Copied avatar must use the source user ID, not the real account ID");
+    H.hideOther = true;
+    assert.equal(plugin.getAvatarHook(user => `${user.id}/${user.avatar}`)(H.real), `${other.id}/${other.avatar}`, "Copied photo must still work after source user cache eviction");
+    H.hideOther = false;
+    nodes(CustomAccountPanel()).find(n => n.type === "button" && text(n) === "Restaurar meu perfil").props.onClick();
     buttons.at(-1).props.onClick();
     assert.equal(H.real.id, real.id);
     assert.equal(H.real.username, custom.username);
