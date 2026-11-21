@@ -45,10 +45,22 @@ func init() {
 }
 
 func GetInstallerDownloadLink() string {
-	if runtime.GOOS != "windows" || runtime.GOARCH != "amd64" {
+	var filename string
+	switch runtime.GOOS {
+	case "windows":
+		if runtime.GOARCH != "amd64" {
+			return ""
+		}
+		filename = Ternary(buildinfo.UiType == buildinfo.UiTypeCli, "ByaFluxInstallerCli.exe", "ByaFluxInstaller.exe")
+	case "linux":
+		arch := map[string]string{"amd64": "x86_64", "arm64": "aarch64"}[runtime.GOARCH]
+		if arch == "" {
+			return ""
+		}
+		filename = "ByaFluxInstallerCli-Linux-" + arch
+	default:
 		return ""
 	}
-	filename := Ternary(buildinfo.UiType == buildinfo.UiTypeCli, "ByaFluxInstallerCli.exe", "ByaFluxInstaller.exe")
 	return "https://github.com/" + ByaFluxRepository + "/releases/latest/download/" + filename
 }
 

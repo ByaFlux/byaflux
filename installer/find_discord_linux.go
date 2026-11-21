@@ -33,10 +33,10 @@ func init() {
 	}
 	if sudoUser != "" {
 		if sudoUser == "root" {
-			panic("Equilotl must not be run as the root user. Please rerun as normal user. Use sudo or doas to run as root.")
+			panic("ByaFlux for Linux must not be run as the root user. Please rerun as normal user. Use sudo or doas to run as root.")
 		}
 
-		Log.Debug("Equilotl was run with root privileges, actual user is", sudoUser)
+		Log.Debug("ByaFlux for Linux was run with root privileges, actual user is", sudoUser)
 		Log.Debug("Looking up HOME of", sudoUser)
 
 		u, err := user.Lookup(sudoUser)
@@ -47,7 +47,7 @@ func init() {
 			_ = os.Setenv("HOME", u.HomeDir)
 		}
 	} else if os.Getuid() == 0 {
-		panic("Equilotl was run as root but neither SUDO_USER nor DOAS_USER are set. Please rerun me as a normal user, with sudo/doas, or manually set SUDO_USER to your username")
+		panic("ByaFlux for Linux was run as root but neither SUDO_USER nor DOAS_USER are set. Please rerun me as a normal user, with sudo/doas, or manually set SUDO_USER to your username")
 	}
 	Home = os.Getenv("HOME")
 
@@ -146,6 +146,9 @@ func ParseDiscord(p, _ string) *DiscordInstall {
 
 	needsFlatpakResolve := strings.Contains(p, "/flatpak/") && !strings.Contains(p, "/current/active/files/")
 	if needsFlatpakResolve {
+		if !strings.HasPrefix(name, "com.discordapp.Discord") {
+			return nil
+		}
 		discordName := strings.ToLower(name[len("com.discordapp."):])
 		if discordName != "discord" { //
 			// DiscordCanary -> discord-canary
@@ -196,7 +199,7 @@ func FindDiscords() []any {
 
 		for _, child := range children {
 			name := child.Name()
-			if !child.IsDir() || !SliceContains(LinuxDiscordNames, name) {
+			if (!child.IsDir() && child.Type()&os.ModeSymlink == 0) || !SliceContains(LinuxDiscordNames, name) {
 				continue
 			}
 

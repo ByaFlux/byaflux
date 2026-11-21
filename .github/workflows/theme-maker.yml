@@ -21,6 +21,10 @@ jobs:
       - run: pnpm --dir mod testTsc
       - run: node scripts/testThemeMaker.mjs
         working-directory: mod
+      - run: node scripts/testFakeAccount.mjs
+        working-directory: mod
+      - run: node scripts/testLinuxMigration.mjs
+        working-directory: mod
       - run: node scripts/testFakeRoles.mjs
         working-directory: mod
       - run: node scripts/testIconMaker.mjs

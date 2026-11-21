@@ -19,10 +19,13 @@ import (
 )
 
 type GithubRelease struct {
-	Name    string `json:"name"`
-	TagName string `json:"tag_name"`
-	Assets  []struct {
+	Name       string `json:"name"`
+	TagName    string `json:"tag_name"`
+	Draft      bool   `json:"draft"`
+	Prerelease bool   `json:"prerelease"`
+	Assets     []struct {
 		Name        string `json:"name"`
+		Size        int64  `json:"size"`
 		DownloadURL string `json:"browser_download_url"`
 	} `json:"assets"`
 }
@@ -67,6 +70,9 @@ func GetGithubRelease(url, fallbackUrl string) (*GithubRelease, error) {
 		return nil, err
 	}
 
+	if err := validateStableRelease(data); err != nil {
+		return nil, err
+	}
 	return &data, nil
 }
 
@@ -195,4 +201,16 @@ func installLatestBuilds() (retErr error) {
 
 	InstalledHash = LatestHash
 	return
+}
+
+func validateStableRelease(release GithubRelease) error {
+	if release.Draft || release.Prerelease || !regexp.MustCompile(`^v[0-9]+\.[0-9]+\.[0-9]+$`).MatchString(release.TagName) {
+		return errors.New("Expected a stable ByaFlux release")
+	}
+	for _, asset := range release.Assets {
+		if asset.Name == "desktop.asar" && asset.Size > 0 {
+			return nil
+		}
+	}
+	return errors.New("Stable ByaFlux release has no desktop.asar")
 }

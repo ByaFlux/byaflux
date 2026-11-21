@@ -159,7 +159,7 @@ func main() {
 		errSilent = PromptDiscord("unpatch", *locationFlag, *branchFlag).unpatch()
 	} else if update {
 		Log.Info("Downloading latest ByaFlux files...")
-		err := installLatestBuilds()
+		err = installLatestBuilds()
 		Log.Info("Done!")
 		if err == nil {
 			errSilent = PromptDiscord("repair", *locationFlag, *branchFlag).patch()

@@ -17,6 +17,7 @@
 */
 
 import { app } from "electron";
+import { migrateLinuxData } from "./migrateLinuxData";
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
@@ -27,6 +28,14 @@ export const DATA_DIR = process.env.EQUICORD_USER_DATA_DIR ?? (
         ? join(process.env.DISCORD_USER_DATA_DIR, "..", "ByaFluxData", suffix)
         : join(app.getPath("userData"), "..", "ByaFlux", suffix)
 );
+
+if (process.platform === "linux" && !IS_DEV && !process.env.EQUICORD_USER_DATA_DIR) {
+    const legacy = process.env.DISCORD_USER_DATA_DIR
+        ? join(process.env.DISCORD_USER_DATA_DIR, "..", "ByaFluxLinuxDevData")
+        : join(app.getPath("userData"), "..", "ByaFluxLinuxDev");
+    try { migrateLinuxData(DATA_DIR, legacy); }
+    catch (error) { console.warn("Não foi possível importar as configurações antigas do ByaFlux Linux", error); }
+}
 
 export const SETTINGS_DIR = join(DATA_DIR, "settings");
 export const THEMES_DIR = join(DATA_DIR, "themes");

@@ -74,9 +74,43 @@ jobs:
           name: installers
           path: installer/ByaFluxInstaller*.exe
           if-no-files-found: error
+  linux:
+    needs: [mod]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: installer/go.mod
+          cache-dependency-path: installer/go.sum
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: node scripts/configure.mjs
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: mod
+          path: linux-bundle
+      - name: Test and build stable Linux installers
+        working-directory: installer
+        run: |
+          set -euo pipefail
+          go test -tags cli ./...
+          version="$(node -p "require('../package.json').version")"
+          mkdir -p ../linux-installers
+          for target in amd64:x86_64 arm64:aarch64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH="${target%:*}" go build -tags cli -ldflags "-s -w -X equilotl/buildinfo.InstallerGitHash=$GITHUB_SHA -X equilotl/buildinfo.InstallerTag=v$version" -o "../linux-installers/ByaFluxInstallerCli-Linux-${target#*:}"
+          done
+      - name: Verify Linux install and removal
+        run: bash scripts/test-linux-install.sh linux-installers/ByaFluxInstallerCli-Linux-x86_64 linux-bundle/dist/desktop.asar
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: linux-installers
+          path: linux-installers/*
+          if-no-files-found: error
   release:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-    needs: [mod, installer, theme-maker]
+    needs: [mod, installer, theme-maker, linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -105,11 +139,14 @@ jobs:
           cp release/LICENSE publish/LICENSE
           cp release/ByaFluxInstaller.exe publish/ByaFluxInstaller.exe
           cp release/ByaFluxInstallerCli.exe publish/ByaFluxInstallerCli.exe
+          cp release/ByaFluxInstallerCli-Linux-* publish/
           release_files=(
             publish/desktop.asar
             publish/ByaFluxInstaller.exe
             publish/ByaFluxInstallerCli.exe
             publish/LICENSE
+            publish/ByaFluxInstallerCli-Linux-x86_64
+            publish/ByaFluxInstallerCli-Linux-aarch64
           )
           for file in "${release_files[@]}"; do
             test -s "$file"
@@ -121,3 +158,9 @@ jobs:
             gh release create "$tag" "${release_files[@]}" --target "$GITHUB_SHA" --draft --title "ByaFlux $GITHUB_SHA" --notes-file RELEASE_NOTES.md
           fi
           gh release edit "$tag" --draft=false --title "ByaFlux $GITHUB_SHA" --notes-file RELEASE_NOTES.md --latest
+      - name: Include current Android installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/include-mobile-release.py

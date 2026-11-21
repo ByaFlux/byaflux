@@ -27,3 +27,20 @@ In the installer, **Reinstall / Repair** repairs the installation and **Uninstal
 Based on [Equicord](https://github.com/Equicord/Equicord), [Vencord](https://github.com/Vendicated/Vencord), and [Equilotl](https://github.com/Equicord/Equilotl). Licenses: [mod](mod/LICENSE) and [installer](installer/LICENSE).
 
 ByaFlux is not an official Discord product.
+
+## Linux
+
+Close Discord, then run:
+
+```bash
+mkdir -p ~/ByaFlux && cd ~/ByaFlux
+curl -fL "https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstallerCli-Linux-$(uname -m)" -o ByaFluxInstaller
+chmod +x ByaFluxInstaller
+./ByaFluxInstaller --install
+```
+
+If Discord is installed in a protected system directory, run `sudo ./ByaFluxInstaller --install`. Do not run Discord with sudo.
+
+To uninstall: `./ByaFluxInstaller --uninstall`.
+
+Linux uses the same stable release and updater as Windows. Run this installer once to leave the old Linux dev channel. Existing settings and themes are imported only when missing from the stable data directory.

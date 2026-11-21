@@ -13,9 +13,11 @@ import definePlugin from "@utils/types";
 import { migratePluginSettings } from "@api/Settings";
 import { CustomAccount, customAccount, isCustomAccount } from "./custom";
 import { findStoreLazy, waitFor } from "@webpack";
-import { FluxDispatcher, IconUtils, Menu, React, TextInput, UserStore } from "@webpack/common";
+import { FluxDispatcher, IconUtils, Menu, Modal, openModal, React, TextInput, UserStore } from "@webpack/common";
 
 migratePluginSettings("FakeAccount", "FakeSwitcher");
+
+import type { RenderModalProps } from "@vencord/discord-types";
 
 const UserProfileStore = findStoreLazy("UserProfileStore");
 const DS_KEY = "fakeAccount_switcher";
@@ -49,13 +51,19 @@ function removeCustom(id: string) {
     _store?.emitChange?.();
 }
 
-function CustomAccountPanel() {
+export function CustomAccountPanel() {
     React.useSyncExternalStore(subscribePanel, getPanelRevision, getPanelRevision);
     const [username, setUsername] = React.useState("");
     const [photo, setPhoto] = React.useState("");
     const [feedback, setFeedback] = React.useState("");
     return <div>
-        <Paragraph>Crie um perfil visual com nome e foto. Ele aparece em Mudar de conta, sem fazer login em outra conta.</Paragraph>
+        <Paragraph>Escolha um perfil visual ou crie um com nome e foto. Nenhum login é feito em outra conta.</Paragraph>
+        <Button type="button" onClick={restoreRealAccount} disabled={!activeFakeId}>Restaurar meu perfil</Button>
+        {fakeAccounts.filter(account => !customAccounts.some(custom => custom.id === account.id)).map(account => <div key={account.id}>
+            <Paragraph>{account.globalName ?? account.username}</Paragraph>
+            <Button type="button" onClick={() => simulateSwitch(account)}>Usar aparência</Button>{" "}
+            <Button type="button" variant="dangerPrimary" onClick={() => onRemoveAccount({ userId: account.id })}>Remover</Button>
+        </div>)}
         <Paragraph>Username</Paragraph>
         <TextInput value={username} onChange={setUsername} placeholder="Nome do perfil" maxLength={32} />
         <Paragraph>Foto por URL (HTTPS)</Paragraph>
@@ -195,8 +203,9 @@ function simulateSwitch(fake: any) {
     const me = UserStore.getCurrentUser();
     if (!me) return;
 
-    if (!realUserSnapshot) {
+    if (!realUserSnapshot || realUserSnapshot.id !== me.id) {
         realUserSnapshot = {
+            id: me.id,
             username: me.username,
             globalName: (me as any).globalName ?? me.username,
             avatar: me.avatar,
@@ -211,6 +220,7 @@ function simulateSwitch(fake: any) {
     }
 
     activeFakeId = fake.id;
+    refreshPanel();
 
     FluxDispatcher.dispatch({
         type: "USER_UPDATE",
@@ -245,6 +255,12 @@ function restoreRealAccount() {
     if (!realUserSnapshot) return;
     const me = UserStore.getCurrentUser();
     if (!me) return;
+    if (me.id !== realUserSnapshot.id) {
+        activeFakeId = null;
+        realUserSnapshot = null;
+        refreshPanel();
+        return;
+    }
 
     FluxDispatcher.dispatch({
         type: "USER_UPDATE",
@@ -265,12 +281,12 @@ function restoreRealAccount() {
 
     activeFakeId = null;
     realUserSnapshot = null;
+    refreshPanel();
 
     // Force the bottom-left panel (AccountPanel) to re-render
     try {
         const updated = UserStore.getCurrentUser();
         if (updated) FluxDispatcher.dispatch({ type: "CURRENT_USER_UPDATE", user: { ...updated } });
-        FluxDispatcher.dispatch({ type: "USER_SETTINGS_PROTO_UPDATE", settings: { type: 1, proto: {} } });
         FluxDispatcher.dispatch({ type: "IDLE" });
     } catch { }
 
@@ -316,6 +332,7 @@ function onRemoveAccount(action: any) {
 
     // Remove from array and persist
     fakeAccounts.splice(idx, 1);
+    refreshPanel();
     DataStore.set(DS_KEY, fakeAccounts.map(f => f.id));
 
     // Force re-render of switcher
@@ -346,6 +363,7 @@ function addToSwitcher(userId: string) {
 
     DataStore.set(DS_KEY, fakeAccounts.map(f => f.id));
     patchStore();
+    refreshPanel();
     _store?.emitChange?.();
     console.log("[FakeAccount] Added:", username);
 }
@@ -360,17 +378,11 @@ function RestoreIcon() {
 }
 
 function RestoreButton() {
-    const [active, setActive] = React.useState(!!activeFakeId);
-    React.useEffect(() => {
-        const t = setInterval(() => setActive(!!activeFakeId), 300);
-        return () => clearInterval(t);
-    }, []);
-    if (!active) return null;
     return (
         <HeaderBarButton
             icon={RestoreIcon}
-            tooltip="Perfil visual ativo. Clique para restaurar sua aparência."
-            onClick={() => { restoreRealAccount(); setActive(false); }}
+            tooltip="Abrir FakeAccount"
+            onClick={openAccountPicker}
         />
     );
 }
@@ -386,7 +398,8 @@ function FakeAccountIcon() {
 const ctxPatch: NavContextMenuPatchCallback = (children, { user }) => {
     if (!children || !Array.isArray(children)) return;
     try {
-        if (!user || user.id === UserStore.getCurrentUser()?.id) return;
+        if (!user) return;
+        if (user.id === UserStore.getCurrentUser()?.id) { selfPatch(children, {}); return; }
         children.push(
             <Menu.MenuItem
                 id="fake-account-add"
@@ -400,14 +413,28 @@ const ctxPatch: NavContextMenuPatchCallback = (children, { user }) => {
     }
 };
 
+function AccountPicker(props: RenderModalProps) {
+    return <Modal {...props} title="FakeAccount" size="md"><CustomAccountPanel /></Modal>;
+}
+function openAccountPicker() {
+    if (running) openModal(props => <AccountPicker {...props} />);
+}
+const selfPatch: NavContextMenuPatchCallback = children => {
+    children.push(<Menu.MenuGroup key="byaflux-fake-account">
+        <Menu.MenuItem id="byaflux-fake-account-open" label="FakeAccount" action={openAccountPicker} />
+    </Menu.MenuGroup>);
+};
+
 // ── Plugin ─────────────────────────────────────────────────────────────────
 export default definePlugin({
     name: "FakeAccount",
-    enabledByDefault: true,
+    enabledByDefault: false,
     description: "Adicione perfis visuais pelo botão direito ou crie um com nome e foto. Escolha a aparência no seletor de contas.",
     authors: [{ name: "Haru", id: 1227436212982251533n }],
     dependencies: ["HeaderBarAPI", "ContextMenuAPI"],
     settingsAboutComponent: CustomAccountPanel,
+    toolboxActions: { "Abrir FakeAccount": openAccountPicker },
+    contextMenus: { "vc-ap-server-profile": selfPatch, "byaflux-profilebadges-self": selfPatch },
     patches: [{
         find: "getUserAvatarURL:",
         replacement: {
@@ -448,54 +475,51 @@ export default definePlugin({
 
         addContextMenuPatch("user-context", ctxPatch);
         addContextMenuPatch("user-profile-actions", ctxPatch);
+        addContextMenuPatch("user-profile", ctxPatch);
         addHeaderBarButton("fake-account-restore", () => <RestoreButton />, 5);
 
-        waitFor(["getUsers", "getValidUsers", "getHasLoggedInAccounts"], async (mod: any) => {
-            // Critical Validation: verify matched store is indeed the MultiAccountStore
-            // and not another Webpack store sharing these method names.
-            // Patching the wrong store causes all rooms to disappear
-            // on servers with permissions (the permissions store becomes corrupted).
-            if (!isMultiAccountStore(mod)) {
-                console.warn("[FakeAccount] Store ignored — doesn't look like MultiAccountStore:", mod);
-                return;
-            }
-
-            if (!running || currentRun !== runId) return;
+        waitFor("getHasLoggedInAccounts", (mod: any) => {
+            if (!running || currentRun !== runId || !isMultiAccountStore(mod)) return;
             _store = mod;
-            const savedCustom = await DataStore.get<unknown>(CUSTOM_KEY);
-            if (!running || currentRun !== runId) return;
-            const savedProfiles = Array.isArray(savedCustom) ? savedCustom.filter(isCustomAccount) : [];
-            customAccounts = [...new Map([...savedProfiles, ...customAccounts].map(p => [p.id, p])).values()];
-            for (const profile of customAccounts) {
-                if (!fakeAccounts.some(p => p.id === profile.id)) fakeAccounts.push(asFakeAccount(profile));
-            }
-            refreshPanel();
-
-            const savedIds: string[] = (await DataStore.get(DS_KEY)) ?? [];
-            if (!running || currentRun !== runId) return;
-            for (const id of savedIds) {
-                if (fakeAccounts.find(f => f.id === id)) continue;
-                const user = UserStore.getUser(id);
-                if (!user) continue;
-                const profile = UserProfileStore.getUserProfile?.(id) ?? {};
-                fakeAccounts.push({
-                    id: user.id,
-                    username: user.username,
-                    globalName: (user as any).globalName ?? user.username,
-                    discriminator: user.discriminator ?? "0",
-                    avatar: user.avatar ?? null,
-                    _bio: profile.bio ?? "",
-                    _banner: profile.banner ?? null,
-                    _accentColor: profile.accentColor ?? null,
-                    _publicFlags: (user as any).publicFlags ?? 0,
-                    _flags: (user as any).flags ?? 0,
-                    _premiumType: (user as any).premiumType ?? 0,
-                });
-            }
-
             patchStore();
             mod.emitChange?.();
         });
+
+        const savedCustom = await DataStore.get<unknown>(CUSTOM_KEY);
+        if (!running || currentRun !== runId) return;
+        const savedProfiles = Array.isArray(savedCustom) ? savedCustom.filter(isCustomAccount) : [];
+        customAccounts = [...new Map([...savedProfiles, ...customAccounts].map(p => [p.id, p])).values()];
+        for (const profile of customAccounts) {
+            if (!fakeAccounts.some(p => p.id === profile.id)) fakeAccounts.push(asFakeAccount(profile));
+        }
+        refreshPanel();
+
+        const savedIds: string[] = (await DataStore.get(DS_KEY)) ?? [];
+        if (!running || currentRun !== runId) return;
+        for (const id of savedIds) {
+            if (fakeAccounts.find(f => f.id === id)) continue;
+            const user = UserStore.getUser(id);
+            if (!user) continue;
+            const profile = UserProfileStore.getUserProfile?.(id) ?? {};
+            fakeAccounts.push({
+                id: user.id,
+                username: user.username,
+                globalName: (user as any).globalName ?? user.username,
+                discriminator: user.discriminator ?? "0",
+                avatar: user.avatar ?? null,
+                _bio: profile.bio ?? "",
+                _banner: profile.banner ?? null,
+                _accentColor: profile.accentColor ?? null,
+                _publicFlags: (user as any).publicFlags ?? 0,
+                _flags: (user as any).flags ?? 0,
+                _premiumType: (user as any).premiumType ?? 0,
+            });
+        }
+
+
+        patchStore();
+        refreshPanel();
+        _store?.emitChange?.();
     },
 
     stop() {
@@ -506,6 +530,7 @@ export default definePlugin({
         FluxDispatcher.unsubscribe("MULTI_ACCOUNT_REMOVE_ACCOUNT", onRemoveAccount);
         removeContextMenuPatch("user-context", ctxPatch);
         removeContextMenuPatch("user-profile-actions", ctxPatch);
+        removeContextMenuPatch("user-profile", ctxPatch);
         removeHeaderBarButton("fake-account-restore");
         if (activeFakeId) restoreRealAccount();
         fakeAccounts = [];
