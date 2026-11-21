@@ -230,7 +230,7 @@ with sync_playwright() as playwright:
         expect(online).to_have_css('stroke-width', '5px')
         page.get_by_role('tab', name='Emojis', exact=True).click()
         for pack in PACKS:
-            page.get_by_label('Emojis', exact=True).select_option(pack)
+            page.get_by_role('combobox', name='Emojis', exact=True).select_option(pack)
             images = frame.locator('.message').first.locator('.emoji')
             expect(images.first).to_have_attribute('src', re.compile('/emojis/' + re.escape(pack) + '/people/grinning.png'))
             for image in images.all():
@@ -239,13 +239,13 @@ with sync_playwright() as playwright:
                 assert image.evaluate('e => e.naturalWidth > 0')
             expect(page.locator('.bf-ctm-warning')).to_have_count(0)
         failed_pack['value'] = 'Apple'
-        page.get_by_label('Emojis', exact=True).select_option('Apple')
+        page.get_by_role('combobox', name='Emojis', exact=True).select_option('Apple')
         expect(page.get_by_text('O pack Apple não carregou.', exact=False)).to_be_visible()
         expect(frame.locator('.message').first.locator('.emoji').first).to_have_attribute('src', re.compile('https://discord.com/assets/'))
         failed_pack['value'] = ''
-        page.get_by_label('Emojis', exact=True).select_option('Discord')
+        page.get_by_role('combobox', name='Emojis', exact=True).select_option('Discord')
         expect(page.locator('.bf-ctm-warning')).to_have_count(0)
-        page.get_by_label('Emojis', exact=True).select_option('Apple')
+        page.get_by_role('combobox', name='Emojis', exact=True).select_option('Apple')
         expect(frame.locator('.emoji').first).to_have_attribute('src', re.compile('/Apple/'))
         page.get_by_role('tab', name='Servidores', exact=True).click()
         page.get_by_role('radio', name='Triangular', exact=True).check()
@@ -315,7 +315,7 @@ with sync_playwright() as playwright:
         assert page.get_by_label('Raio dos cartões', exact=True).input_value() == '24'
         page.get_by_role('tab', name='Avatares', exact=True).click()
         page.get_by_role('tab', name='Emojis', exact=True).click()
-        assert page.get_by_label('Emojis', exact=True).input_value() == 'Apple' 
+        assert page.get_by_role('combobox', name='Emojis', exact=True).input_value() == 'Apple' 
         page.get_by_role('tab', name='Avatares', exact=True).click()
         assert page.get_by_label('Espessura Membros', exact=True).input_value() == '5'
         assert page.get_by_label('Distância Membros', exact=True).input_value() == '6'
