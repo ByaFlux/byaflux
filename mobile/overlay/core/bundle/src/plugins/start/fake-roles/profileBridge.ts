@@ -140,16 +140,16 @@ export function createProfileBridge(
         },
         patchArgs<T extends [unknown, unknown?, ...unknown[]]>(args: T): T {
             const type = args[0],
-                props = args[1] as Record<string, any> | undefined
+                props = (args[1] ?? {}) as Record<string, any>
             if (
                 creatingNative ||
                 !options.enabled() ||
-                !props ||
                 (typeof type !== 'function' &&
                     (typeof type !== 'object' || !type))
             )
                 return args
             if (!kind(type, props)) return args
+            args[1] = props
             args[0] = wrap(type)
             return args
         },

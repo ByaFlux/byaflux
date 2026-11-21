@@ -136,6 +136,7 @@ it('matches minified role exports and restores saved selections before rendering
     const props = { userId: f.self, guildId: f.guild }
     const args = patchProfileArgs([a, props]) as any
     expect(args[0]).not.toBe(a)
+    expect(patchProfileArgs([a, null])[0]).not.toBe(a)
     expect(args[0](props).type).toBe('view')
     expect(args[0]({ ...props, userId: '3227436212982251533' }).type).toBe(a)
     for (const cleanup of cleanups.reverse()) cleanup()
