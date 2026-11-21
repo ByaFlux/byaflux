@@ -4,6 +4,10 @@ const f = vi.hoisted(() => {
     const self = '1227436212982251533',
         guild = '2227436212982251533'
     const jsx = (type: unknown, props: unknown) => ({ type, props })
+    const hooks = new Map<unknown, (args: any[], jsx: any) => any>()
+    const cachedJsx = (type: unknown, props: unknown) =>
+        hooks.get(type)?.([type, props], jsx) ?? jsx(type, props)
+    const stores: Record<string, any> = {}
     const react = {
         createElement: jsx,
         createContext: () => ({ Provider: 'provider' }),
@@ -11,6 +15,9 @@ const f = vi.hoisted(() => {
     }
     return {
         modules: {} as Record<string, unknown>,
+        hooks,
+        cachedJsx,
+        stores,
         self,
         guild,
         jsx,
@@ -19,6 +26,12 @@ const f = vi.hoisted(() => {
         options: null as any,
     }
 })
+vi.mock('@valenced/react/jsx-runtime', () => ({
+    insteadJSX: (type: unknown, hook: any) => {
+        f.hooks.set(type, hook)
+        return () => f.hooks.delete(type)
+    },
+}))
 vi.mock('@valenced/discord/design', () => ({
     Design: { TableCheckboxRow: 'checkbox' },
 }))
@@ -58,11 +71,12 @@ vi.mock('~/byaflux/mobile', () => ({
     Action: 'action',
     Panel: 'panel',
     store: (name: string) =>
-        name === 'UserStore'
+        f.stores[name] ??
+        (name === 'UserStore'
             ? { getCurrentUser: () => ({ id: f.self }) }
             : name === 'SelectedGuildStore'
               ? { getGuildId: () => f.guild }
-              : undefined,
+              : undefined),
 }))
 vi.mock('@valenced/plugins/_', () => ({
     registerInternalPlugin: (_: unknown, options: unknown) => {
@@ -70,6 +84,13 @@ vi.mock('@valenced/plugins/_', () => ({
     },
 }))
 vi.mock('@valenced/patcher', () => ({
+    instead: (object: any, key: string, hook: any) => {
+        const original = object[key]
+        object[key] = (...args: unknown[]) => hook(args, original.bind(object))
+        return () => {
+            object[key] = original
+        }
+    },
     before: (object: any, key: string, hook: any) => {
         const original = object[key]
         object[key] = (...args: unknown[]) => original(...(hook(args) ?? args))
@@ -142,4 +163,74 @@ it('matches minified role exports and restores saved selections before rendering
     for (const cleanup of cleanups.reverse()) cleanup()
     expect(patchProfileArgs([a, props])[0]).toBe(a)
     f.modules = {}
+})
+
+it('patches cached native JSX factories and message author metadata without changing real members', () => {
+    function a() {
+        return null
+    }
+    const role = '3227436212982251533'
+    const member = Object.freeze({
+        userId: f.self,
+        roles: Object.freeze([]),
+        iconRoleId: undefined,
+    })
+    const nativeAuthor = Object.freeze({
+        colorString: '#123456',
+        colorStrings: null,
+        iconRoleId: undefined,
+    })
+    const getMessageAuthor = () => nativeAuthor
+    f.modules = { UserProfileRoles: a, getMessageAuthor }
+    f.stores.GuildRoleStore = {
+        getSortedRoles: () => [
+            {
+                id: role,
+                name: 'Owner',
+                position: 100,
+                colors: { primary_color: 0xff6600 },
+                unicodeEmoji: '👑',
+                hoist: true,
+            },
+        ],
+    }
+    f.stores.GuildMemberStore = { getMember: () => member }
+    f.stores.ChannelStore = {
+        getChannel: (id: string) =>
+            id === 'guild-channel' ? { guild_id: f.guild } : {},
+    }
+    const cleanups: (() => void)[] = []
+    f.options.start({
+        jsonStorage: {
+            cache: {
+                profiles: {
+                    [`${f.self}:${f.guild}`]: { added: [role], hidden: [] },
+                },
+            },
+            set: () => Promise.resolve(),
+        },
+        plugin: { reportError: vi.fn() },
+        cleanup: (...values: (() => void)[]) => cleanups.push(...values),
+    })
+    const rendered = f.cachedJsx(a, { userId: f.self, guildId: f.guild })
+    expect(rendered.type).not.toBe(a)
+    const wrappedAuthor = f.modules.getMessageAuthor as any
+    const message = { author: { id: f.self }, channel_id: 'guild-channel' }
+    expect(wrappedAuthor(message)).toMatchObject({
+        colorString: '#ff6600',
+        iconRoleId: role,
+        colorRoleId: role,
+    })
+    expect(wrappedAuthor({ ...message, channel_id: 'dm-channel' })).toBe(
+        nativeAuthor,
+    )
+    expect(wrappedAuthor({ ...message, author: { id: role } })).toBe(
+        nativeAuthor,
+    )
+    expect(member.roles).toEqual([])
+    for (const cleanup of cleanups.reverse()) cleanup()
+    expect(f.cachedJsx(a, { userId: f.self, guildId: f.guild }).type).toBe(a)
+    expect(f.modules.getMessageAuthor).toBe(getMessageAuthor)
+    f.modules = {}
+    for (const key of Object.keys(f.stores)) f.stores[key] = undefined
 })

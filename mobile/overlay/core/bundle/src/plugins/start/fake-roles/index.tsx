@@ -2,9 +2,10 @@ import { Design } from '@valenced/discord/design'
 import { getStore } from '@valenced/discord/flux'
 import { getModules } from '@valenced/modules/finders'
 import { withProps } from '@valenced/modules/finders/filters'
-import { before } from '@valenced/patcher'
+import { before, instead } from '@valenced/patcher'
 import { registerInternalPlugin } from '@valenced/plugins/_'
 import { React, ReactJSXRuntime } from '@valenced/react'
+import { insteadJSX } from '@valenced/react/jsx-runtime'
 import { useState, useSyncExternalStore } from 'react'
 import {
     Modal,
@@ -29,6 +30,7 @@ import {
     visibleRoles,
 } from './model'
 import {
+    appearanceExports,
     createProfileBridge,
     profileExports,
     roleSectionExports,
@@ -325,8 +327,24 @@ function resolveContext(
         props.displayProfile?.userId ??
         props.userProfile?.userId ??
         props.profile?.userId ??
+        props.message?.author?.id ??
+        props.author?.id ??
         parent?.userId
+    const channelId =
+        props.message?.channel_id ??
+        props.message?.channelId ??
+        props.channelId ??
+        props.channel_id
+    const channel =
+        props.channel ??
+        (channelId
+            ? store<any>('ChannelStore')?.getChannel(channelId)
+            : undefined)
+    if ((channel || channelId) && !(channel?.guild_id ?? channel?.guildId))
+        return
     const guildId =
+        channel?.guild_id ??
+        channel?.guildId ??
         props.guildId ??
         props.guild?.id ??
         props.member?.guildId ??
@@ -338,7 +356,23 @@ function resolveContext(
 function projectedProps(props: Record<string, any>, ctx: ProfileRoleContext) {
     const available = roles(ctx.guildId),
         selection = profiles[roleKey(ctx.userId, ctx.guildId)]
-    const next = { ...props }
+    const appearance = projectMember(
+        { roles: realRoles(ctx.guildId, ctx.userId) },
+        selection,
+        available,
+        ctx.guildId,
+    )
+    const fields = {
+        colorString: appearance.colorString,
+        colorStrings: appearance.colorStrings,
+        colorRoleName: appearance.colorRoleName,
+        colorRoleId: appearance.colorRoleId,
+        iconRoleId: appearance.iconRoleId,
+        highestRoleId: appearance.highestRoleId,
+        hoistRoleId: appearance.hoistRoleId,
+    }
+    const next: Record<string, any> = { ...props, ...fields }
+    if (props.author) next.author = { ...props.author, ...fields }
     for (const key of ['member', 'guildMember'])
         if (props[key])
             next[key] = projectMember(
@@ -434,13 +468,65 @@ registerInternalPlugin<{ jsonStorage: Settings }>(manifest, {
         for (const [names, mode] of [
             [profileExports, 'profile'],
             [roleSectionExports, 'roles'],
+            [appearanceExports, 'display'],
         ] as const)
             for (const name of names)
                 cleanup(
                     getModules(withProps(name), module => {
-                        bridge?.register((module as any)[name], mode, name)
+                        const component = (module as any)[name]
+                        bridge?.register(component, mode, name)
+                        if (
+                            typeof component === 'function' ||
+                            (component && typeof component === 'object')
+                        )
+                            cleanup(
+                                insteadJSX(component, (args, jsx) => {
+                                    const [type, props, key] = patchProfileArgs(
+                                        args as [any, any, any],
+                                    )
+                                    return jsx(type, props, key)
+                                }),
+                            )
                     }),
                 )
+        for (const name of ['getMessageAuthor', 'getMessageAuthorInfo'])
+            cleanup(
+                getModules(withProps(name), module => {
+                    const source = module as Record<
+                        string,
+                        (...args: any[]) => any
+                    >
+                    if (typeof source[name] !== 'function') return
+                    cleanup(
+                        instead(source, name, (args, original) => {
+                            const result = original(...args)
+                            const message = args.find(
+                                value =>
+                                    value &&
+                                    typeof value === 'object' &&
+                                    value.author &&
+                                    (value.channel_id || value.channelId),
+                            )
+                            if (
+                                !active ||
+                                !message ||
+                                !result ||
+                                typeof result !== 'object' ||
+                                typeof result.then === 'function'
+                            )
+                                return result
+                            const ctx = resolveContext({ message }, null)
+                            if (
+                                !ctx ||
+                                !profiles[roleKey(ctx.userId, ctx.guildId)]
+                            )
+                                return result
+                            return projectedProps({ author: result }, ctx)
+                                .author
+                        }),
+                    )
+                }),
+            )
         for (const name of [
             'ChannelMemberStore',
             'GuildMemberListStore',
@@ -449,6 +535,9 @@ registerInternalPlugin<{ jsonStorage: Settings }>(manifest, {
             cleanup(
                 getStore(name, source => {
                     displayStores.add(source)
+                    const changedDisplay = () => changed()
+                    source.addChangeListener?.(changedDisplay)
+                    cleanup(() => source.removeChangeListener?.(changedDisplay))
                     cleanup(
                         bindMemberListStore(source, projectionContext),
                         bindSectionListStore(source, projectionContext),

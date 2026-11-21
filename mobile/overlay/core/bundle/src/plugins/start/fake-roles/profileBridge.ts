@@ -1,3 +1,12 @@
+export const appearanceExports = [
+    'MessageHeader',
+    'MessageUsername',
+    'MessageAuthor',
+    'MessageAuthorName',
+    'GuildMemberListItem',
+    'MemberListItem',
+    'MemberListRow',
+]
 export const roleSectionExports = [
     'UserProfileRoles',
     'UserProfileRolesSection',
@@ -47,7 +56,7 @@ export function createProfileBridge(
     const headers = new WeakSet<object>()
     const types = new WeakMap<
             object,
-            'profile' | 'roles' | 'scoped' | 'scopedRoles'
+            'profile' | 'roles' | 'scoped' | 'scopedRoles' | 'display'
         >(),
         wrappers = new WeakMap<object, any>()
     let creatingNative = false,
@@ -89,6 +98,13 @@ export function createProfileBridge(
             if (!options.enabled() || !ctx) return native(type, props)
             const mode = kind(type, props),
                 name = (type?.type ?? type?.render ?? type)?.name ?? ''
+            if (mode === 'display')
+                return native(
+                    type,
+                    options.hasSelection(ctx)
+                        ? options.project(props, ctx)
+                        : props,
+                )
             if ((mode === 'scoped' || mode === 'scopedRoles') && !parent)
                 return native(type, props)
             if (
@@ -129,7 +145,11 @@ export function createProfileBridge(
         return wrapped
     }
     return {
-        register(type: unknown, mode: 'profile' | 'roles', name = '') {
+        register(
+            type: unknown,
+            mode: 'profile' | 'roles' | 'display',
+            name = '',
+        ) {
             if (
                 typeof type === 'function' ||
                 (typeof type === 'object' && type !== null)
