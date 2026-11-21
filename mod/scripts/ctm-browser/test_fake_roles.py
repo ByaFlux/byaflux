@@ -1,9 +1,10 @@
-"""Exercise the real IconMaker UI, IndexedDB persistence and decoded PNG/GIF downloads."""
+"""Check local roles, native profile replacement and member list rendering."""
 from io import BytesIO
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 from PIL import Image, ImageChops
 import json
+import os
 import subprocess
 import time
 import urllib.request
@@ -44,7 +45,7 @@ def change_color(locator, color):
 
 
 with sync_playwright() as playwright:
-    browser = playwright.chromium.launch()
+    browser = playwright.chromium.launch(executable_path=os.environ.get("PLAYWRIGHT_CHROMIUM_EXECUTABLE"))
     try:
         page = browser.new_page()
         page.goto(URL + '/fake-roles')
@@ -52,7 +53,11 @@ with sync_playwright() as playwright:
         member = page.get_by_role('checkbox', name='Membro', exact=True)
         expect(member).to_be_checked()
         expect(owner).not_to_be_checked()
+        expect(page.get_by_label('Perfil nativo')).to_contain_text('Membro')
         owner.check()
+        expect(page.get_by_label('Perfil nativo')).to_contain_text('Owner')
+        assert page.get_by_label('Lista de membros').inner_text().splitlines() == ['3227436212982251533', 'Alice', 'Haru', 'Zoe']
+        assert page.evaluate('window.roleFixture.originalRows().length') == 5
         profile = page.get_by_label('Cargos no perfil')
         expect(profile).to_contain_text('3227436212982251533')
         member.uncheck()
@@ -70,9 +75,12 @@ with sync_playwright() as playwright:
         expect(page.get_by_role('checkbox', name='Membro', exact=True)).to_be_checked()
         page.screenshot(path=str(SHOTS / 'fake-roles.png'), full_page=True)
         page.get_by_role('checkbox', name='Owner', exact=True).check()
+        expect(page.get_by_label('Perfil nativo')).to_contain_text('Owner')
         page.evaluate('window.fakeRolesPlugin.stop()')
         expect(profile).not_to_contain_text('3227436212982251533')
         assert page.evaluate('window.roleFixture.realMember().roles') == ['5227436212982251533']
+        expect(page.get_by_label('Perfil nativo')).not_to_contain_text('Owner')
+        assert page.get_by_label('Lista de membros').inner_text().splitlines() == ['3227436212982251533', 'Alice', 'Zoe', 'online', 'Haru']
         print('PASS FakeRoles browser: immediate checkbox and profile rendering, native member isolation, search, managed roles, persistence, reset and disable restoration.', flush=True)
     finally:
         browser.close()

@@ -56,3 +56,43 @@
     border-radius: 50%;
     background: #99aab5;
 }
+
+.bf-profile-role-section {
+    margin: 12px 0;
+    color: var(--text-normal);
+}
+.bf-profile-role-section h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    color: var(--header-primary);
+}
+.bf-profile-role-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.bf-profile-role,
+.bf-profile-role-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--background-modifier-accent);
+    border-radius: 4px;
+    padding: 3px 6px;
+    background: var(--background-secondary-alt);
+    color: var(--text-normal);
+    font-size: 12px;
+}
+.bf-profile-role-add {
+    cursor: pointer;
+}
+
+.bf-role-row > div {
+    width: 100%;
+}
+.bf-role-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
