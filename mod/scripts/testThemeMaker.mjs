@@ -20,7 +20,8 @@ try {
             model: "src/shared/themeMaker/index.ts",
             storage: "src/main/themes/themeMaker.ts",
             service: "src/components/settings/tabs/themeMaker/service.ts",
-            headers: "src/main/themes/index.ts"
+            headers: "src/main/themes/index.ts",
+            editor: "src/components/settings/tabs/themeMaker/editorState.ts"
         },
         bundle: true,
         platform: "node",
@@ -33,6 +34,7 @@ try {
     const { saveCtmTheme, listCtmThemes } = await import(pathToFileURL(join(temp, "storage.mjs")));
     const { saveAndActivateTheme } = await import(pathToFileURL(join(temp, "service.mjs")));
     const { getThemeInfo } = await import(pathToFileURL(join(temp, "headers.mjs")));
+    const editor = await import(pathToFileURL(join(temp, "editor.mjs")));
     let checks = 0;
     const check = fn => {
         fn();
@@ -51,7 +53,9 @@ try {
         const c = model.defaults();
         c.emoji = pack;
         const css = model.generateTheme(doc(c));
-        check(() => assert.equal((css.match(/EmojiReplace\/base\//g) || []).length, pack === "Discord" ? 0 : 1));
+        check(() =>
+            assert.equal((css.match(/EmojiReplace\/base\//g) || []).length, pack === "Discord" ? 0 : 1)
+        );
         if (pack !== "Discord") check(() => assert.ok(css.includes("/base/" + pack + ".css")));
         check(() => assert.deepEqual(model.parseTheme(css), doc(c)));
     }
@@ -92,6 +96,55 @@ try {
     check(() => assert.ok(!accent.includes("--control-critical")));
     check(() => assert.ok(!accent.includes("--rs-online")));
     check(() => assert.throws(() => model.accentVariables("#fff; color:red")));
+    const initialSnapshot = { choices: model.defaults(), name: "Meu tema" };
+    let history = editor.createHistory(initialSnapshot);
+    history = editor.editorHistory(history, {
+        type: "change",
+        update: s => ({ ...s, choices: { ...s.choices, accent: "#123456" } })
+    });
+    history = editor.editorHistory(history, { type: "change", update: s => ({ ...s, name: "Renomeado" }) });
+    check(() => assert.notEqual(editor.snapshotKey(history.present), history.baseline));
+    history = editor.editorHistory(history, { type: "undo" });
+    check(() => assert.equal(history.present.name, "Meu tema"));
+    check(() => assert.equal(history.present.choices.accent, "#123456"));
+    history = editor.editorHistory(history, { type: "redo" });
+    check(() => assert.equal(history.present.name, "Renomeado"));
+    history = editor.editorHistory(history, { type: "saved", snapshot: history.present });
+    check(() => assert.equal(editor.snapshotKey(history.present), history.baseline));
+    history = editor.editorHistory(history, { type: "undo" });
+    check(() => assert.notEqual(editor.snapshotKey(history.present), history.baseline));
+    history = editor.editorHistory(history, { type: "load", snapshot: initialSnapshot });
+    check(() => assert.equal(history.past.length + history.future.length, 0));
+    check(() => assert.equal(editor.contrastRatio("#ffffff", "#000000"), 21));
+    check(() => assert.equal(editor.contrastRatio("#112233", "#112233"), 1));
+    check(() => assert.equal(editor.contrastRatio("invalid", "#112233"), undefined));
+    for (let n = 0; n < 100; n++)
+        history = editor.editorHistory(history, { type: "change", update: s => ({ ...s, name: String(n) }) });
+    check(() => assert.equal(history.past.length, 80));
+    const background = model.defaults();
+    background.background = {
+        ...background.background,
+        enabled: true,
+        url: "https://example.com/bg.jpg",
+        position: "top",
+        blur: 8
+    };
+    check(() => assert.ok(model.generateTheme(doc(background)).includes("filter: blur(8px)")));
+    check(() => assert.ok(model.generateTheme(doc(background)).includes("top / cover")));
+    check(() => assert.deepEqual(model.parseTheme(model.generateTheme(doc(background))), doc(background)));
+    check(() =>
+        assert.throws(() =>
+            model.validateChoices({ ...background, background: { ...background.background, blur: 99 } })
+        )
+    );
+    check(() =>
+        assert.throws(() =>
+            model.validateChoices({
+                ...background,
+                background: { ...background.background, position: "url(unsafe)" }
+            })
+        )
+    );
     // New controls must survive round-trip and old saved themes must still open.
     for (const font of Object.keys(model.FONTS)) {
         const choices = model.defaults();
@@ -123,6 +176,7 @@ try {
     combo.status.mode = "radial";
     combo.icons.shape = "triangle";
     combo.background = {
+        ...model.defaults().background,
         enabled: true,
         url: "https://example.com/fundo.png?name=%22x%22",
         opacity: 70

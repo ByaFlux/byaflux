@@ -11,6 +11,7 @@ import { addThemeChangeListener, removeThemeChangeListener } from "@api/Themes";
 import { SettingsTab, wrapTab } from "@components/settings/tabs/BaseTab";
 import {
     defaults,
+    generateTheme,
     EMOJI_PACKS,
     EmojiPack,
     FontChoice,
@@ -35,6 +36,7 @@ import {
 import { React, useEffect, useMemo, useRef, useState } from "@webpack/common";
 
 import { saveAndActivateTheme, ThemeMakerAdapter } from "./service";
+import { contrastRatio, createHistory, editorHistory, snapshotKey } from "./editorState";
 
 const bridgeError = () =>
     new Error(
@@ -73,8 +75,76 @@ const paletteLabels: Record<keyof Palette, string> = {
     text: "Texto principal",
     muted: "Texto secundário"
 };
-const categories = ["Aparência", "Tipografia", "Layout", "Detalhes"] as const;
-function ColorField({ label, value, onChange }: { label: string; value: string; onChange(value: string): void }) {
+const categories = [
+    "Aparência",
+    "Cores",
+    "Tipografia",
+    "Layout",
+    "Avatares",
+    "Servidores",
+    "Emojis"
+] as const;
+const categoryInfo = {
+    Aparência: ["appearance", "Escolha uma base e personalize o fundo."],
+    Cores: ["colors", "Personalize sem perder a legibilidade."],
+    Tipografia: ["type", "Encontre uma leitura confortável para suas conversas."],
+    Layout: ["layout", "Ajuste a densidade e o espaço de cada elemento."],
+    Avatares: ["avatar", "Indicadores nativos ou contornos de status."],
+    Servidores: ["servers", "Personalize os ícones sem alterar seus indicadores."],
+    Emojis: ["emoji", "Um único pack para todas as suas conversas."]
+} as const;
+const basePalettes = [
+    { name: "Escuro", colors: PALETTES[0].colors },
+    {
+        name: "AMOLED",
+        colors: {
+            chat: "#000000",
+            sidebar: "#09090b",
+            servers: "#000000",
+            surface: "#19191d",
+            text: "#f2f3f5",
+            muted: "#b5bac1"
+        }
+    },
+    { name: "Claro", colors: PALETTES[4].colors }
+];
+function CategoryIcon({ name }: { name: string }) {
+    const paths: Record<string, string> = {
+        appearance:
+            "M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1-4c-1-1 0-2 1-2h2a4 4 0 0 0 4-4c0-5-4-8-9-8Z M7 9h.01 M10 6h.01 M15 7h.01 M18 11h.01",
+        colors: "m14 4 6 6 M11 7l6 6-9 8H3v-5Z M15 3l6 6",
+        type: "m4 20 8-16 8 16 M7 14h10",
+        layout: "M3 4h18v16H3Z M3 9h18 M9 9v11",
+        avatar: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z M16 9a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z M6 19c0-6 12-6 12 0",
+        servers: "m12 3 9 5-9 5-9-5Z M3 12l9 5 9-5 M3 16l9 5 9-5",
+        emoji: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z M8 14c1 4 7 4 8 0 M8 9h.01 M16 9h.01",
+        library: "M3 3h7v7H3Z M14 3h7v7h-7Z M3 14h7v7H3Z M14 14h7v7h-7Z"
+    };
+    return (
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <path d={paths[name] ?? paths.appearance} />
+        </svg>
+    );
+}
+function ColorField({
+    label,
+    value,
+    onChange
+}: {
+    label: string;
+    value: string;
+    onChange(value: string): void;
+}) {
     return (
         <label className="bf-ctm-color-field">
             <span>{label}</span>
@@ -167,12 +237,26 @@ export function ThemeMakerEditor({
     adapter?: ThemeMakerAdapter;
     themeSettings?: Pick<typeof Settings, "enabledThemes" | "themeActivationModes">;
 }) {
-    const [draft, setDraft] = useState<ThemeChoices>(defaults);
-    const [name, setName] = useState("Meu tema");
+    const [history, dispatch] = React.useReducer(editorHistory, undefined, () =>
+        createHistory({ choices: defaults(), name: "Meu tema" })
+    );
+    const { choices: draft, name } = history.present;
+    const setDraft = (update: React.SetStateAction<ThemeChoices>) =>
+        dispatch({
+            type: "change",
+            update: snapshot => ({
+                ...snapshot,
+                choices: typeof update === "function" ? update(snapshot.choices) : update
+            })
+        });
+    const setName = (name: string) =>
+        dispatch({ type: "change", update: snapshot => ({ ...snapshot, name }) });
+    const dirty = snapshotKey(history.present) !== history.baseline;
+    const [scene, setScene] = useState<"conversation" | "profile">("conversation");
     const [editing, setEditing] = useState<SavedCtmTheme>();
     const [themes, setThemes] = useState<SavedCtmTheme[]>([]);
     const [tab, setTab] = useState<"editor" | "themes">("editor");
-    const [category, setCategory] = useState<(typeof categories)[number]>("Aparência");
+    const [category, setCategory] = useState<(typeof categories)[number]>("Cores");
     const [before, setBefore] = useState(false);
     const [highlight, setHighlight] = useState("");
     const [saving, setSaving] = useState(false);
@@ -206,8 +290,8 @@ export function ThemeMakerEditor({
         nameError = (e as Error).message;
     }
     const payload = useMemo(
-        () => previewPayload(valid ?? lastValid.current, before, highlight),
-        [draft, before, highlight]
+        () => previewPayload(valid ?? lastValid.current, before, highlight, scene),
+        [draft, before, highlight, scene]
     );
     const payloadRef = useRef(payload);
     payloadRef.current = payload;
@@ -253,7 +337,9 @@ export function ThemeMakerEditor({
                 setExpanded(false);
             }
             if (event.key === "Tab") {
-                const buttons = Array.from(previewPanel.current?.querySelectorAll<HTMLButtonElement>("button") ?? []);
+                const buttons = Array.from(
+                    previewPanel.current?.querySelectorAll<HTMLButtonElement>("button") ?? []
+                );
                 if (!buttons.length) return;
                 const first = buttons[0],
                     last = buttons[buttons.length - 1];
@@ -272,6 +358,58 @@ export function ThemeMakerEditor({
             previous?.focus();
         };
     }, [expanded]);
+    useEffect(() => {
+        const warn = (event: BeforeUnloadEvent) => {
+            if (dirty) {
+                event.preventDefault();
+                event.returnValue = "";
+            }
+        };
+        window.addEventListener("beforeunload", warn);
+        return () => window.removeEventListener("beforeunload", warn);
+    }, [dirty]);
+    const discard = () => !dirty || window.confirm("Descartar as alterações não salvas deste tema?");
+    const resetCategory = () => {
+        const base = defaults();
+        setDraft(d => {
+            switch (category) {
+                case "Aparência":
+                    return { ...d, background: base.background };
+                case "Cores":
+                    return { ...d, accent: base.accent, palette: base.palette };
+                case "Tipografia":
+                    return { ...d, typography: base.typography };
+                case "Layout":
+                    return { ...d, layout: base.layout, compact: base.compact };
+                case "Avatares":
+                    return { ...d, status: base.status };
+                case "Servidores":
+                    return { ...d, icons: base.icons };
+                case "Emojis":
+                    return { ...d, emoji: base.emoji };
+            }
+        });
+    };
+    const exportTheme = (theme: SavedCtmTheme) => {
+        const url = URL.createObjectURL(new Blob([generateTheme(theme.document)], { type: "text/css" }));
+        const link = window.document.createElement("a");
+        link.href = url;
+        link.download = theme.fileName;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+    const duplicate = (theme: SavedCtmTheme) => {
+        if (!discard()) return;
+        dispatch({
+            type: "load",
+            snapshot: { choices: theme.document.choices, name: `${theme.document.name.slice(0, 54)} (cópia)` }
+        });
+        setEditing(undefined);
+        setTab("editor");
+        setCategory("Cores");
+        setMessage("");
+        setError("");
+    };
     const previewLoad = () => {
         controller.current?.destroy();
         const doc = frame.current?.contentDocument;
@@ -295,24 +433,24 @@ export function ThemeMakerEditor({
         onBlurCapture: () => setHighlight("")
     });
     const fresh = () => {
-        setDraft(defaults());
-        setName("Meu tema");
+        if (!discard()) return;
+        dispatch({ type: "load", snapshot: { choices: defaults(), name: "Meu tema" } });
         setEditing(undefined);
         setBefore(false);
         setMessage("");
         setError("");
         setTab("editor");
-        setCategory("Aparência");
+        setCategory("Cores");
     };
     const edit = (theme: SavedCtmTheme) => {
-        setDraft(theme.document.choices);
-        setName(theme.document.name);
+        if (!discard()) return;
+        dispatch({ type: "load", snapshot: { choices: theme.document.choices, name: theme.document.name } });
         setEditing(theme);
         setBefore(false);
         setMessage("");
         setError("");
         setTab("editor");
-        setCategory("Aparência");
+        setCategory("Cores");
     };
     const applyPreset = (preset: (typeof PALETTES)[number]) => {
         setDraft(d => ({ ...d, accent: preset.accent, palette: { ...preset.colors } }));
@@ -328,12 +466,18 @@ export function ThemeMakerEditor({
             const result = await saveAndActivateTheme(adapter, themeSettings, {
                 name: validateName(name),
                 choices: validateChoices(draft),
-                editing: editing && { fileName: editing.fileName, id: editing.document.id, revision: editing.revision }
+                editing: editing && {
+                    fileName: editing.fileName,
+                    id: editing.document.id,
+                    revision: editing.revision
+                }
             });
             if (!mounted.current) return;
             setEditing(result);
-            setName(result.document.name);
-            setDraft(result.document.choices);
+            dispatch({
+                type: "saved",
+                snapshot: { choices: result.document.choices, name: result.document.name }
+            });
             setMessage(`Salvo e ativado: ${result.fileName}`);
             await refresh();
         } catch (e) {
@@ -347,12 +491,16 @@ export function ThemeMakerEditor({
         try {
             const { url } = validateChoices(draft).background;
             if (await VencordNative.csp.isDomainAllowed(url, ["img-src"])) {
-                setMessage("O domínio já está permitido. Confira se o link aponta diretamente para uma imagem.");
+                setMessage(
+                    "O domínio já está permitido. Confira se o link aponta diretamente para uma imagem."
+                );
                 return;
             }
             const result = await VencordNative.csp.requestAddOverride(url, ["img-src"], "Settings");
             if (result === "ok")
-                setMessage("Domínio permitido. Feche completamente e abra o Discord para carregar esse fundo.");
+                setMessage(
+                    "Domínio permitido. Feche completamente e abra o Discord para carregar esse fundo."
+                );
             else if (result !== "cancelled") setError("A permissão do domínio não foi alterada.");
         } catch (e) {
             setError((e as Error).message);
@@ -361,588 +509,850 @@ export function ThemeMakerEditor({
     return (
         <div className="bf-ctm">
             <header className="bf-ctm-heading">
-                <div>
+                <div className="bf-ctm-title">
+                    <span className="bf-ctm-brand" aria-hidden="true">
+                        BF
+                    </span>
                     <h2>Criador de temas</h2>
-                    <p>Comece com uma paleta. Ajuste os detalhes. Veja antes de aplicar.</p>
                 </div>
-                <button className="bf-ctm-secondary" disabled={saving} onClick={fresh}>
-                    Novo tema
-                </button>
+                <div className="bf-ctm-header-actions">
+                    <button
+                        className="bf-ctm-icon-button"
+                        aria-label="Desfazer"
+                        title="Desfazer"
+                        disabled={saving || !history.past.length}
+                        onClick={() => dispatch({ type: "undo" })}
+                    >
+                        ↶
+                    </button>
+                    <button
+                        className="bf-ctm-icon-button"
+                        aria-label="Refazer"
+                        title="Refazer"
+                        disabled={saving || !history.future.length}
+                        onClick={() => dispatch({ type: "redo" })}
+                    >
+                        ↷
+                    </button>
+                    <span className="bf-ctm-dirty" role="status">
+                        {dirty ? "Alterações não salvas" : editing ? "Tema salvo" : "Novo tema"}
+                    </span>
+                    <button className="bf-ctm-secondary" disabled={saving} onClick={fresh}>
+                        Novo tema
+                    </button>
+                    <button
+                        className="bf-ctm-primary"
+                        disabled={saving || !!nameError || !!invalid}
+                        onClick={() => void save()}
+                    >
+                        {saving ? "Salvando…" : "Salvar e ativar"}
+                    </button>
+                </div>
             </header>
-            <nav className="bf-ctm-tabs" aria-label="Criador de temas">
-                <button aria-pressed={tab === "editor"} onClick={() => setTab("editor")} disabled={saving}>
-                    Editor
-                </button>
-                <button
-                    aria-pressed={tab === "themes"}
-                    onClick={() => {
-                        setTab("themes");
-                        void refresh();
-                    }}
-                    disabled={saving}
-                >
-                    Meus temas <span>{themes.length}</span>
-                </button>
-            </nav>
-            {error && (
-                <p className="bf-ctm-error" role="alert">
-                    {error}
-                </p>
-            )}
-            {message && (
-                <p className="bf-ctm-success" role="status">
-                    {message}
-                </p>
-            )}
-            {tab === "themes" && (
-                <section className="bf-ctm-library">
-                    <div className="bf-ctm-library-heading">
-                        <h3>Meus temas</h3>
-                        <button className="bf-ctm-secondary" onClick={() => void refresh()}>
-                            Atualizar lista
-                        </button>
-                    </div>
-                    <p>Temas locais criados aqui. Suas escolhas ficam salvas no arquivo.</p>
-                    {themes.length === 0 && (
-                        <div className="bf-ctm-empty">
-                            Você ainda não criou um tema.
-                            <button className="bf-ctm-primary" onClick={fresh}>
-                                Criar meu primeiro tema
-                            </button>
-                        </div>
-                    )}
-                    {themes.map(theme => (
-                        <article key={theme.fileName} className="bf-ctm-theme-card">
-                            <div
-                                className="bf-ctm-theme-swatch"
-                                style={{
-                                    background: theme.document.choices.palette.chat,
-                                    borderColor: theme.document.choices.accent
+            <div className="bf-ctm-workspace">
+                <aside className="bf-ctm-navigation">
+                    <small>PERSONALIZAÇÃO</small>
+                    <nav
+                        className="bf-ctm-categories"
+                        aria-label="Personalização"
+                        role="tablist"
+                        aria-orientation="vertical"
+                    >
+                        {categories.map(item => (
+                            <button
+                                key={item}
+                                role="tab"
+                                id={`bf-ctm-tab-${item}`}
+                                aria-controls="bf-ctm-options"
+                                aria-selected={tab === "editor" && category === item}
+                                disabled={saving}
+                                onClick={() => {
+                                    setCategory(item);
+                                    setTab("editor");
+                                    setHighlight("");
                                 }}
-                            />
-                            <div>
-                                <strong>{theme.document.name}</strong>
-                                <small>{theme.fileName}</small>
-                            </div>
-                            <button className="bf-ctm-secondary" onClick={() => edit(theme)}>
-                                Editar
+                            >
+                                <CategoryIcon name={categoryInfo[item][0]} />
+                                {item}
                             </button>
-                        </article>
-                    ))}
-                </section>
-            )}
-            <div hidden={tab !== "editor"}>
-                <div className="bf-ctm-presets" role="group" aria-label="Paletas prontas">
-                    {PALETTES.map(preset => (
-                        <button
-                            key={preset.id}
-                            disabled={saving}
-                            aria-pressed={
-                                draft.accent === preset.accent &&
-                                JSON.stringify(draft.palette) === JSON.stringify(preset.colors)
-                            }
-                            onClick={() => applyPreset(preset)}
-                        >
-                            <span className="bf-ctm-palette-mini" style={{ background: preset.colors.chat }}>
-                                <i style={{ background: preset.colors.servers }} />
-                                <i style={{ background: preset.colors.sidebar }} />
-                                <i style={{ background: preset.accent }} />
-                            </span>
-                            {preset.name}
-                        </button>
-                    ))}
-                </div>
-                <nav className="bf-ctm-categories" aria-label="Personalização" role="tablist">
-                    {categories.map(item => (
-                        <button
-                            key={item}
-                            role="tab"
-                            id={`bf-ctm-tab-${item}`}
-                            aria-controls="bf-ctm-options"
-                            aria-selected={category === item}
-                            disabled={saving}
-                            onClick={() => {
-                                setCategory(item);
-                                setHighlight("");
-                            }}
-                        >
-                            {item}
-                        </button>
-                    ))}
-                </nav>
-                <div className="bf-ctm-columns">
-                    <fieldset
-                        className="bf-ctm-controls"
-                        id="bf-ctm-options"
-                        role="tabpanel"
-                        aria-labelledby={`bf-ctm-tab-${category}`}
+                        ))}
+                    </nav>
+                    <button
+                        className="bf-ctm-library-nav"
+                        aria-pressed={tab === "themes"}
+                        onClick={() => {
+                            setTab("themes");
+                            void refresh();
+                        }}
                         disabled={saving}
                     >
-                        {category === "Aparência" && (
-                            <>
-                                <section {...focus("accent")}>
-                                    <h3>Cores do tema</h3>
-                                    <p>Altere a paleta sem mudar o restante do projeto.</p>
-                                    <ColorField
-                                        label="Cor de destaque"
-                                        value={draft.accent}
-                                        onChange={accent => setDraft(d => ({ ...d, accent }))}
+                        <CategoryIcon name="library" />
+                        Meus temas <span>{themes.length}</span>
+                    </button>
+                </aside>
+                <main className="bf-ctm-content">
+                    {themeSettings.enabledThemes.some(
+                        file => !themes.some(theme => theme.fileName === file)
+                    ) && (
+                        <p className="bf-ctm-conflict">
+                            Outros temas estão ativos. Eles podem sobrescrever as cores e medidas deste tema.
+                        </p>
+                    )}
+                    {error && (
+                        <p className="bf-ctm-error" role="alert">
+                            {error}
+                        </p>
+                    )}
+                    {message && (
+                        <p className="bf-ctm-success" role="status">
+                            {message}
+                        </p>
+                    )}
+                    {tab === "themes" && (
+                        <section className="bf-ctm-library">
+                            <div className="bf-ctm-library-heading">
+                                <h3>Meus temas</h3>
+                                <button className="bf-ctm-secondary" onClick={() => void refresh()}>
+                                    Atualizar lista
+                                </button>
+                            </div>
+                            <p>Temas locais criados aqui. Suas escolhas ficam salvas no arquivo.</p>
+                            {themes.length === 0 && (
+                                <div className="bf-ctm-empty">
+                                    Você ainda não criou um tema.
+                                    <button className="bf-ctm-primary" onClick={fresh}>
+                                        Criar meu primeiro tema
+                                    </button>
+                                </div>
+                            )}
+                            {themes.map(theme => (
+                                <article key={theme.fileName} className="bf-ctm-theme-card">
+                                    <div
+                                        className="bf-ctm-theme-swatch"
+                                        style={{
+                                            background: theme.document.choices.palette.chat,
+                                            borderColor: theme.document.choices.accent
+                                        }}
                                     />
-                                    <small>
-                                        Botões, links e controles selecionados. Use Salvar e ativar para aplicar ao
-                                        Discord.
-                                    </small>
-                                </section>
-                                <section {...focus("palette")} className="bf-ctm-palette-fields">
-                                    {(Object.keys(paletteLabels) as (keyof Palette)[]).map(key => (
-                                        <ColorField
-                                            key={key}
-                                            label={paletteLabels[key]}
-                                            value={draft.palette[key]}
-                                            onChange={value =>
-                                                setDraft(d => ({ ...d, palette: { ...d.palette, [key]: value } }))
-                                            }
-                                        />
-                                    ))}
-                                </section>
-                                <section {...focus("background")}>
-                                    <SwitchField
-                                        label="Fundo personalizado"
-                                        description="Use o link direto de uma imagem HTTPS."
-                                        checked={draft.background.enabled}
-                                        onChange={enabled =>
-                                            setDraft(d => ({ ...d, background: { ...d.background, enabled } }))
-                                        }
+                                    <div>
+                                        <strong>{theme.document.name}</strong>
+                                        <small>{theme.fileName}</small>
+                                    </div>
+                                    <button className="bf-ctm-secondary" onClick={() => exportTheme(theme)}>
+                                        Exportar
+                                    </button>
+                                    <button className="bf-ctm-secondary" onClick={() => duplicate(theme)}>
+                                        Duplicar
+                                    </button>
+                                    <button className="bf-ctm-secondary" onClick={() => edit(theme)}>
+                                        Editar
+                                    </button>
+                                </article>
+                            ))}
+                        </section>
+                    )}
+                    <div hidden={tab !== "editor"}>
+                        <div className="bf-ctm-columns">
+                            <fieldset
+                                className="bf-ctm-controls"
+                                id="bf-ctm-options"
+                                role="tabpanel"
+                                aria-labelledby={`bf-ctm-tab-${category}`}
+                                disabled={saving}
+                            >
+                                <div className="bf-ctm-controls-heading">
+                                    <h3>{category}</h3>
+                                    <p>{categoryInfo[category][1]}</p>
+                                </div>
+                                <label className="bf-ctm-field bf-ctm-name">
+                                    Nome do tema
+                                    <input
+                                        id="bf-ctm-name"
+                                        placeholder="Meu tema"
+                                        value={name}
+                                        maxLength={64}
+                                        disabled={saving}
+                                        aria-invalid={!!nameError}
+                                        onChange={e => setName(e.target.value)}
                                     />
-                                    {draft.background.enabled && (
-                                        <>
-                                            <input
-                                                type="url"
-                                                aria-label="URL do fundo"
-                                                placeholder="https://exemplo.com/imagem.jpg"
-                                                value={draft.background.url}
+                                </label>
+                                {nameError && <small className="bf-ctm-name-error">{nameError}</small>}
+                                {category === "Aparência" && (
+                                    <>
+                                        <h4>Paletas prontas</h4>{" "}
+                                        <div
+                                            className="bf-ctm-presets"
+                                            role="group"
+                                            aria-label="Paletas prontas"
+                                        >
+                                            {PALETTES.map(preset => (
+                                                <button
+                                                    key={preset.id}
+                                                    disabled={saving}
+                                                    aria-pressed={
+                                                        draft.accent === preset.accent &&
+                                                        JSON.stringify(draft.palette) ===
+                                                            JSON.stringify(preset.colors)
+                                                    }
+                                                    onClick={() => applyPreset(preset)}
+                                                >
+                                                    <span
+                                                        className="bf-ctm-palette-mini"
+                                                        style={{ background: preset.colors.chat }}
+                                                    >
+                                                        <i style={{ background: preset.colors.servers }} />
+                                                        <i style={{ background: preset.colors.sidebar }} />
+                                                        <i style={{ background: preset.accent }} />
+                                                    </span>
+                                                    {preset.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <section {...focus("background")}>
+                                            <SwitchField
+                                                label="Fundo personalizado"
+                                                description="Use o link direto de uma imagem HTTPS."
+                                                checked={draft.background.enabled}
+                                                onChange={enabled =>
+                                                    setDraft(d => ({
+                                                        ...d,
+                                                        background: { ...d.background, enabled }
+                                                    }))
+                                                }
+                                            />
+                                            {draft.background.enabled && (
+                                                <>
+                                                    <input
+                                                        type="url"
+                                                        aria-label="URL do fundo"
+                                                        placeholder="https://exemplo.com/imagem.jpg"
+                                                        value={draft.background.url}
+                                                        onChange={e =>
+                                                            setDraft(d => ({
+                                                                ...d,
+                                                                background: {
+                                                                    ...d.background,
+                                                                    url: e.target.value
+                                                                }
+                                                            }))
+                                                        }
+                                                    />
+                                                    <label className="bf-ctm-field">
+                                                        Posição da imagem
+                                                        <select
+                                                            aria-label="Posição da imagem"
+                                                            value={draft.background.position ?? "center"}
+                                                            onChange={e =>
+                                                                setDraft(d => ({
+                                                                    ...d,
+                                                                    background: {
+                                                                        ...d.background,
+                                                                        position: e.target
+                                                                            .value as NonNullable<
+                                                                            ThemeChoices["background"]["position"]
+                                                                        >
+                                                                    }
+                                                                }))
+                                                            }
+                                                        >
+                                                            <option value="center">Centro</option>
+                                                            <option value="top">Topo</option>
+                                                            <option value="bottom">Embaixo</option>
+                                                            <option value="left">Esquerda</option>
+                                                            <option value="right">Direita</option>
+                                                        </select>
+                                                    </label>
+                                                    <RangeField
+                                                        label="Desfoque do fundo"
+                                                        min={0}
+                                                        max={20}
+                                                        value={draft.background.blur ?? 0}
+                                                        onChange={blur =>
+                                                            setDraft(d => ({
+                                                                ...d,
+                                                                background: { ...d.background, blur }
+                                                            }))
+                                                        }
+                                                    />
+                                                    <RangeField
+                                                        label="Escurecimento do fundo"
+                                                        value={draft.background.opacity}
+                                                        min={0}
+                                                        max={100}
+                                                        unit="%"
+                                                        onChange={opacity =>
+                                                            setDraft(d => ({
+                                                                ...d,
+                                                                background: { ...d.background, opacity }
+                                                            }))
+                                                        }
+                                                    />
+                                                    {resourceErrors.background && (
+                                                        <button
+                                                            className="bf-ctm-text"
+                                                            onClick={() => void allowBackground()}
+                                                        >
+                                                            Verificar permissão do domínio
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
+                                        </section>
+                                    </>
+                                )}
+                                {category === "Cores" && (
+                                    <>
+                                        <section>
+                                            <h4>Base do tema</h4>
+                                            <div
+                                                className="bf-ctm-segmented"
+                                                role="group"
+                                                aria-label="Base do tema"
+                                            >
+                                                {basePalettes.map(base => (
+                                                    <button
+                                                        key={base.name}
+                                                        aria-pressed={
+                                                            JSON.stringify(draft.palette) ===
+                                                            JSON.stringify(base.colors)
+                                                        }
+                                                        onClick={() =>
+                                                            setDraft(d => ({
+                                                                ...d,
+                                                                palette: { ...base.colors }
+                                                            }))
+                                                        }
+                                                    >
+                                                        {base.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </section>{" "}
+                                        <section {...focus("accent")}>
+                                            <h3>Cores do tema</h3>
+                                            <p>Altere a paleta sem mudar o restante do projeto.</p>
+                                            <ColorField
+                                                label="Cor de destaque"
+                                                value={draft.accent}
+                                                onChange={accent => setDraft(d => ({ ...d, accent }))}
+                                            />
+                                            <small>
+                                                Botões, links e controles selecionados. Use Salvar e ativar
+                                                para aplicar ao Discord.
+                                            </small>
+                                        </section>
+                                        <section {...focus("palette")} className="bf-ctm-palette-fields">
+                                            {(Object.keys(paletteLabels) as (keyof Palette)[]).map(key => (
+                                                <ColorField
+                                                    key={key}
+                                                    label={paletteLabels[key]}
+                                                    value={draft.palette[key]}
+                                                    onChange={value =>
+                                                        setDraft(d => ({
+                                                            ...d,
+                                                            palette: { ...d.palette, [key]: value }
+                                                        }))
+                                                    }
+                                                />
+                                            ))}
+                                        </section>
+                                        <div className="bf-ctm-contrast" role="status">
+                                            {(() => {
+                                                const ratio = contrastRatio(
+                                                    draft.palette.text,
+                                                    draft.palette.chat
+                                                );
+                                                const muted = contrastRatio(
+                                                    draft.palette.muted,
+                                                    draft.palette.chat
+                                                );
+                                                if (ratio === undefined || muted === undefined)
+                                                    return "Complete as cores para verificar o contraste.";
+                                                return (
+                                                    <>
+                                                        <strong
+                                                            className={
+                                                                Math.min(ratio, muted) >= 4.5 ? "good" : "low"
+                                                            }
+                                                        >
+                                                            {Math.min(ratio, muted) >= 4.5
+                                                                ? "Contraste adequado · AA"
+                                                                : "Contraste baixo · ajuste as cores"}
+                                                        </strong>
+                                                        <small>
+                                                            Texto: {ratio.toFixed(2)}:1 · Secundário:{" "}
+                                                            {muted.toFixed(2)}:1
+                                                        </small>
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
+                                    </>
+                                )}
+                                {category === "Tipografia" && (
+                                    <section {...focus("typography")}>
+                                        <h3>Tipografia</h3>
+                                        <p>
+                                            Fonte e medidas aplicadas às mensagens. Código mantém sua fonte
+                                            monoespaçada.
+                                        </p>
+                                        <label className="bf-ctm-field">
+                                            Fonte
+                                            <select
+                                                aria-label="Fonte"
+                                                value={draft.typography.font}
                                                 onChange={e =>
                                                     setDraft(d => ({
                                                         ...d,
-                                                        background: { ...d.background, url: e.target.value }
+                                                        typography: {
+                                                            ...d.typography,
+                                                            font: e.target.value as FontChoice
+                                                        }
+                                                    }))
+                                                }
+                                            >
+                                                {Object.entries(FONTS).map(([key, font]) => (
+                                                    <option key={key} value={key}>
+                                                        {font.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                        <RangeField
+                                            label="Tamanho da fonte"
+                                            min={12}
+                                            max={22}
+                                            value={draft.typography.size}
+                                            onChange={size =>
+                                                setDraft(d => ({
+                                                    ...d,
+                                                    typography: { ...d.typography, size }
+                                                }))
+                                            }
+                                        />
+                                        <RangeField
+                                            label="Altura da linha"
+                                            min={1.2}
+                                            max={2}
+                                            step={0.05}
+                                            unit="×"
+                                            value={draft.typography.lineHeight}
+                                            onChange={lineHeight =>
+                                                setDraft(d => ({
+                                                    ...d,
+                                                    typography: { ...d.typography, lineHeight }
+                                                }))
+                                            }
+                                        />
+                                        <label className="bf-ctm-field">
+                                            Peso da fonte
+                                            <select
+                                                aria-label="Peso da fonte"
+                                                value={draft.typography.weight}
+                                                onChange={e =>
+                                                    setDraft(d => ({
+                                                        ...d,
+                                                        typography: {
+                                                            ...d.typography,
+                                                            weight: Number(e.target.value)
+                                                        }
+                                                    }))
+                                                }
+                                            >
+                                                <option value={400}>Regular · 400</option>
+                                                <option value={500}>Médio · 500</option>
+                                                <option value={600}>Seminegrito · 600</option>
+                                            </select>
+                                        </label>
+                                        <small>
+                                            Inter, Roboto e Manrope são carregadas do Google Fonts. As demais
+                                            usam fontes do Discord ou do sistema.
+                                        </small>
+                                    </section>
+                                )}
+                                {category === "Layout" && (
+                                    <>
+                                        {" "}
+                                        <section {...focus("layout")}>
+                                            <h3>Layout e espaçamento</h3>
+                                            <p>Encontre o equilíbrio entre conteúdo e espaço livre.</p>
+                                            <RangeField
+                                                label="Largura dos canais"
+                                                min={220}
+                                                max={360}
+                                                value={draft.layout.sidebarWidth}
+                                                onChange={sidebarWidth =>
+                                                    setDraft(d => ({
+                                                        ...d,
+                                                        compact: false,
+                                                        layout: { ...d.layout, sidebarWidth }
                                                     }))
                                                 }
                                             />
                                             <RangeField
-                                                label="Escurecimento do fundo"
-                                                value={draft.background.opacity}
+                                                label="Espaço entre mensagens"
                                                 min={0}
-                                                max={100}
-                                                unit="%"
-                                                onChange={opacity =>
-                                                    setDraft(d => ({ ...d, background: { ...d.background, opacity } }))
-                                                }
-                                            />
-                                            {resourceErrors.background && (
-                                                <button className="bf-ctm-text" onClick={() => void allowBackground()}>
-                                                    Verificar permissão do domínio
-                                                </button>
-                                            )}
-                                        </>
-                                    )}
-                                </section>
-                            </>
-                        )}
-                        {category === "Tipografia" && (
-                            <section {...focus("typography")}>
-                                <h3>Tipografia</h3>
-                                <p>Fonte e medidas aplicadas às mensagens. Código mantém sua fonte monoespaçada.</p>
-                                <label className="bf-ctm-field">
-                                    Fonte
-                                    <select
-                                        aria-label="Fonte"
-                                        value={draft.typography.font}
-                                        onChange={e =>
-                                            setDraft(d => ({
-                                                ...d,
-                                                typography: { ...d.typography, font: e.target.value as FontChoice }
-                                            }))
-                                        }
-                                    >
-                                        {Object.entries(FONTS).map(([key, font]) => (
-                                            <option key={key} value={key}>
-                                                {font.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                                <RangeField
-                                    label="Tamanho da fonte"
-                                    min={12}
-                                    max={22}
-                                    value={draft.typography.size}
-                                    onChange={size => setDraft(d => ({ ...d, typography: { ...d.typography, size } }))}
-                                />
-                                <RangeField
-                                    label="Altura da linha"
-                                    min={1.2}
-                                    max={2}
-                                    step={0.05}
-                                    unit="×"
-                                    value={draft.typography.lineHeight}
-                                    onChange={lineHeight =>
-                                        setDraft(d => ({ ...d, typography: { ...d.typography, lineHeight } }))
-                                    }
-                                />
-                                <label className="bf-ctm-field">
-                                    Peso da fonte
-                                    <select
-                                        aria-label="Peso da fonte"
-                                        value={draft.typography.weight}
-                                        onChange={e =>
-                                            setDraft(d => ({
-                                                ...d,
-                                                typography: { ...d.typography, weight: Number(e.target.value) }
-                                            }))
-                                        }
-                                    >
-                                        <option value={400}>Regular · 400</option>
-                                        <option value={500}>Médio · 500</option>
-                                        <option value={600}>Seminegrito · 600</option>
-                                    </select>
-                                </label>
-                                <small>
-                                    Inter, Roboto e Manrope são carregadas do Google Fonts. As demais usam fontes do
-                                    Discord ou do sistema.
-                                </small>
-                            </section>
-                        )}
-                        {category === "Layout" && (
-                            <>
-                                <section {...focus("layout")}>
-                                    <h3>Layout e espaçamento</h3>
-                                    <p>Encontre o equilíbrio entre conteúdo e espaço livre.</p>
-                                    <RangeField
-                                        label="Largura dos canais"
-                                        min={220}
-                                        max={360}
-                                        value={draft.layout.sidebarWidth}
-                                        onChange={sidebarWidth =>
-                                            setDraft(d => ({
-                                                ...d,
-                                                compact: false,
-                                                layout: { ...d.layout, sidebarWidth }
-                                            }))
-                                        }
-                                    />
-                                    <RangeField
-                                        label="Espaço entre mensagens"
-                                        min={0}
-                                        max={32}
-                                        value={draft.layout.messageGap}
-                                        onChange={messageGap =>
-                                            setDraft(d => ({ ...d, layout: { ...d.layout, messageGap } }))
-                                        }
-                                    />
-                                    <RangeField
-                                        label="Raio dos cartões"
-                                        min={0}
-                                        max={24}
-                                        value={draft.layout.radius}
-                                        onChange={radius => setDraft(d => ({ ...d, layout: { ...d.layout, radius } }))}
-                                    />
-                                </section>
-                                <section {...focus("compact")}>
-                                    <SwitchField
-                                        label="Barra lateral compacta"
-                                        description="Servidores em 64 px e canais em 240 px."
-                                        checked={draft.compact}
-                                        onChange={compact => setDraft(d => ({ ...d, compact }))}
-                                    />
-                                </section>
-                                <section {...focus("icons")}>
-                                    <h4>Ícones de servidores</h4>
-                                    <div className="bf-ctm-shapes" role="radiogroup" aria-label="Formato dos ícones">
-                                        {shapes.map(shape => (
-                                            <label
-                                                key={shape.value}
-                                                className={draft.icons.shape === shape.value ? "selected" : ""}
-                                            >
-                                                <input
-                                                    type="radio"
-                                                    name="bf-ctm-shape"
-                                                    value={shape.value}
-                                                    checked={draft.icons.shape === shape.value}
-                                                    onChange={() =>
-                                                        setDraft(d => ({
-                                                            ...d,
-                                                            icons: { ...d.icons, shape: shape.value }
-                                                        }))
-                                                    }
-                                                />
-                                                <img
-                                                    src={SERVER_IMAGE}
-                                                    alt=""
-                                                    style={{ clipPath: iconClip(shape.value, draft.icons.radius) }}
-                                                />
-                                                <span>{shape.label}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                    <button
-                                        className="bf-ctm-text"
-                                        onClick={() =>
-                                            setDraft(d => ({ ...d, icons: { ...d.icons, shape: "native" } }))
-                                        }
-                                    >
-                                        Restaurar formato nativo{draft.icons.shape === "native" ? " ✓" : ""}
-                                    </button>
-                                    {draft.icons.shape === "rounded" && (
-                                        <label className="bf-ctm-range">
-                                            Raio dos ícones <output>{draft.icons.radius} px</output>
-                                            <input
-                                                aria-label="Raio dos ícones"
-                                                type="range"
-                                                min={0}
-                                                max={24}
-                                                step={1}
-                                                value={draft.icons.radius}
-                                                onChange={e =>
+                                                max={32}
+                                                value={draft.layout.messageGap}
+                                                onChange={messageGap =>
                                                     setDraft(d => ({
                                                         ...d,
-                                                        icons: { ...d.icons, radius: Number(e.target.value) }
+                                                        layout: { ...d.layout, messageGap }
                                                     }))
                                                 }
                                             />
-                                        </label>
-                                    )}
-                                </section>
-                            </>
-                        )}
-                        {category === "Detalhes" && (
-                            <>
-                                <section {...focus("status")}>
-                                    <h4>Status</h4>
-                                    <div className="bf-ctm-segmented" role="group" aria-label="Estilo de status">
-                                        {(["normal", "radial"] as const).map(mode => (
-                                            <button
-                                                key={mode}
-                                                aria-pressed={draft.status.mode === mode}
-                                                onClick={() => updateStatus({ mode })}
+                                            <RangeField
+                                                label="Raio dos cartões"
+                                                min={0}
+                                                max={24}
+                                                value={draft.layout.radius}
+                                                onChange={radius =>
+                                                    setDraft(d => ({ ...d, layout: { ...d.layout, radius } }))
+                                                }
+                                            />
+                                        </section>
+                                        <section {...focus("compact")}>
+                                            <SwitchField
+                                                label="Barra lateral compacta"
+                                                description="Servidores em 64 px e canais em 240 px."
+                                                checked={draft.compact}
+                                                onChange={compact => setDraft(d => ({ ...d, compact }))}
+                                            />
+                                        </section>
+                                    </>
+                                )}
+                                {category === "Servidores" && (
+                                    <>
+                                        {" "}
+                                        <section {...focus("icons")}>
+                                            <h4>Ícones de servidores</h4>
+                                            <div
+                                                className="bf-ctm-shapes"
+                                                role="radiogroup"
+                                                aria-label="Formato dos ícones"
                                             >
-                                                {mode === "normal" ? "Normal" : "Radial"}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    {draft.status.mode === "radial" && (
-                                        <div className="bf-ctm-radial-controls">
-                                            <div className="bf-ctm-measure-grid">
-                                                <span>Tamanho</span>
-                                                <span>Espessura</span>
-                                                <span>Distância</span>
-                                                {["Membros", "Popout", "Perfil"].map((label, i) => (
-                                                    <React.Fragment key={label}>
-                                                        <span>{label}</span>
-                                                        <label>
-                                                            <input
-                                                                aria-label={`Espessura ${label}`}
-                                                                type="number"
-                                                                min={0.5}
-                                                                max={12}
-                                                                step={0.5}
-                                                                value={draft.status.widths[i]}
-                                                                onChange={e => {
-                                                                    const widths = [...draft.status.widths] as [
-                                                                        number,
-                                                                        number,
-                                                                        number
-                                                                    ];
-                                                                    widths[i] = Number(e.target.value);
-                                                                    updateStatus({ widths });
-                                                                }}
-                                                            />
-                                                            <span>px</span>
-                                                        </label>
-                                                        <label>
-                                                            <input
-                                                                aria-label={`Distância ${label}`}
-                                                                type="number"
-                                                                min={0}
-                                                                max={16}
-                                                                step={0.5}
-                                                                value={draft.status.gaps[i]}
-                                                                onChange={e => {
-                                                                    const gaps = [...draft.status.gaps] as [
-                                                                        number,
-                                                                        number,
-                                                                        number
-                                                                    ];
-                                                                    gaps[i] = Number(e.target.value);
-                                                                    updateStatus({ gaps });
-                                                                }}
-                                                            />
-                                                            <span>px</span>
-                                                        </label>
-                                                    </React.Fragment>
+                                                {shapes.map(shape => (
+                                                    <label
+                                                        key={shape.value}
+                                                        className={
+                                                            draft.icons.shape === shape.value
+                                                                ? "selected"
+                                                                : ""
+                                                        }
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name="bf-ctm-shape"
+                                                            value={shape.value}
+                                                            checked={draft.icons.shape === shape.value}
+                                                            onChange={() =>
+                                                                setDraft(d => ({
+                                                                    ...d,
+                                                                    icons: { ...d.icons, shape: shape.value }
+                                                                }))
+                                                            }
+                                                        />
+                                                        <img
+                                                            src={SERVER_IMAGE}
+                                                            alt=""
+                                                            style={{
+                                                                clipPath: iconClip(
+                                                                    shape.value,
+                                                                    draft.icons.radius
+                                                                )
+                                                            }}
+                                                        />
+                                                        <span>{shape.label}</span>
+                                                    </label>
                                                 ))}
                                             </div>
-                                            <details>
-                                                <summary>Cores do status</summary>
-                                                <div className="bf-ctm-status-colors">
-                                                    {(Object.keys(STATUS_COLORS) as (keyof typeof STATUS_COLORS)[]).map(
-                                                        key => (
-                                                            <label key={key}>
-                                                                <input
-                                                                    type="color"
-                                                                    aria-label={`Cor ${colorLabels[key]}`}
-                                                                    value={draft.status.colors[key]}
-                                                                    onChange={e =>
-                                                                        updateStatus({
-                                                                            colors: {
-                                                                                ...draft.status.colors,
-                                                                                [key]: e.target.value
-                                                                            }
-                                                                        })
-                                                                    }
-                                                                />
-                                                                {colorLabels[key]}
-                                                            </label>
-                                                        )
-                                                    )}
-                                                </div>
-                                            </details>
                                             <button
                                                 className="bf-ctm-text"
                                                 onClick={() =>
-                                                    updateStatus({
-                                                        widths: [2, 3, 4],
-                                                        gaps: [2, 3, 4],
-                                                        colors: { ...STATUS_COLORS }
-                                                    })
+                                                    setDraft(d => ({
+                                                        ...d,
+                                                        icons: { ...d.icons, shape: "native" }
+                                                    }))
                                                 }
                                             >
-                                                Restaurar padrões do RadialStatus
+                                                Restaurar formato nativo
+                                                {draft.icons.shape === "native" ? " ✓" : ""}
                                             </button>
-                                        </div>
-                                    )}
-                                </section>
-                                <section {...focus("emoji")}>
-                                    <label className="bf-ctm-field">
-                                        Emojis
-                                        <select
-                                            aria-label="Emojis"
-                                            value={draft.emoji}
-                                            onChange={e =>
-                                                setDraft(d => ({ ...d, emoji: e.target.value as EmojiPack }))
-                                            }
-                                        >
-                                            {EMOJI_PACKS.map(pack => (
-                                                <option key={pack} value={pack}>
-                                                    {pack === "Discord" ? "Padrão do Discord" : pack.replace("-", " ")}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </label>
-                                    <small>Um único pack por tema. A prévia usa sempre os mesmos emojis.</small>
-                                </section>
-                                <p className="bf-ctm-credit">RadialStatus por Gibbu · EmojiReplace por DevilBro</p>
-                            </>
-                        )}
-                    </fieldset>
-                    <section
-                        ref={previewPanel}
-                        role={expanded ? "dialog" : undefined}
-                        aria-modal={expanded || undefined}
-                        className={`bf-ctm-preview-panel${expanded ? " bf-ctm-expanded" : ""}`}
-                        aria-label="Prévia do tema"
-                    >
-                        <header>
-                            <div>
-                                <h3>Prévia</h3>
-                                <p>{before ? "Visual original do Discord" : "Seu tema em tempo real"}</p>
-                            </div>
-                            <div className="bf-ctm-segmented" role="group" aria-label="Comparação">
-                                <button aria-pressed={before} onClick={() => setBefore(true)}>
-                                    Antes
-                                </button>
-                                <button aria-pressed={!before} onClick={() => setBefore(false)}>
-                                    Depois
-                                </button>
-                            </div>
-                            <button className="bf-ctm-secondary" onClick={() => setExpanded(!expanded)}>
-                                {expanded ? "Fechar prévia" : "Ampliar"}
-                            </button>
-                        </header>
-                        <div className="bf-ctm-frame" ref={viewport} style={{ height: 600 * scale }}>
-                            <iframe
-                                ref={frame}
-                                title="Prévia isolada do tema"
-                                sandbox="allow-same-origin"
-                                srcDoc={document}
-                                onLoad={previewLoad}
-                                style={{ width: 960, height: 600, zoom: scale }}
-                            />
+                                            {draft.icons.shape === "rounded" && (
+                                                <label className="bf-ctm-range">
+                                                    Raio dos ícones <output>{draft.icons.radius} px</output>
+                                                    <input
+                                                        aria-label="Raio dos ícones"
+                                                        type="range"
+                                                        min={0}
+                                                        max={24}
+                                                        step={1}
+                                                        value={draft.icons.radius}
+                                                        onChange={e =>
+                                                            setDraft(d => ({
+                                                                ...d,
+                                                                icons: {
+                                                                    ...d.icons,
+                                                                    radius: Number(e.target.value)
+                                                                }
+                                                            }))
+                                                        }
+                                                    />
+                                                </label>
+                                            )}
+                                        </section>
+                                    </>
+                                )}
+                                {category === "Avatares" && (
+                                    <>
+                                        {" "}
+                                        <section {...focus("status")}>
+                                            <h4>Status</h4>
+                                            <div
+                                                className="bf-ctm-segmented"
+                                                role="group"
+                                                aria-label="Estilo de status"
+                                            >
+                                                {(["normal", "radial"] as const).map(mode => (
+                                                    <button
+                                                        key={mode}
+                                                        aria-pressed={draft.status.mode === mode}
+                                                        onClick={() => updateStatus({ mode })}
+                                                    >
+                                                        {mode === "normal" ? "Normal" : "Radial"}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            {draft.status.mode === "radial" && (
+                                                <div className="bf-ctm-radial-controls">
+                                                    <div className="bf-ctm-measure-grid">
+                                                        <span>Tamanho</span>
+                                                        <span>Espessura</span>
+                                                        <span>Distância</span>
+                                                        {["Membros", "Popout", "Perfil"].map((label, i) => (
+                                                            <React.Fragment key={label}>
+                                                                <span>{label}</span>
+                                                                <label>
+                                                                    <input
+                                                                        aria-label={`Espessura ${label}`}
+                                                                        type="number"
+                                                                        min={0.5}
+                                                                        max={12}
+                                                                        step={0.5}
+                                                                        value={draft.status.widths[i]}
+                                                                        onChange={e => {
+                                                                            const widths = [
+                                                                                ...draft.status.widths
+                                                                            ] as [number, number, number];
+                                                                            widths[i] = Number(
+                                                                                e.target.value
+                                                                            );
+                                                                            updateStatus({ widths });
+                                                                        }}
+                                                                    />
+                                                                    <span>px</span>
+                                                                </label>
+                                                                <label>
+                                                                    <input
+                                                                        aria-label={`Distância ${label}`}
+                                                                        type="number"
+                                                                        min={0}
+                                                                        max={16}
+                                                                        step={0.5}
+                                                                        value={draft.status.gaps[i]}
+                                                                        onChange={e => {
+                                                                            const gaps = [
+                                                                                ...draft.status.gaps
+                                                                            ] as [number, number, number];
+                                                                            gaps[i] = Number(e.target.value);
+                                                                            updateStatus({ gaps });
+                                                                        }}
+                                                                    />
+                                                                    <span>px</span>
+                                                                </label>
+                                                            </React.Fragment>
+                                                        ))}
+                                                    </div>
+                                                    <details>
+                                                        <summary>Cores do status</summary>
+                                                        <div className="bf-ctm-status-colors">
+                                                            {(
+                                                                Object.keys(
+                                                                    STATUS_COLORS
+                                                                ) as (keyof typeof STATUS_COLORS)[]
+                                                            ).map(key => (
+                                                                <label key={key}>
+                                                                    <input
+                                                                        type="color"
+                                                                        aria-label={`Cor ${colorLabels[key]}`}
+                                                                        value={draft.status.colors[key]}
+                                                                        onChange={e =>
+                                                                            updateStatus({
+                                                                                colors: {
+                                                                                    ...draft.status.colors,
+                                                                                    [key]: e.target.value
+                                                                                }
+                                                                            })
+                                                                        }
+                                                                    />
+                                                                    {colorLabels[key]}
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    </details>
+                                                    <button
+                                                        className="bf-ctm-text"
+                                                        onClick={() =>
+                                                            updateStatus({
+                                                                widths: [2, 3, 4],
+                                                                gaps: [2, 3, 4],
+                                                                colors: { ...STATUS_COLORS }
+                                                            })
+                                                        }
+                                                    >
+                                                        Restaurar padrões do RadialStatus
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </section>
+                                        <p className="bf-ctm-credit">RadialStatus por Gibbu</p>
+                                    </>
+                                )}
+                                {category === "Emojis" && (
+                                    <>
+                                        {" "}
+                                        <section {...focus("emoji")}>
+                                            <label className="bf-ctm-field">
+                                                Emojis
+                                                <select
+                                                    aria-label="Emojis"
+                                                    value={draft.emoji}
+                                                    onChange={e =>
+                                                        setDraft(d => ({
+                                                            ...d,
+                                                            emoji: e.target.value as EmojiPack
+                                                        }))
+                                                    }
+                                                >
+                                                    {EMOJI_PACKS.map(pack => (
+                                                        <option key={pack} value={pack}>
+                                                            {pack === "Discord"
+                                                                ? "Padrão do Discord"
+                                                                : pack.replace("-", " ")}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                            <small>
+                                                Um único pack por tema. A prévia usa sempre os mesmos emojis.
+                                            </small>
+                                        </section>
+                                        <p className="bf-ctm-credit">EmojiReplace por DevilBro</p>
+                                    </>
+                                )}
+                                <button className="bf-ctm-reset" onClick={resetCategory}>
+                                    Restaurar {category.toLocaleLowerCase()}
+                                </button>{" "}
+                            </fieldset>
+                            <section
+                                ref={previewPanel}
+                                role={expanded ? "dialog" : undefined}
+                                aria-modal={expanded || undefined}
+                                className={`bf-ctm-preview-panel${expanded ? " bf-ctm-expanded" : ""}`}
+                                aria-label="Prévia do tema"
+                            >
+                                <header>
+                                    <div>
+                                        <h3>Prévia ao vivo</h3>
+                                        <p>
+                                            {before ? "Visual original do Discord" : "Seu tema em tempo real"}
+                                        </p>
+                                    </div>
+                                    <div className="bf-ctm-segmented" role="group" aria-label="Comparação">
+                                        <button aria-pressed={before} onClick={() => setBefore(true)}>
+                                            Antes
+                                        </button>
+                                        <button aria-pressed={!before} onClick={() => setBefore(false)}>
+                                            Depois
+                                        </button>
+                                    </div>
+                                    <button
+                                        className="bf-ctm-secondary"
+                                        onClick={() => setExpanded(!expanded)}
+                                    >
+                                        {expanded ? "Fechar prévia" : "Ampliar"}
+                                    </button>
+                                </header>
+                                <nav className="bf-ctm-scenes" aria-label="Cenário da prévia">
+                                    <button
+                                        aria-pressed={scene === "conversation"}
+                                        onClick={() => setScene("conversation")}
+                                    >
+                                        Conversa
+                                    </button>
+                                    <button
+                                        aria-pressed={scene === "profile"}
+                                        onClick={() => setScene("profile")}
+                                    >
+                                        Perfil
+                                    </button>
+                                </nav>
+                                <div className="bf-ctm-frame" ref={viewport} style={{ height: 600 * scale }}>
+                                    <iframe
+                                        ref={frame}
+                                        title="Prévia isolada do tema"
+                                        sandbox="allow-same-origin"
+                                        srcDoc={document}
+                                        onLoad={previewLoad}
+                                        style={{ width: 960, height: 600, zoom: scale }}
+                                    />
+                                </div>
+                                {!previewReady && (
+                                    <p role="status" className="bf-ctm-preview-note">
+                                        Preparando prévia…
+                                    </p>
+                                )}
+                                <p className="bf-ctm-preview-note">
+                                    Prévia isolada · O Discord só muda quando você salvar e ativar.
+                                </p>
+                                {resourceErrors.emoji && (
+                                    <p className="bf-ctm-warning" role="status">
+                                        O pack {resourceErrors.emoji} não carregou. A prévia está usando
+                                        emojis padrão.
+                                    </p>
+                                )}
+                                {resourceErrors.radial && (
+                                    <p className="bf-ctm-warning" role="status">
+                                        Não foi possível carregar o RadialStatus na prévia.
+                                    </p>
+                                )}
+                                {resourceErrors.font && (
+                                    <p className="bf-ctm-warning" role="status">
+                                        A fonte {resourceErrors.font} não carregou. Usando a alternativa do
+                                        sistema.
+                                    </p>
+                                )}
+                                {resourceErrors.background && (
+                                    <p className="bf-ctm-warning" role="status">
+                                        {resourceErrors.background}
+                                    </p>
+                                )}
+                                {invalid && (
+                                    <p className="bf-ctm-warning" role="status">
+                                        {invalid}
+                                    </p>
+                                )}
+                            </section>
                         </div>
-                        {!previewReady && (
-                            <p role="status" className="bf-ctm-preview-note">
-                                Preparando prévia…
-                            </p>
-                        )}
-                        <p className="bf-ctm-preview-note">
-                            O Discord só muda quando você salvar e ativar. Passe sobre um controle para localizar o
-                            efeito.
-                        </p>
-                        {resourceErrors.emoji && (
-                            <p className="bf-ctm-warning" role="status">
-                                O pack {resourceErrors.emoji} não carregou. A prévia está usando emojis padrão.
-                            </p>
-                        )}
-                        {resourceErrors.radial && (
-                            <p className="bf-ctm-warning" role="status">
-                                Não foi possível carregar o RadialStatus na prévia.
-                            </p>
-                        )}
-                        {resourceErrors.font && (
-                            <p className="bf-ctm-warning" role="status">
-                                A fonte {resourceErrors.font} não carregou. Usando a alternativa do sistema.
-                            </p>
-                        )}
-                        {resourceErrors.background && (
-                            <p className="bf-ctm-warning" role="status">
-                                {resourceErrors.background}
-                            </p>
-                        )}
-                        {invalid && (
-                            <p className="bf-ctm-warning" role="status">
-                                {invalid}
-                            </p>
-                        )}
-                    </section>
-                </div>
-                <footer className="bf-ctm-save">
-                    <label htmlFor="bf-ctm-name">
-                        Nome do tema
-                        <input
-                            id="bf-ctm-name"
-                            placeholder="Meu tema"
-                            value={name}
-                            maxLength={64}
-                            disabled={saving}
-                            aria-invalid={!!nameError}
-                            onChange={e => setName(e.target.value)}
-                        />
-                    </label>
-                    <div>
-                        <small>
-                            {editing
-                                ? `Editando ${editing.fileName}`
-                                : "Um arquivo .theme.css, pronto para usar e compartilhar."}
-                        </small>
-                        <button
-                            className="bf-ctm-primary"
-                            disabled={saving || !!nameError || !!invalid}
-                            onClick={() => void save()}
-                        >
-                            {saving ? "Salvando…" : "Salvar e ativar"}
-                        </button>
+                        <footer className="bf-ctm-save">
+                            <small>
+                                {editing
+                                    ? `Editando ${editing.fileName}`
+                                    : "Um arquivo .theme.css, com suas escolhas salvas para editar depois."}
+                            </small>
+                        </footer>
                     </div>
-                    {nameError && <small className="bf-ctm-name-error">{nameError}</small>}
-                </footer>
+                </main>
             </div>
         </div>
     );

@@ -128,9 +128,35 @@ with sync_playwright() as playwright:
         assert page.locator('iframe[title="Prévia isolada do tema"]').get_attribute('sandbox') == 'allow-same-origin'
         assert frame.locator('script').count() == 0
         assert 'gg sans' in frame.locator('#ctm-native-fonts').evaluate('e => e.textContent')
+        page.get_by_role('tab', name='Aparência', exact=True).click()
+        # Studio navigation, history, contrast and scene switching use the real editor.
+        page.get_by_role('tab', name='Cores', exact=True).click()
+        original_accent = page.get_by_label('Cor de destaque', exact=True).input_value()
+        page.get_by_label('Cor de destaque', exact=True).fill('#bc5319')
+        expect(page.get_by_text('Alterações não salvas', exact=True)).to_be_visible()
+        page.get_by_role('button', name='Desfazer', exact=True).click()
+        expect(page.get_by_label('Cor de destaque', exact=True)).to_have_value(original_accent)
+        page.get_by_role('button', name='Refazer', exact=True).click()
+        expect(page.get_by_label('Cor de destaque', exact=True)).to_have_value('#bc5319')
+        page.get_by_role('button', name='Restaurar cores', exact=True).click()
+        expect(page.get_by_label('Cor de destaque', exact=True)).to_have_value(original_accent)
+        page.get_by_role('group', name='Base do tema').get_by_role('button', name='AMOLED', exact=True).click()
+        expect(frame.locator('.chatContent_preview')).to_have_css('background-color', 'rgb(0, 0, 0)')
+        page.get_by_role('button', name='Desfazer', exact=True).click()
+        page.get_by_label('Texto principal', exact=True).fill('#242429')
+        expect(page.get_by_text('Contraste baixo · ajuste as cores', exact=True)).to_be_visible()
+        page.get_by_role('button', name='Desfazer', exact=True).click()
+        page.get_by_role('button', name='Perfil', exact=True).click()
+        expect(frame.get_by_label('Perfil de exemplo')).to_be_visible()
+        expect(frame.locator('.ctm-profile-banner')).to_have_css('background-color', 'rgb(255, 128, 56)')
+        page.screenshot(path=str(SCREENSHOTS / 'ctm-studio-profile.png'), full_page=True)
+        page.get_by_role('button', name='Conversa', exact=True).click()
+        expect(frame.get_by_label('Perfil de exemplo')).not_to_be_visible()
+        page.get_by_role('tab', name='Aparência', exact=True).click()
         for name, color in [('Discord', 'rgb(49, 51, 56)'), ('Meia-noite', 'rgb(19, 21, 28)'), ('Oceano', 'rgb(23, 42, 50)'), ('Claro', 'rgb(255, 255, 255)'), ('Grafite', 'rgb(36, 36, 41)')]:
             page.get_by_role('group', name='Paletas prontas').get_by_role('button', name=name, exact=True).click()
             expect(frame.locator('.chatContent_preview')).to_have_css('background-color', color)
+        page.get_by_role('tab', name='Cores', exact=True).click()
         page.get_by_label('Fundo das mensagens', exact=True).fill('#121820')
         expect(frame.locator('.chatContent_preview')).to_have_css('background-color', 'rgb(18, 24, 32)')
         page.get_by_role('tab', name='Tipografia', exact=True).click()
@@ -148,7 +174,7 @@ with sync_playwright() as playwright:
         expect(page.get_by_role('dialog', name='Prévia do tema')).to_be_visible()
         page.keyboard.press('Escape')
         expect(page.get_by_role('dialog', name='Prévia do tema')).to_have_count(0)
-        page.get_by_role('tab', name='Aparência', exact=True).click()
+        page.get_by_role('tab', name='Cores', exact=True).click()
         native = page.frame_locator('iframe[title="Controles nativos do Discord"]')
         native_button = native.locator('#native-primary')
         native_default = native_button.evaluate('e => getComputedStyle(e).backgroundColor')
@@ -173,6 +199,7 @@ with sync_playwright() as playwright:
         expect(frame.locator('.sidebar_preview')).to_have_css('width', '360px')
         expect(frame.locator('.message').first).to_have_css('margin-top', '32px')
         expect(frame.locator('.composer')).to_have_css('border-radius', '24px')
+        page.get_by_role('tab', name='Servidores', exact=True).click()
         icon = frame.locator('.server .icon_preview').first
         for label, shape in [('Redondo', 'circle'), ('Triangular', 'polygon'), ('Quadrado', 'inset'), ('Quadrado arredondado', 'round 16px')]:
             page.get_by_role('radio', name=label, exact=True).check()
@@ -187,7 +214,7 @@ with sync_playwright() as playwright:
         expect(page.get_by_label('Raio dos ícones', exact=True)).to_have_count(0)
         page.get_by_role('button', name=re.compile('Restaurar formato nativo')).click()
         expect(icon).to_have_css('clip-path', 'none')
-        page.get_by_role('tab', name='Detalhes', exact=True).click()
+        page.get_by_role('tab', name='Avatares', exact=True).click()
         page.get_by_role('button', name='Radial', exact=True).click()
         online = frame.locator('.state .ctm-avatar > svg > rect').first
         expect(online).to_have_css('stroke', 'rgb(67, 181, 129)')
@@ -201,6 +228,7 @@ with sync_playwright() as playwright:
         expect(frame.locator('html')).to_have_css('--byaflux-ctm-accent', '#5865f2')
         page.get_by_role('button', name='Depois', exact=True).click()
         expect(online).to_have_css('stroke-width', '5px')
+        page.get_by_role('tab', name='Emojis', exact=True).click()
         for pack in PACKS:
             page.get_by_label('Emojis', exact=True).select_option(pack)
             images = frame.locator('.message').first.locator('.emoji')
@@ -219,14 +247,15 @@ with sync_playwright() as playwright:
         expect(page.locator('.bf-ctm-warning')).to_have_count(0)
         page.get_by_label('Emojis', exact=True).select_option('Apple')
         expect(frame.locator('.emoji').first).to_have_attribute('src', re.compile('/Apple/'))
-        page.get_by_role('tab', name='Layout', exact=True).click()
+        page.get_by_role('tab', name='Servidores', exact=True).click()
         page.get_by_role('radio', name='Triangular', exact=True).check()
+        page.get_by_role('tab', name='Layout', exact=True).click()
         page.get_by_role('switch', name='Barra lateral compacta', exact=True).check()
         expect(frame.locator('.sidebar_preview')).to_have_css('width', '240px')
         page.get_by_role('tab', name='Aparência', exact=True).click()
         page.get_by_role('switch', name='Fundo personalizado', exact=True).check()
         page.get_by_label('URL do fundo', exact=True).fill('https://images.example.test/background.svg')
-        expect(frame.locator('#app-mount')).to_have_css('background-image', re.compile('background.svg'))
+        assert 'background.svg' in frame.locator('#app-mount').evaluate("e => getComputedStyle(e, '::before').backgroundImage")
         assert page.locator('html').evaluate("e => getComputedStyle(e).getPropertyValue('--brand-500')") == baseline
         page.get_by_label('Nome do tema', exact=True).fill('CTM Playwright')
         page.get_by_role('button', name='Salvar e ativar', exact=True).click()
@@ -251,6 +280,7 @@ with sync_playwright() as playwright:
         assert state['enabledThemes'] == ['Other.theme.css', 'CTM Playwright.theme.css']
         assert state['themeActivationModes']['Other.theme.css'] == 'dark'
         assert any(t['name'] == 'CTM Playwright' for t in api('/themes'))
+        page.once('dialog', lambda dialog: dialog.accept())
         page.get_by_role('button', name='Novo tema', exact=False).click()
         page.get_by_label('Nome do tema', exact=True).fill('CTM Playwright')
         page.get_by_role('button', name='Salvar e ativar', exact=True).click()
@@ -270,18 +300,23 @@ with sync_playwright() as playwright:
         card = page.locator('.bf-ctm-theme-card').filter(has=page.get_by_text('CTM Playwright', exact=True))
         card.get_by_role('button', name='Editar', exact=True).click()
         assert page.get_by_label('Nome do tema', exact=True).input_value() == 'CTM Playwright'
+        page.get_by_role('tab', name='Aparência', exact=True).click()
         assert page.get_by_label('URL do fundo', exact=True).input_value() == 'https://images.example.test/background.svg'
+        page.get_by_role('tab', name='Cores', exact=True).click()
         assert page.get_by_label('Fundo das mensagens', exact=True).input_value() == '#121820'
         page.get_by_role('tab', name='Tipografia', exact=True).click()
         assert page.get_by_label('Fonte', exact=True).input_value() == 'Arial'
         assert page.get_by_label('Tamanho da fonte', exact=True).input_value() == '22'
         assert page.get_by_label('Altura da linha', exact=True).input_value() == '2'
         assert page.get_by_label('Peso da fonte', exact=True).input_value() == '500'
-        page.get_by_role('tab', name='Layout', exact=True).click()
+        page.get_by_role('tab', name='Servidores', exact=True).click()
         expect(page.get_by_role('radio', name='Triangular', exact=True)).to_be_checked()
+        page.get_by_role('tab', name='Layout', exact=True).click()
         assert page.get_by_label('Raio dos cartões', exact=True).input_value() == '24'
-        page.get_by_role('tab', name='Detalhes', exact=True).click()
+        page.get_by_role('tab', name='Avatares', exact=True).click()
+        page.get_by_role('tab', name='Emojis', exact=True).click()
         assert page.get_by_label('Emojis', exact=True).input_value() == 'Apple' 
+        page.get_by_role('tab', name='Avatares', exact=True).click()
         assert page.get_by_label('Espessura Membros', exact=True).input_value() == '5'
         assert page.get_by_label('Distância Membros', exact=True).input_value() == '6'
         page.get_by_label('Nome do tema', exact=True).fill('CTM Editado')
@@ -290,6 +325,15 @@ with sync_playwright() as playwright:
         assert len(api('/ctm-themes')) == 2
         assert api('/settings')['enabledThemes'] == ['Other.theme.css', 'CTM Playwright.theme.css']
         page.screenshot(path=str(SCREENSHOTS / 'ctm-restored-and-edited.png'), full_page=True)
+        page.get_by_role('button', name=re.compile('Meus temas')).click()
+        edited_card = page.locator('.bf-ctm-theme-card').filter(has_text='CTM Playwright.theme.css')
+        with page.expect_download() as export:
+            edited_card.get_by_role('button', name='Exportar', exact=True).click()
+        export_file = export.value.path()
+        assert '@byafluxCTM' in Path(export_file).read_text()
+        edited_card.get_by_role('button', name='Duplicar', exact=True).click()
+        expect(page.get_by_label('Nome do tema', exact=True)).to_have_value('CTM Editado (cópia)')
+        assert len(api('/ctm-themes')) == 2
         frame = page.frame_locator('iframe[title="Prévia isolada do tema"]')
         page.set_viewport_size({'width': 1120, 'height': 900})
         page.get_by_role('tab', name='Aparência', exact=True).click()

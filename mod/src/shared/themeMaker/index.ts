@@ -139,7 +139,13 @@ export interface ThemeChoices {
     layout: { sidebarWidth: number; messageGap: number; radius: number };
     accent: string;
     compact: boolean;
-    background: { enabled: boolean; url: string; opacity: number };
+    background: {
+        enabled: boolean;
+        url: string;
+        opacity: number;
+        position?: "center" | "top" | "bottom" | "left" | "right";
+        blur?: number;
+    };
     status: {
         mode: "normal" | "radial";
         widths: [number, number, number];
@@ -171,7 +177,7 @@ export const defaults = (): ThemeChoices => ({
     layout: { sidebarWidth: 272, messageGap: 16, radius: 8 },
     accent: "#ff8038",
     compact: false,
-    background: { enabled: false, url: "", opacity: 75 },
+    background: { enabled: false, url: "", opacity: 75, position: "center", blur: 0 },
     status: { mode: "normal", widths: [2, 3, 4], gaps: [2, 3, 4], colors: { ...STATUS_COLORS } },
     icons: { shape: "native", radius: 16 },
     emoji: "Discord"
@@ -221,7 +227,8 @@ export function validateName(value: unknown): string {
     return name;
 }
 function color(value: unknown): string {
-    if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value)) throw new Error("Use cores no formato #RRGGBB.");
+    if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value))
+        throw new Error("Use cores no formato #RRGGBB.");
     return value.toLowerCase();
 }
 function number(value: unknown, min: number, max: number): number {
@@ -243,9 +250,11 @@ export function validateChoices(value: ThemeChoices): ThemeChoices {
     )
         throw new Error("Seleção de tema desconhecida.");
     const colors = { ...STATUS_COLORS };
-    for (const key of Object.keys(colors) as (keyof typeof colors)[]) colors[key] = color(value.status.colors?.[key]);
+    for (const key of Object.keys(colors) as (keyof typeof colors)[])
+        colors[key] = color(value.status.colors?.[key]);
     const sizes = (values: number[], min: number, max: number): [number, number, number] => {
-        if (!Array.isArray(values) || values.length !== 3) throw new Error("Informe as três medidas de status.");
+        if (!Array.isArray(values) || values.length !== 3)
+            throw new Error("Informe as três medidas de status.");
         return values.map(n => number(n, min, max)) as [number, number, number];
     };
     if (typeof value.background.url !== "string" || value.background.url.length > 2048)
@@ -254,7 +263,12 @@ export function validateChoices(value: ThemeChoices): ThemeChoices {
     if (value.background.enabled) {
         try {
             const parsed = new URL(url);
-            if (parsed.protocol !== "https:" || parsed.username || parsed.password || /[\r\n\u0000]/.test(url))
+            if (
+                parsed.protocol !== "https:" ||
+                parsed.username ||
+                parsed.password ||
+                /[\r\n\u0000]/.test(url)
+            )
                 throw new Error();
             url = parsed.href;
         } catch {
@@ -267,8 +281,11 @@ export function validateChoices(value: ThemeChoices): ThemeChoices {
     const layout = value.layout === undefined ? defaults().layout : value.layout;
     if (!palette || !typography || !layout || !Object.hasOwn(FONTS, typography.font))
         throw new Error("Configuração de cores, fonte ou layout inválida.");
+    if (!["center", "top", "bottom", "left", "right"].includes(value.background.position ?? "center"))
+        throw new Error("Posição do fundo inválida.");
     const validatedPalette = defaultPalette();
-    for (const key of Object.keys(validatedPalette) as (keyof Palette)[]) validatedPalette[key] = color(palette[key]);
+    for (const key of Object.keys(validatedPalette) as (keyof Palette)[])
+        validatedPalette[key] = color(palette[key]);
     if (![400, 500, 600].includes(typography.weight)) throw new Error("Peso de fonte inválido.");
     return {
         palette: validatedPalette,
@@ -288,7 +305,9 @@ export function validateChoices(value: ThemeChoices): ThemeChoices {
         background: {
             enabled: flag(value.background.enabled),
             url,
-            opacity: number(value.background.opacity, 0, 100)
+            opacity: number(value.background.opacity, 0, 100),
+            position: value.background.position ?? "center",
+            blur: number(value.background.blur ?? 0, 0, 20)
         },
         status: {
             mode: value.status.mode,
@@ -312,8 +331,10 @@ export function iconClip(shape: IconShape, radius: number): string {
 export function themeModules(choices: ThemeChoices): { id: "radial" | "emoji" | "font"; url: string }[] {
     const result: { id: "radial" | "emoji" | "font"; url: string }[] = [];
     if (choices.status.mode === "radial") result.push({ id: "radial", url: RADIAL_URL });
-    if (choices.emoji !== "Discord") result.push({ id: "emoji", url: `${EMOJI_BASE}/base/${choices.emoji}.css` });
-    if (FONTS[choices.typography.font].url) result.push({ id: "font", url: FONTS[choices.typography.font].url });
+    if (choices.emoji !== "Discord")
+        result.push({ id: "emoji", url: `${EMOJI_BASE}/base/${choices.emoji}.css` });
+    if (FONTS[choices.typography.font].url)
+        result.push({ id: "font", url: FONTS[choices.typography.font].url });
     return result;
 }
 function mixHex(hex: string, factor: number): string {
@@ -342,7 +363,8 @@ function hsl(hex: string): string {
         delta = max - min,
         lightness = (max + min) / 2;
     let hue = 0;
-    if (delta) hue = max === r ? ((g - b) / delta) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
+    if (delta)
+        hue = max === r ? ((g - b) / delta) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
     const saturation = delta ? delta / (1 - Math.abs(2 * lightness - 1)) : 0;
     return `${Math.round((hue * 60 + 360) % 360)} ${Math.round(saturation * 100)}% ${Math.round(lightness * 100)}%`;
 }
@@ -400,7 +422,10 @@ export function accentVariables(input: string): string[] {
             ["default", accent],
             ["hover", hover]
         ])
-            set([`--${control}-background-selected-${state}`, `--${control}-border-selected-${state}`], background);
+            set(
+                [`--${control}-background-selected-${state}`, `--${control}-border-selected-${state}`],
+                background
+            );
     }
     values["--switch-thumb-background-selected-default"] = accentText(accent);
     values["--checkbox-icon-active"] = accentText(accent);
@@ -446,9 +471,13 @@ export function themeRules(input: ThemeChoices): string {
             "--interactive-active",
             "--channels-default-selected"
         ].map(key => `${key}: ${p.text} !important`),
-        ...["--text-muted", "--text-secondary", "--header-secondary", "--channels-default", "--interactive-normal"].map(
-            key => `${key}: ${p.muted} !important`
-        ),
+        ...[
+            "--text-muted",
+            "--text-secondary",
+            "--header-secondary",
+            "--channels-default",
+            "--interactive-normal"
+        ].map(key => `${key}: ${p.muted} !important`),
         `--font-primary: ${FONTS[c.typography.font].family} !important`,
         `--font-display: ${FONTS[c.typography.font].family} !important`,
         `--byaflux-ctm-font-size: ${c.typography.size}px`,
@@ -461,7 +490,10 @@ export function themeRules(input: ThemeChoices): string {
     if (c.compact) vars.push("--custom-guild-list-width: 64px");
     if (c.status.mode === "radial") {
         for (const [i, size] of ["small", "medium", "large"].entries())
-            vars.push(`--rs-${size}-spacing: ${c.status.gaps[i]}px`, `--rs-${size}-width: ${c.status.widths[i]}px`);
+            vars.push(
+                `--rs-${size}-spacing: ${c.status.gaps[i]}px`,
+                `--rs-${size}-width: ${c.status.widths[i]}px`
+            );
         vars.push(
             "--rs-avatar-shape: 50%",
             ...Object.entries(c.status.colors).map(
@@ -483,7 +515,7 @@ export function themeRules(input: ThemeChoices): string {
     if (c.compact) css += 'nav[class*="guilds_"] { width: var(--custom-guild-list-width) !important; }\n';
     if (c.background.enabled) {
         const alpha = c.background.opacity / 100;
-        css += `#app-mount { background: linear-gradient(rgb(18 19 23 / ${alpha}), rgb(18 19 23 / ${alpha})), url(${JSON.stringify(c.background.url)}) center / cover fixed !important; }\n`;
+        css += `#app-mount { position: relative; isolation: isolate; background: transparent !important; }\n#app-mount::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(rgb(18 19 23 / ${alpha}), rgb(18 19 23 / ${alpha})), url(${JSON.stringify(c.background.url)}) ${c.background.position ?? "center"} / cover; filter: blur(${c.background.blur ?? 0}px); transform: scale(1.05); }\n`;
         css +=
             '#app-mount :is([class*="bg_"], [class*="base_"], [class*="sidebar_"], [class*="sidebarList_"], [class*="chat_"], [class*="chatContent_"], [class*="members_"], [class*="container_"]:has(> [class*="members_"])) { background-color: transparent !important; }\n';
     }
@@ -505,7 +537,8 @@ export function parseTheme(css: string): CtmDocument | null {
     if (!match) return null;
     try {
         const data = JSON.parse(decodeURIComponent(match[1]));
-        if (data.schema !== 1 || typeof data.id !== "string" || !/^[a-z0-9-]{16,64}$/i.test(data.id)) return null;
+        if (data.schema !== 1 || typeof data.id !== "string" || !/^[a-z0-9-]{16,64}$/i.test(data.id))
+            return null;
         return {
             schema: 1,
             id: data.id,
