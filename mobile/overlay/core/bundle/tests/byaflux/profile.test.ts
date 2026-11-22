@@ -130,17 +130,18 @@ describe('ByaFlux mobile profile integration', () => {
             cleanup.push(...fns)
         })
         const id = '1227436212982251533'
-        badgeState.setOfficial({
-            schemaVersion: 1,
-            badges: {
-                developer: {
-                    name: 'Dev',
-                    description: '',
-                    icon: 'icons/developer-minimal.svg',
-                },
-            },
-            users: { [id]: ['developer'] },
-        })
+        badgeState.setRemoteProvider(userId =>
+            userId === id
+                ? [
+                      {
+                          id: `byaflux-${id}-official-developer`,
+                          description: 'Dev',
+                          icon: 'dummy',
+                          iconSrc: 'data:image/webp;base64,AAAA',
+                      },
+                  ]
+                : [],
+        )
         badgeState.setFake({
             target: id,
             users: { [id]: { badges: ['staff'], nitro: 'gold', boost: '' } },

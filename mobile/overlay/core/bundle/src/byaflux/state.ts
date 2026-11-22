@@ -1,10 +1,5 @@
-import { resolveBadgeIcon, userBadges } from './catalog'
 import { boostLevels, imageUrl, nitroLevels, staticBadges } from './definitions'
-import { rasterIcons } from './icons'
-import type { BadgeCatalog } from './catalog'
 
-export const CatalogUrl =
-    'https://raw.githubusercontent.com/ByaFlux/byabadges/main/badges.json'
 export const Prefix = 'byaflux-'
 export type NativeBadge = Record<string, unknown>
 export type Selection = { badges: string[]; nitro: string; boost: string }
@@ -25,7 +20,7 @@ export const isRecord = (x: unknown): x is Record<string, unknown> =>
 
 const listeners = new Set<() => void>()
 let revision = 0
-let official: BadgeCatalog | undefined
+let remoteProvider: ((userId: string) => DisplayBadge[]) | undefined
 let fake: FakeSettings | undefined
 const nativeHashes = [...nitroLevels, ...boostLevels].map(x => x.hash)
 
@@ -42,8 +37,8 @@ export const badgeState = {
         revision++
         for (const fn of listeners) fn()
     },
-    setOfficial(value: BadgeCatalog) {
-        official = value
+    setRemoteProvider(value: ((userId: string) => DisplayBadge[]) | undefined) {
+        remoteProvider = value
         this.changed()
     },
     getFake: () => fake,
@@ -52,18 +47,7 @@ export const badgeState = {
         this.changed()
     },
     badges(userId: string): DisplayBadge[] {
-        const result: DisplayBadge[] = []
-        if (official) {
-            for (const item of userBadges(official, userId))
-                result.push({
-                    id: `${Prefix}${userId}-official-${item.id}`,
-                    description: item.name,
-                    icon: 'dummy',
-                    iconSrc:
-                        rasterIcons[item.icon] ??
-                        resolveBadgeIcon(item.icon, CatalogUrl),
-                })
-        }
+        const result: DisplayBadge[] = remoteProvider?.(userId) ?? []
         const selected = fake?.users[userId]
         if (selected) {
             for (const key of selected.badges) {

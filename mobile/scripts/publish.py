@@ -25,7 +25,7 @@ if existing.returncode == 0:
     print(f'{tag} already published. No release or update channel changes.')
     raise SystemExit(0)
 notes = Path('mobile-output/RELEASE_NOTES.txt')
-notes.write_text(f'ByaFlux Mobile {version}\nByaFlux para Android 9 ou superior.\nFakeRoles: seletor nativo, cargos ordenados no perfil e agrupamento visual na lista de membros.\nCargos visuais não concedem permissões e ficam neste aparelho.\nIdentidade ByaFlux nos links, mensagens e telas do instalador.\nInstale o APK do instalador. Após atualizar, reinstale o ByaFlux pelo instalador.\nSomente os plugins obrigatórios são ativados por padrão. Aviso de atualização com botão Atualizar.\n')
+notes.write_text(f'ByaFlux Mobile {version}\nByaFlux para Android 9 ou superior.\nByaBadges integrado à API: badges por perfil, sem login do usuário ou bot.\nEstatísticas automáticas de instalação e atividade por IP e plataforma, conforme os termos do site.\nInstalador Android registra somente instalações concluídas.\nInstale a atualização do instalador e reinstale o Discord modificado para aplicar o novo bundle.\nSomente os plugins obrigatórios são ativados por padrão.\nRequer a API atualizada em https://byaflux.discloud.dev.\n')
 assets = [str(apk), 'mobile-output/SHA256SUMS', 'mobile-output/byaflux-mobile.bundle', 'mobile-output/manifest.json']
 gh('release','create',tag,*assets,'--target',os.environ['GITHUB_SHA'],'--title',f'ByaFlux Mobile {version}','--notes-file',str(notes),'--latest=false')
 # Keep the desktop release title intact: its commit hash drives desktop updates.

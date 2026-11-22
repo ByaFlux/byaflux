@@ -4,7 +4,7 @@ function assert(value: unknown, message: string): asserts value { if (!value) th
 const a = '1227436212982251533'
 const b = '1447184878411186288'
 const catalog = validateCatalog({schemaVersion:1,badges:{developer:{name:'Desenvolvedor',description:'Dev',icon:'icons/developer-minimal.svg'}},users:{[a]:['developer']}})
-badgeState.setOfficial(catalog)
+badgeState.setRemoteProvider(id => id === a ? [{id: `byaflux-${a}-official-developer`,description:'Desenvolvedor',icon:'dummy',iconSrc:'data:image/webp;base64,AAAA'}] : [])
 const native = [{id:'premium',icon:'native-nitro'},{id:'guild_booster_lvl1',icon:'native-boost'},{id:'early_supporter',icon:'native-early'}]
 const original = JSON.stringify(native)
 badgeState.setFake(readFakeSettings({target:a,users:{[a]:{badges:['staff','staff','invalid'],nitro:'gold',boost:'3m'},[b]:{badges:[],nitro:'bronze',boost:''}}}))

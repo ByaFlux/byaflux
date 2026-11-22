@@ -25,7 +25,7 @@ describe('Mobile update channel', () => {
             {
                 apkUrl: 'https://github.com/ByaFlux/byaflux/releases/download/v0.1.4/app.apk',
             },
-            { apkUrl: valid.apkUrl + '?redirect=other' },
+            { apkUrl: `${valid.apkUrl}?redirect=other` },
             { packageId: 'com.discord' },
             { versionCode: 1.5 },
             { apkSize: 0 },
@@ -38,7 +38,7 @@ describe('Mobile update channel', () => {
 describe('Installed mobile version', () => {
     afterEach(() => vi.unstubAllGlobals())
     it('uses the current build version instead of the old 0.2.1 code', () => {
-        expect(MobileVersionCode).toBe(20799)
+        expect(MobileVersionCode).toBe(20899)
     })
     it('only offers newer versions and clears stale results on failure', async () => {
         const fetch = vi.fn()
