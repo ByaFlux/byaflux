@@ -1,125 +1,55 @@
-/*
- * ByaFlux — shared profile badges.
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-import { addProfileBadge, BadgePosition, getBadgeRevision, notifyBadgeUpdates, subscribeToBadgeUpdates, ProfileBadge, removeProfileBadge } from "@api/Badges";
-import * as DataStore from "@api/DataStore";
+/* ByaFlux — profile-scoped badges and automatic IP statistics. GPL-3.0-or-later. */
+import { addProfileBadge, BadgePosition, notifyBadgeUpdates, ProfileBadge, removeProfileBadge } from "@api/Badges";
 import { Button } from "@components/Button";
 import { Paragraph } from "@components/Paragraph";
-import { Logger } from "@utils/Logger";
 import definePlugin, { PluginNative } from "@utils/types";
-import { React, showToast, UserStore } from "@webpack/common";
-
-import { BadgeCatalog, resolveBadgeIcon, userBadges, validateCatalog } from "./catalog";
-import { BADGES_URL } from "./generated";
-import { fetchRemoteCatalog } from "./remote";
+import { React } from "@webpack/common";
 
 const Native = VencordNative.pluginHelpers.ByaBadges as PluginNative<typeof import("./native")>;
-const logger = new Logger("ByaBadges");
-const CACHE_KEY = "ByaBadges:remote:v1";
-let catalog: BadgeCatalog | null = null;
-let revision = 0;
+type RemoteBadge = { id: string; name: string; description: string; icon: string; };
+const cache = new Map<string, { until: number; badges: RemoteBadge[]; }>();
+const pending = new Set<string>();
 let running = false;
-let refreshing = false;
-let syncStatus = "Aguardando carregamento";
+let epoch = 0;
 let timer: ReturnType<typeof setInterval> | undefined;
 
+async function loadProfile(userId: string) {
+    if (!running || pending.has(userId) || !/^\d{17,20}$/.test(userId)) return;
+    const current = epoch;
+    pending.add(userId);
+    try {
+        const payload = await Native.fetchProfile(userId) as { profileId?: string; badges?: RemoteBadge[]; };
+        if (!running || current !== epoch) return;
+        if (payload.profileId !== userId || !Array.isArray(payload.badges)) throw new Error("Resposta de perfil inválida");
+        const badges = payload.badges.slice(0, 128).filter(b => b && typeof b.id === "string" && typeof b.name === "string" && typeof b.description === "string" && typeof b.icon === "string" && /^data:image\/webp;base64,[A-Za-z0-9+/=]+$/.test(b.icon));
+        if (cache.size >= 200 && !cache.has(userId)) cache.delete(cache.keys().next().value!);
+        cache.set(userId, { until: Date.now() + 60000, badges });
+        notifyBadgeUpdates();
+    } catch {
+        if (running && current === epoch) cache.set(userId, { until: Date.now() + 15000, badges: cache.get(userId)?.badges ?? [] });
+    } finally { if (current === epoch) pending.delete(userId); }
+}
 const provider: ProfileBadge = {
-    id: "byaflux_badges",
-    position: BadgePosition.FIRST,
+    id: "byaflux_badges", position: BadgePosition.FIRST,
     getBadges: ({ userId }) => {
-        const source = BADGES_URL;
-        if (!catalog || !source) return [];
-        return userBadges(catalog, userId).map(badge => ({
-            id: `byaflux_${badge.id}_${revision}`,
-            name: badge.name,
-            description: badge.name,
-            detail: badge.description,
-            infoLabel: "ByaFlux",
-            iconSrc: resolveBadgeIcon(badge.icon, source),
-            largeIconSrc: resolveBadgeIcon(badge.icon, source),
-            props: { style: { objectFit: "contain" } }
-        }));
+        const saved = cache.get(userId);
+        if (running && (!saved || saved.until <= Date.now())) void loadProfile(userId);
+        return (saved?.badges ?? []).map(b => ({ id: `byaflux_${b.id}`, name: b.name, description: b.name, detail: b.description, infoLabel: "ByaFlux", iconSrc: b.icon, largeIconSrc: b.icon, props: { style: { objectFit: "contain" } } }));
     }
 };
-
-async function refresh() {
-    if (!BADGES_URL || refreshing || !running) return false;
-    refreshing = true;
-    try {
-        const next = validateCatalog(await (Native?.fetchCatalog ? Native.fetchCatalog() : fetchRemoteCatalog(BADGES_URL)));
-        if (!running) return false;
-        if (JSON.stringify(next) !== JSON.stringify(catalog)) {
-            catalog = next;
-            revision++;
-        }
-        syncStatus = "Catálogo atualizado";
-        notifyBadgeUpdates();
-        // A cache failure must not undo a valid update already in memory.
-        await DataStore.set(CACHE_KEY, { source: BADGES_URL, catalog: next }).catch(error => logger.warn("Falha ao salvar cache", error));
-        return true;
-    } catch (error) {
-        syncStatus = error instanceof Error ? error.message : String(error);
-        notifyBadgeUpdates();
-        throw error;
-    } finally { refreshing = false; }
-}
-
-function BadgeInfo() {
-    const [loading, setLoading] = React.useState(false);
-    React.useSyncExternalStore(subscribeToBadgeUpdates, getBadgeRevision, getBadgeRevision);
-    const userId = UserStore.getCurrentUser()?.id;
-    const assigned = catalog && userId ? userBadges(catalog, userId).map(badge => badge.name) : [];
-
-    return <div>
-        <Paragraph>ByaBadges é obrigatório. As badges são exibidas para todos que usam ByaFlux.</Paragraph>
-        <Paragraph>{BADGES_URL ? "O catálogo é atualizado a cada 5 minutos. Após atualizar, reabra o perfil." : "A fonte pública das badges ainda não foi configurada."}</Paragraph>
-        <Paragraph>Sincronização: {syncStatus}</Paragraph>
-        <Paragraph>Seu ID: {userId ?? "Carregando"}</Paragraph>
-        <Paragraph>Suas badges: {assigned.length ? assigned.join(", ") : "Nenhuma atribuída neste catálogo"}</Paragraph>
-        <Button disabled={!BADGES_URL || loading} onClick={async () => {
-            setLoading(true);
-            try {
-                const updated = await refresh();
-                showToast({ text: updated ? "Badges atualizadas. Reabra o perfil para visualizar." : "A atualização já está em andamento." });
-            } catch (error) {
-                logger.error(error);
-                showToast({ text: "Não foi possível atualizar. O último catálogo válido foi mantido." });
-            } finally { setLoading(false); }
-        }}>Atualizar badges</Button>
-    </div>;
-}
-
 export default definePlugin({
     name: "ByaBadges",
-    description: "Badges oficiais do ByaFlux, sincronizadas por catálogo público.",
+    description: "Badges oficiais do ByaFlux, consultadas por perfil.",
     authors: [{ name: "Haru", id: 1227436212982251533n }],
-    required: true,
-    enabledByDefault: true,
-    dependencies: ["BadgeAPI"],
-    settingsAboutComponent: BadgeInfo,
-    async start() {
-        running = true;
-        catalog = null;
-        revision++;
-        addProfileBadge(provider);
-        if (!BADGES_URL) return;
-        try {
-            const cached = await DataStore.get<{ source: string; catalog: BadgeCatalog; }>(CACHE_KEY);
-            if (running && cached?.source === BADGES_URL) {
-                catalog = validateCatalog(cached.catalog);
-                revision++;
-                syncStatus = "Usando catálogo em cache";
-                notifyBadgeUpdates();
-            }
-        } catch (error) { logger.warn("Cache inválido; aguardando catálogo remoto", error); }
-        if (!running) return;
-        void refresh().catch(error => logger.warn("Usando o último catálogo válido", error));
-        timer = setInterval(() => void refresh().catch(error => logger.warn("Falha ao atualizar badges", error)), 5 * 60 * 1000);
+    required: true, enabledByDefault: true, dependencies: ["BadgeAPI"],
+    settingsAboutComponent: () => <div>
+        <Paragraph>Badges consultadas por perfil, sem login ou bot. Termos: https://byaflux.discloud.dev/terms.</Paragraph>
+        <Button onClick={() => { cache.clear(); notifyBadgeUpdates(); }}>Atualizar badges</Button>
+    </div>,
+    start() {
+        running = true; epoch++; cache.clear(); pending.clear(); addProfileBadge(provider);
+        void Native.reportOpen(VERSION).catch(() => {});
+        timer = setInterval(() => { void Native.reportOpen(VERSION).catch(() => {}); notifyBadgeUpdates(); }, 60000);
     },
-    stop() {
-        running = false;
-        clearInterval(timer);
-        removeProfileBadge(provider);
-    }
+    stop() { running = false; epoch++; clearInterval(timer); cache.clear(); pending.clear(); removeProfileBadge(provider); }
 });

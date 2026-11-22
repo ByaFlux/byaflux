@@ -166,6 +166,8 @@ func (di *DiscordInstall) patch() error {
 			return errors.New("Failed to grant Discord Flatpak access to " + EquicordDirectory + ": " + err.Error())
 		}
 	}
+	reportByaFluxInstall()
+
 	return nil
 }
 

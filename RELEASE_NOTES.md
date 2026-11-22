@@ -1,11 +1,10 @@
-# ByaFlux 0.1.17
+# ByaFlux 0.1.18
 
-- Criador de temas com nova interface: categorias na lateral, controles organizados e prévia ao vivo.
-- Comparação Antes/Depois e cenários de conversa e perfil.
-- Paletas Escuro, AMOLED e Claro, cores personalizadas e verificação de contraste.
-- Fonte, tamanho, peso, espaçamento, layout, formatos de ícone, status radial e packs de emojis.
-- Fundo personalizado com posição, escurecimento e desfoque.
-- Desfazer/refazer, restauração por categoria, edição, duplicação e exportação de temas locais.
-- Salvamento e ativação preservam os demais temas e as configurações existentes.
+- ByaBadges integrado à API: consulta individual dos emblemas do perfil aberto, sem login do usuário ou bot.
+- Badges oficiais permanecem obrigatórias e aparecem antes das badges nativas.
+- Registro automático de instalação e atividade por IP e plataforma, conforme os termos do site.
+- Reinstalações no mesmo IP e plataforma não somam novas instalações; atividade diária é deduplicada.
+- Integração nos instaladores oficiais de Windows e Linux.
+- Inclui correções de hierarquia, agrupamento e cor/ícone de cargos visuais do FakeRoles.
 
-Disponível nos instaladores oficiais de Windows e Linux (x86_64 e ARM64).
+API: https://byaflux.discloud.dev — requer a versão atualizada do servidor.
