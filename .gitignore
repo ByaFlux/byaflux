@@ -8,3 +8,10 @@
 *.zip
 .env
 .DS_Store
+
+**/__pycache__/
+**/.runtime/
+*.pyc
+*.sqlite
+*.sqlite-*
+*.apk

@@ -6,7 +6,7 @@
 
 import "./style.css";
 
-import { addProfileBadgeTransform, removeProfileBadgeTransform, notifyBadgeUpdates, ProfileBadge } from "@api/Badges";
+import { hasPublicBadgeLayout, addProfileBadgeTransform, removeProfileBadgeTransform, notifyBadgeUpdates, ProfileBadge } from "@api/Badges";
 import type { NavContextMenuPatchCallback } from "@api/ContextMenu";
 import { isPluginEnabled } from "@api/PluginManager";
 import { definePluginSettings, migratePluginSettings } from "@api/Settings";
@@ -104,6 +104,7 @@ export default definePlugin({
     },
     applyLocalBadges(userId: string | undefined, badges: ProfileBadge[]) {
         const currentUserId = UserStore.getCurrentUser()?.id;
+        if (userId && hasPublicBadgeLayout(userId)) return badges;
         return active ? applyLocalBadges(userId, currentUserId, badges, currentUserId ? settings.store.profiles?.[currentUserId] : undefined) : badges;
     },
     openSelfContextMenu(event: React.MouseEvent) {

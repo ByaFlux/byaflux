@@ -1,10 +1,11 @@
-# ByaFlux 0.1.18
+# ByaFlux 0.1.19
 
-- ByaBadges integrado à API: consulta individual dos emblemas do perfil aberto, sem login do usuário ou bot.
-- Badges oficiais permanecem obrigatórias e aparecem antes das badges nativas.
-- Registro automático de instalação e atividade por IP e plataforma, conforme os termos do site.
-- Reinstalações no mesmo IP e plataforma não somam novas instalações; atividade diária é deduplicada.
-- Integração nos instaladores oficiais de Windows e Linux.
-- Inclui correções de hierarquia, agrupamento e cor/ícone de cargos visuais do FakeRoles.
+- Organização pública das badges do ByaFlux: arraste para ordenar e clique para ocultar.
+- Confirmação da conta pelo Discord para editar apenas o próprio perfil.
+- Controles nativos do Discord preservados para as badges oficiais.
+- Correções de cor e ícone dos cargos visuais do FakeRoles no Windows e Linux.
+- Integração da instalação manual com as estatísticas da API.
+- Limpeza de arquivos de testes e instruções antigas do repositório.
 
-API: https://byaflux.discloud.dev — requer a versão atualizada do servidor.
+A organização pública das badges requer a API 1.2.0 já instalada no servidor.
+Esta atualização é para Windows e Linux. O download Android mantém a versão 0.2.8.

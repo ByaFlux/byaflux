@@ -17,5 +17,3 @@ gh("release", "download", "mobile-v" + version, "--repo", repo, "--pattern", nam
 apk = Path("publish") / name
 if apk.stat().st_size != channel["apkSize"] or hashlib.sha256(apk.read_bytes()).hexdigest() != channel["sha256"]:
     raise ValueError("Invalid mobile APK")
-tag = "v" + json.loads(Path("package.json").read_text())["version"]
-gh("release", "upload", tag, str(apk), "--repo", repo, "--clobber")

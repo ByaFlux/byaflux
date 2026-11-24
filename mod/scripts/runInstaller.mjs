@@ -94,6 +94,23 @@ try {
             EQUICORD_DEV_INSTALL: "1"
         }
     });
+    if (!helpOnly && (args.includes("--install") || args.includes("--repair"))) {
+        const platform = process.platform === "win32" ? "windows" : process.platform === "linux" ? "linux" : null;
+        if (platform) {
+            const { version } = JSON.parse(readFileSync(join(BASE_DIR, "package.json"), "utf8"));
+            try {
+                const response = await fetch("https://byaflux.discloud.dev/api/client/install", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ platform, version }),
+                    signal: AbortSignal.timeout(4000)
+                });
+                if (!response.ok) console.warn("Instalação concluída. O registro na API ficou indisponível.");
+            } catch {
+                console.warn("Instalação concluída. O registro na API ficou indisponível.");
+            }
+        }
+    }
 } catch (error) {
     console.error(error.message);
     process.exitCode = Number.isInteger(error.status) && error.status > 0 ? error.status : 1;

@@ -1,4 +1,9 @@
-import { isHttpsUrl } from "./catalog";
+function isHttpsUrl(value: string) {
+    try {
+        const url = new URL(value);
+        return url.protocol === "https:" && !url.username && !url.password;
+    } catch { return false; }
+}
 
 export async function fetchRemoteCatalog(source: string | null): Promise<unknown> {
     if (!source || !isHttpsUrl(source)) throw new Error("A URL pública das badges não foi configurada.");

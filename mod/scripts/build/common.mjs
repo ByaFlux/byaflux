@@ -31,8 +31,6 @@ import { fileURLToPath } from "url";
 import { promisify } from "util";
 
 import { getPluginTarget } from "../utils.mjs";
-import { syncBadgeFiles } from "../syncBadges.mjs";
-syncBadgeFiles();
 
 const PackageJSON = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../package.json"), "utf-8"));
 

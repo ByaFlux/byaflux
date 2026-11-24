@@ -201,8 +201,8 @@ export default definePlugin({
         {
             find: "getLegacyUsername(){",
             replacement: {
-                match: /getBadges\(\)\{.{0,100}?return\[/,
-                replace: "$&...$self.getBadges(this),"
+                match: /getBadges\(\)\{return(\[.{0,500}?\])\}(?=getLegacyUsername)/,
+                replace: "getBadges(){return $self.mergeProfileBadges(this,$1)}"
             }
         },
         {

@@ -2,45 +2,38 @@
 
 [Português](README.md)
 
-Plugins and customization for the Discord desktop app.
+Discord customization for Windows and Linux.
 
-**[Download for Windows x64](https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstaller.exe)**
+## Install
 
-## Requirements
+1. [Download the Windows installer](https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstaller.exe).
+2. Fully close Discord, including its system tray icon.
+3. Run the installer and select your Discord installation.
 
-Windows x64, Discord installed, and an internet connection.
+### Linux
 
-## Installation
-
-1. Fully close Discord, including its system tray icon.
-2. Open the installer, select your Discord installation, and click **Install**.
-3. Open Discord and go to **User Settings → ByaFlux**.
-
-## Update, repair, or uninstall
-
-Click **Atualizar e reiniciar** (Update and restart) when the new-version banner appears.
-
-In the installer, **Reinstall / Repair** repairs the installation and **Uninstall** removes ByaFlux. Close Discord before using either option.
-
-## Credits and license
-
-Based on [Equicord](https://github.com/Equicord/Equicord), [Vencord](https://github.com/Vendicated/Vencord), and [Equilotl](https://github.com/Equicord/Equilotl). Licenses: [mod](mod/LICENSE) and [installer](installer/LICENSE).
-
-ByaFlux is not an official Discord product.
-
-## Linux
-
-Close Discord, then run:
-
-```bash
-mkdir -p ~/ByaFlux && cd ~/ByaFlux
-curl -fL "https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstallerCli-Linux-$(uname -m)" -o ByaFluxInstaller
+```sh
+curl -fL https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstallerCli-Linux-$(uname -m) -o ByaFluxInstaller
 chmod +x ByaFluxInstaller
 ./ByaFluxInstaller --install
 ```
 
-If Discord is installed in a protected system directory, run `sudo ./ByaFluxInstaller --install`. Do not run Discord with sudo.
+If the Discord directory requires administrator access, use `sudo ./ByaFluxInstaller --install`.
 
-To uninstall: `./ByaFluxInstaller --uninstall`.
+[Android](https://github.com/ByaFlux/byaflux/releases/latest) · [All downloads](https://github.com/ByaFlux/byaflux/releases/latest)
 
-Linux uses the same stable release and updater as Windows. Run this installer once to leave the old Linux dev channel. Existing settings and themes are imported only when missing from the stable data directory.
+## Update or remove
+
+When an update is available, choose **Update and restart** in Discord.
+To repair or remove ByaFlux, close Discord and run the installer again.
+On Linux, use `./ByaFluxInstaller --uninstall` to remove it.
+
+## Requirements
+
+Discord installed, an internet connection, and Windows x64 or Linux x86_64/ARM64.
+
+## Credits
+
+Based on [Equicord](https://github.com/Equicord/Equicord), [Vencord](https://github.com/Vendicated/Vencord)
+and [Equilotl](https://github.com/Equicord/Equilotl). Licenses: [client](mod/LICENSE) and [installer](installer/LICENSE).
+ByaFlux is independent and is not affiliated with Discord.

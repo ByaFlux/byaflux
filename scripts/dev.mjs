@@ -3,7 +3,6 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { syncBadgeFiles } from '../mod/scripts/syncBadges.mjs';
 import { packageManagerCommand } from './package-manager.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -44,7 +43,6 @@ switch (command) {
         break;
     }
     case 'build': {
-        syncBadgeFiles();
         const env = { ...process.env, EQUICORD_HASH: sourceHash() };
         // Local builds use local source. Published standalone builds retain their own updater.
         run(process.execPath, ['--require=./scripts/suppressExperimentalWarnings.js', 'scripts/build/build.mjs', '--disable-updater', ...args], { env });
