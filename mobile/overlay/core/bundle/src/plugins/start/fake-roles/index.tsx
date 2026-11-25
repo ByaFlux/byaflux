@@ -18,6 +18,7 @@ import {
 import { Action, Panel, store } from '~/byaflux/mobile'
 import manifest from './manifest.json'
 import {
+    bindMemberAppearanceStore,
     bindMemberListStore,
     bindSectionListStore,
     orderedRoles,
@@ -527,6 +528,34 @@ registerInternalPlugin<{ jsonStorage: Settings }>(manifest, {
                     )
                 }),
             )
+        cleanup(
+            getStore('GuildMemberStore', source => {
+                displayStores.add(source)
+                cleanup(
+                    bindMemberAppearanceStore(
+                        source,
+                        (guildId, id) => {
+                            const ownId = userId()
+                            if (
+                                !active ||
+                                !ownId ||
+                                (id && id !== ownId) ||
+                                !store<any>('GuildStore')?.getGuild(guildId)
+                            )
+                                return
+                            return {
+                                guildId,
+                                userId: ownId,
+                                selection: profiles[roleKey(ownId, guildId)],
+                                roles: roles(guildId),
+                                revision,
+                            }
+                        },
+                        () => revision,
+                    ),
+                )
+            }),
+        )
         for (const name of [
             'ChannelMemberStore',
             'GuildMemberListStore',
@@ -565,6 +594,7 @@ registerInternalPlugin<{ jsonStorage: Settings }>(manifest, {
             () => {
                 active = false
                 bridge = undefined
+                for (const source of displayStores) source.emitChange?.()
                 displayStores.clear()
                 persist = undefined
                 profiles = {}
