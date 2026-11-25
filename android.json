@@ -1,8 +1,8 @@
 {
-  "versionName": "0.2.10",
-  "versionCode": 21099,
+  "versionName": "0.2.11",
+  "versionCode": 21199,
   "packageId": "app.byaflux.manager",
-  "apkUrl": "https://github.com/ByaFlux/byaflux/releases/download/mobile-v0.2.10/ByaFluxMobile-0.2.10.apk",
-  "apkSize": 58492739,
-  "sha256": "4f9061fc83a5d1d8674b2d82877cca2df1accbf356549fd541c3be9a91546bcb"
+  "apkUrl": "https://github.com/ByaFlux/byaflux/releases/download/mobile-v0.2.11/ByaFluxMobile-0.2.11.apk",
+  "apkSize": 58631443,
+  "sha256": "31d559ae782951b35d101c927fbe6dc34e303056b05da11273ad41aaf5ea6097"
 }
