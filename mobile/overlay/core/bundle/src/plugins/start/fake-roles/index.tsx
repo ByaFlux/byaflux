@@ -421,7 +421,10 @@ function projectionContext(guildArg?: string, channelArg?: string) {
         user:
             store<any>('UserStore')?.getUser?.(id) ??
             store<any>('UserStore')?.getCurrentUser(),
-        status: store<any>('PresenceStore')?.getStatus(id) ?? 'offline',
+        status:
+            store<any>('SelfPresenceStore')?.getStatus?.() ??
+            store<any>('PresenceStore')?.getStatus(id) ??
+            'offline',
         revision,
     }
 }
@@ -576,6 +579,7 @@ registerInternalPlugin<{ jsonStorage: Settings }>(manifest, {
         const sourceChanged = () => changed()
         for (const name of [
             'PresenceStore',
+            'SelfPresenceStore',
             'GuildRoleStore',
             'GuildMemberStore',
             'SelectedGuildStore',

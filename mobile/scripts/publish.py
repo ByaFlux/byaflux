@@ -25,7 +25,7 @@ if existing.returncode == 0:
     print(f'{tag} already published. No release or update channel changes.')
     raise SystemExit(0)
 notes = Path('mobile-output/RELEASE_NOTES.txt')
-notes.write_text(f'ByaFlux Mobile {version}\nCorreção do FakeRoles: grupos, índices e cargos na lista de membros.\nPreserva as posições não carregadas em servidores grandes.\nCor e ícone dos cargos visuais atualizados nas mensagens e na lista de membros.\nInstale a atualização do instalador e reinstale o Discord modificado para aplicar o novo bundle.\nSomente os plugins obrigatórios são ativados por padrão.\n')
+notes.write_text(f'ByaFlux Mobile {version}\nFakeRoles exibe o próprio usuário mesmo antes de o Discord carregar sua linha na lista de membros.\nMantém cores, ícones, grupos e permissões reais.\nApoio ao projeto em https://byaflux.discloud.dev/doar.\nInstale a atualização do instalador e reinstale o Discord modificado para aplicar o novo bundle.\nSomente os plugins obrigatórios são ativados por padrão.\n')
 assets = [str(apk), 'mobile-output/SHA256SUMS', 'mobile-output/byaflux-mobile.bundle', 'mobile-output/manifest.json']
 gh('release','create',tag,*assets,'--target',os.environ['GITHUB_SHA'],'--title',f'ByaFlux Mobile {version}','--notes-file',str(notes),'--latest=false')
 # Keep the desktop release title intact: its commit hash drives desktop updates.

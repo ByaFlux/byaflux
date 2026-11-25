@@ -1,29 +1,20 @@
-# ByaFlux
+# ByaFlux para Android
 
 [English](README.en.md)
 
-Plugins e personalização para o aplicativo do Discord.
+Requer Android 9 ou superior.
 
-**[Baixar para Windows x64](https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstaller.exe)**
+1. [Baixe o instalador Android](https://github.com/ByaFlux/byaflux/releases/latest).
+2. Abra o APK e permita a instalação quando solicitado pelo Android.
+3. Use o instalador para instalar o Discord com ByaFlux.
+4. Ative os plugins desejados em Configurações, ByaFlux, Plugins.
 
-## Requisitos
+Somente os plugins obrigatórios ficam ativos por padrão.
 
-Windows x64, Discord instalado e conexão com a internet.
+## Atualizar
 
-## Instalação
+Aceite a atualização indicada no instalador ou nas configurações do ByaFlux. Depois, reinstale o Discord modificado pelo instalador para aplicar os novos recursos.
 
-1. Feche completamente o Discord, inclusive o ícone perto do relógio.
-2. Abra o instalador, selecione seu Discord e clique em **Install**.
-3. Abra o Discord e acesse **Configurações do usuário → ByaFlux**.
+[Apoie o projeto](https://byaflux.discloud.dev/doar) · [Downloads para todas as plataformas](https://github.com/ByaFlux/byaflux/releases/latest)
 
-## Atualizar, reparar ou remover
-
-Use **Atualizar e reiniciar** quando o aviso de nova versão aparecer.
-
-No instalador, **Reinstall / Repair** repara a instalação e **Uninstall** remove o ByaFlux. Feche o Discord antes de usar essas opções.
-
-## Créditos e licença
-
-Baseado em [Equicord](https://github.com/Equicord/Equicord), [Vencord](https://github.com/Vendicated/Vencord) e [Equilotl](https://github.com/Equicord/Equilotl). Licenças: [mod](mod/LICENSE) e [instalador](installer/LICENSE).
-
-ByaFlux não é um produto oficial do Discord.
+Baseado em [Valenced](https://github.com/Valenced/valenced) e [Valenced Manager](https://github.com/Valenced/valenced-manager). [Créditos dos plugins](mobile/NOTICE-mobile-plugins) e [licença dos plugins portados](mobile/LICENSE-plugins).

@@ -154,3 +154,47 @@ test(`${platform}: store cache respects replacement groups even without a versio
     assert.equal(store.getProps().groups[0].id, 'offline')
     restore()
 })
+test(`${platform}: self missing from server cache appears at the target group's first unloaded slot`, () => {
+    const a = header(role, 100, 0),
+        b = header('online', 2, 101)
+    const rows = new Array(104)
+    rows[0] = a
+    rows[1] = person('444444444444444444', 'Alice')
+    rows[101] = b
+    const source = { groups: [a, b], rows, version: 10 }
+    const r = project(source)
+    aligned(r)
+    assert.equal(r.groups[0].count, 101)
+    assert.equal(r.groups[1].count, 1)
+    assert.equal(r.rows[2].user.id, self)
+    assert.equal(r.rows.length, 104)
+    assert.equal(r.rows[1], rows[1])
+    assert.deepEqual(member.roles, [])
+})
+test(`${platform}: fully loaded peers are never removed when self is absent`, () => {
+    const a = header('online', 1, 0),
+        peer = person('444444444444444444', 'Zoe')
+    const source = { groups: [a], rows: [a, peer], version: 11 }
+    const r = project(source)
+    aligned(r)
+    assert.equal(
+        r.rows.filter(x => m.memberRowId(x) === peer.user.id).length,
+        1,
+    )
+    assert.equal(source.rows.length, 2)
+    assert.equal(r.groups.find(x => x.id === 'online').count, 1)
+})
+test(`${platform}: loading native self later cannot create a duplicate`, () => {
+    const a = header('online', 2, 0)
+    let rows = [a, undefined, person('444444444444444444', 'Zoe')]
+    const first = project({ groups: [a], rows, version: 1 })
+    assert.equal(first.rows.filter(x => m.memberRowId(x) === self).length, 1)
+    rows = [a, own, rows[2]]
+    const next = project({ groups: [a], rows, version: 2 })
+    aligned(next)
+    assert.equal(next.rows.filter(x => m.memberRowId(x) === self).length, 1)
+    assert.equal(
+        next.groups.reduce((n, g) => n + g.count, 0),
+        2,
+    )
+})

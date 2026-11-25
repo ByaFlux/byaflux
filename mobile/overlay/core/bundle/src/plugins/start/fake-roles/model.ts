@@ -273,7 +273,32 @@ export function projectMemberList<T extends MemberListSnapshot>(
         })
         offset += meta.count + 1
     }
-    if (offset !== source.rows.length || !originalRow) return source
+    if (offset !== source.rows.length) return source
+    if (!originalRow) {
+        const nativeHoist = ordered.find(
+            r => r.hoist && (member.roles ?? []).includes(r.id),
+        )
+        const nativeId = offline ? 'offline' : (nativeHoist?.id ?? 'online')
+        const nativeSection = sections.get(nativeId)
+        // Replace one unloaded native slot without dropping another known member.
+        const unloaded =
+            nativeSection?.rows.findIndex(value => value == null) ?? -1
+        if (unloaded >= 0) {
+            nativeSection!.rows.splice(unloaded, 1)
+            originalId = nativeId
+        }
+        originalRow = {
+            type: 'MEMBER',
+            activities: [],
+            applicationStream: null,
+            isOwner: false,
+            isMobileOnline: false,
+            isVROnline: false,
+            ...member,
+            user,
+            status,
+        }
+    }
     const visual = projectMember(member, selection, ordered, guildId)
     const template = originalRow
     const row: MemberRecord = {
@@ -369,9 +394,9 @@ export function projectMemberList<T extends MemberListSnapshot>(
     const target = sections.get(targetId)!.rows
     const insert = target.findIndex(
         peer =>
-            peer &&
-            memberRowId(peer) &&
-            compareMemberRows(row, peer as MemberRecord) < 0,
+            peer == null ||
+            (memberRowId(peer) &&
+                compareMemberRows(row, peer as MemberRecord) < 0),
     )
     target.splice(insert < 0 ? target.length : insert, 0, row)
     const rows: unknown[] = []

@@ -98,7 +98,7 @@ jobs:
           cp "$apk" "mobile-output/ByaFluxMobile-${MOBILE_VERSION}.apk"
           cp mobile/work/core/bundle/dist/valenced.bundle mobile-output/byaflux-mobile.bundle
           cp mobile/work/core/bundle/dist/manifest.json mobile-output/manifest.json
-          cp mobile/README.md mobile-output/LEIA-ME.md
+          cp README.md mobile-output/LEIA-ME.md
           cp mobile/work/core/LICENSE mobile-output/LICENSE-core
           cp mobile/work/manager/LICENSE mobile-output/LICENSE-manager
           sha256sum mobile-output/*.apk > mobile-output/SHA256SUMS

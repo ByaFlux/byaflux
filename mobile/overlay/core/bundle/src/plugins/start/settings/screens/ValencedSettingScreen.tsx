@@ -134,7 +134,7 @@ function DonateCard() {
                                 <Button
                                     size="sm"
                                     icon={getAssetIdByName('HeartIcon')}
-                                    text="Donate"
+                                    text="Doar"
                                     variant="expressive"
                                     onPress={() => {
                                         Linking.openURL(__BUILD_DONATE_URL__)
