@@ -1,20 +1,39 @@
-# ByaFlux for Android
+# ByaFlux
 
 [Português](README.md)
 
-Requires Android 9 or newer.
+Customize Discord on Windows, Linux and Android.
 
-1. [Download the Android installer](https://github.com/ByaFlux/byaflux/releases/latest).
-2. Open the APK and allow installation when Android asks.
-3. Use the installer to install Discord with ByaFlux.
-4. Enable your preferred plugins in Settings, ByaFlux, Plugins.
+## Install
 
-Only required plugins are enabled by default.
+Download from the [official site](https://byaflux.discloud.dev) or [latest release](https://github.com/ByaFlux/byaflux/releases/latest).
 
-## Update
+- **Windows:** fully close Discord, run `ByaFluxInstaller.exe` and select your installation.
+- **Android:** install the ByaFlux APK and follow its instructions to install the modified Discord app.
+- **Linux:** fully close Discord and run:
 
-Accept the update offered by the installer or ByaFlux settings. Then reinstall modified Discord through the installer to apply the new bundle.
+```sh
+curl -fL https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstallerCli-Linux-$(uname -m) -o ByaFluxInstaller
+chmod +x ByaFluxInstaller
+./ByaFluxInstaller --install
+```
 
-[Support the project](https://byaflux.discloud.dev/doar) · [All platforms](https://github.com/ByaFlux/byaflux/releases/latest)
+Use `sudo ./ByaFluxInstaller --install` when Discord's installation directory requires administrator access.
 
-Based on [Valenced](https://github.com/Valenced/valenced) and [Valenced Manager](https://github.com/Valenced/valenced-manager). [Plugin credits](mobile/NOTICE-mobile-plugins) and [ported plugin license](mobile/LICENSE-plugins).
+## Update or remove
+
+On desktop, use **Update and restart** when prompted. Reopen the installer to repair or remove ByaFlux.
+On Linux, remove it with `./ByaFluxInstaller --uninstall`.
+
+On Android, accept the update prompt, update the installer and reinstall modified Discord to apply the new bundle.
+
+## Requirements
+
+Internet access. Installed Discord on Windows x64 or Linux x86_64/ARM64. Android 9 or newer.
+Nitro features and collectibles still require the corresponding account benefits.
+
+[Donate](https://byaflux.discloud.dev/doar)
+
+## Credits
+
+Based on Equicord, Vencord, Equilotl and Valenced. Original project and dependency credits and licenses are preserved.

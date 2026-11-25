@@ -4,6 +4,7 @@ import { Design } from '@valenced/discord/design'
 import { SettingListRenderer } from '@valenced/discord/modules/settings/renderer'
 import { useSyncExternalStore } from 'react'
 import { Image, Linking, ScrollView, StyleSheet, View } from 'react-native'
+import { NativeProfileTools } from '~/byaflux/profile-editor'
 import { updates } from '~/byaflux/updates'
 import ValencedDonate from '~assets/ValencedDonate'
 import { Setting } from '../constants'
@@ -17,6 +18,7 @@ export default function ValencedSettingScreen() {
             <Stack spacing={0}>
                 <View style={{ padding: 16, paddingBottom: 0 }}>
                     <DonateCard />
+                    <NativeProfileTools />
                 </View>
                 <View style={{ padding: 16 }}>
                     <Design.TableRowGroup title="Atualizações">

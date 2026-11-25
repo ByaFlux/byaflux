@@ -1,4 +1,6 @@
+import { applyBadgeLayout } from './badge-layout'
 import { boostLevels, imageUrl, nitroLevels, staticBadges } from './definitions'
+import type { BadgeLayout } from './badge-layout'
 
 export const Prefix = 'byaflux-'
 export type NativeBadge = Record<string, unknown>
@@ -6,6 +8,7 @@ export type Selection = { badges: string[]; nitro: string; boost: string }
 export type FakeSettings = { target: string; users: Record<string, Selection> }
 export type DisplayBadge = {
     id: string
+    layoutKey?: string
     description: string
     icon: string
     iconSrc: string
@@ -21,6 +24,7 @@ export const isRecord = (x: unknown): x is Record<string, unknown> =>
 const listeners = new Set<() => void>()
 let revision = 0
 let remoteProvider: ((userId: string) => DisplayBadge[]) | undefined
+let layoutProvider: ((userId: string) => BadgeLayout | null) | undefined
 let fake: FakeSettings | undefined
 const nativeHashes = [...nitroLevels, ...boostLevels].map(x => x.hash)
 
@@ -41,6 +45,19 @@ export const badgeState = {
         remoteProvider = value
         this.changed()
     },
+    setLayoutProvider(value: typeof layoutProvider) {
+        layoutProvider = value
+        this.changed()
+    },
+    layout(userId: string) {
+        return layoutProvider?.(userId) ?? null
+    },
+    arrange<T extends Record<string, unknown>>(
+        badges: T[],
+        userId: string,
+    ): T[] {
+        return applyBadgeLayout(badges, this.layout(userId))
+    },
     getFake: () => fake,
     setFake(value: FakeSettings | undefined) {
         fake = value
@@ -48,7 +65,7 @@ export const badgeState = {
     },
     badges(userId: string): DisplayBadge[] {
         const result: DisplayBadge[] = remoteProvider?.(userId) ?? []
-        const selected = fake?.users[userId]
+        const selected = this.layout(userId) ? undefined : fake?.users[userId]
         if (selected) {
             for (const key of selected.badges) {
                 const badge = staticBadges.find(b => b.key === key)
@@ -77,7 +94,7 @@ export const badgeState = {
         return result
     },
     merge(original: unknown[], userId: string): unknown[] {
-        const selection = fake?.users[userId]
+        const selection = this.layout(userId) ? undefined : fake?.users[userId]
         const native = original.filter(item => {
             if (!isRecord(item)) return true
             if (
@@ -106,7 +123,10 @@ export const badgeState = {
                 return false
             return true
         })
-        return [...this.badges(userId), ...native]
+        return applyBadgeLayout(
+            [...this.badges(userId), ...native] as Record<string, unknown>[],
+            this.layout(userId),
+        )
     },
     props(id: unknown) {
         if (typeof id !== 'string' || !id.startsWith(Prefix)) return undefined
@@ -119,7 +139,7 @@ export const badgeState = {
             : undefined
     },
     hasReplacement(userId: string, kind: 'nitro' | 'boost') {
-        return !!fake?.users[userId]?.[kind]
+        return !this.layout(userId) && !!fake?.users[userId]?.[kind]
     },
     nativeHashes,
 }

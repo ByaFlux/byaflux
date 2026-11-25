@@ -33,6 +33,7 @@ function LocalBadge({ id }: { id: string }) {
 function catalogFor(original: unknown[], userId: string) {
     const own = badgeState.badges(userId).map(b => ({
         badge_id: b.id,
+        layoutKey: b.layoutKey,
         name: b.description,
         info_label: b.description,
         description: b.description,
@@ -48,7 +49,10 @@ function catalogFor(original: unknown[], userId: string) {
     const native = badgeState
         .merge(original, userId)
         .filter(b => !isRecord(b) || !String(b.id).startsWith(Prefix))
-    return [...own, ...native]
+    return badgeState.arrange(
+        [...own, ...native] as Record<string, unknown>[],
+        userId,
+    )
 }
 
 function profileProps(props: Record<string, unknown>) {

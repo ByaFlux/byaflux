@@ -25,7 +25,7 @@ if existing.returncode == 0:
     print(f'{tag} already published. No release or update channel changes.')
     raise SystemExit(0)
 notes = Path('mobile-output/RELEASE_NOTES.txt')
-notes.write_text(f'ByaFlux Mobile {version}\nFakeRoles exibe o próprio usuário mesmo antes de o Discord carregar sua linha na lista de membros.\nMantém cores, ícones, grupos e permissões reais.\nApoio ao projeto em https://byaflux.discloud.dev/doar.\nInstale a atualização do instalador e reinstale o Discord modificado para aplicar o novo bundle.\nSomente os plugins obrigatórios são ativados por padrão.\n')
+notes.write_text(f'ByaFlux Mobile {version}\nProfilePreset e conversor de vídeo para GIF integrados ao núcleo, sem ativar plugins.\nSeleção de campos, recorte por arraste, prévia e linha do tempo.\nOs presets ficam salvos por conta e o vídeo é processado no aparelho.\nAbra Editar perfil antes de salvar ou aplicar um preset. Confirme as alterações visuais no editor nativo do Discord.\nTambém disponível em Configurações do ByaFlux, na seção Perfil.\nInstale a atualização do instalador e reinstale o Discord modificado para aplicar o novo bundle.\nRecursos Nitro continuam dependendo da conta.\nCompilação e testes automatizados aprovados. Ainda sem validação em aparelho físico.\nApoio ao projeto: https://byaflux.discloud.dev/doar.\n')
 assets = [str(apk), 'mobile-output/SHA256SUMS', 'mobile-output/byaflux-mobile.bundle', 'mobile-output/manifest.json']
 gh('release','create',tag,*assets,'--target',os.environ['GITHUB_SHA'],'--title',f'ByaFlux Mobile {version}','--notes-file',str(notes),'--latest=false')
 # Keep the desktop release title intact: its commit hash drives desktop updates.

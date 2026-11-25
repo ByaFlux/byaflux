@@ -62,8 +62,11 @@ vi.mock('@valenced/react', () => ({
     ReactJSXRuntime: f.runtime,
 }))
 vi.mock('@valenced/discord/flux', () => ({
-    getStore: (_: string, cb: any) => {
-        cb({ addChangeListener() {}, removeChangeListener() {} })
+    getStore: (name: string, cb: any) => {
+        const source = f.stores[name] ?? {}
+        source.addChangeListener ??= () => {}
+        source.removeChangeListener ??= () => {}
+        cb(source)
         return () => {}
     },
 }))
@@ -232,5 +235,58 @@ it('patches cached native JSX factories and message author metadata without chan
     expect(f.cachedJsx(a, { userId: f.self, guildId: f.guild }).type).toBe(a)
     expect(f.modules.getMessageAuthor).toBe(getMessageAuthor)
     f.modules = {}
+    for (const key of Object.keys(f.stores)) f.stores[key] = undefined
+})
+
+it('updates native chat and sidebar member reads without depending on named components', () => {
+    const role = '3227436212982251533'
+    const member = Object.freeze({
+        userId: f.self,
+        roles: Object.freeze([]),
+        permissions: 0n,
+        colorString: '#123456',
+        iconRoleId: undefined,
+    })
+    const getMember = () => member
+    f.modules = {}
+    f.stores.GuildMemberStore = { getMember, getMemberVersion: () => 1 }
+    f.stores.GuildStore = {
+        getGuild: (id: string) => (id === f.guild ? { id } : undefined),
+    }
+    f.stores.GuildRoleStore = {
+        getSortedRoles: () => [
+            {
+                id: role,
+                name: 'Owner',
+                position: 100,
+                color: 0xff6600,
+                unicodeEmoji: '👑',
+            },
+        ],
+    }
+    const cleanups: (() => void)[] = []
+    f.options.start({
+        jsonStorage: {
+            cache: {
+                profiles: {
+                    [`${f.self}:${f.guild}`]: { added: [role], hidden: [] },
+                },
+            },
+            set: () => Promise.resolve(),
+        },
+        plugin: { reportError: vi.fn() },
+        cleanup: (...values: (() => void)[]) => cleanups.push(...values),
+    })
+    const source = f.stores.GuildMemberStore
+    const rendered = source.getMember(f.guild, f.self)
+    expect(rendered.colorString).toBe('#ff6600')
+    expect(rendered.iconRoleId).toBe(role)
+    expect(rendered.roles).toBe(member.roles)
+    expect(rendered.permissions).toBe(0n)
+    expect(source.getMember(f.guild, role)).toBe(member)
+    expect(source.getMember('dm', f.self)).toBe(member)
+    for (const cleanup of cleanups.reverse()) cleanup()
+    expect(source.getMember).toBe(getMember)
+    expect(source.getMember(f.guild, f.self)).toBe(member)
     for (const key of Object.keys(f.stores)) f.stores[key] = undefined
 })
