@@ -1,0 +1,503 @@
+.bf-studio {
+  --bs-panel: var(--background-secondary, #202127);
+  --bs-edge: var(--background-modifier-accent, #383a42);
+  --bs-accent: #ff9438;
+  color: var(--text-normal, #ececf1);
+  font-family: var(--font-primary, sans-serif);
+}
+.bf-studio * {
+  box-sizing: border-box;
+}
+.bf-studio .bs-hero {
+  padding: 26px;
+  border: 1px solid var(--bs-edge);
+  border-radius: 16px;
+  background: linear-gradient(125deg, #ff94381a, transparent 70%), var(--bs-panel);
+  margin-bottom: 20px;
+}
+.bf-studio .bs-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--bs-accent);
+  text-transform: uppercase;
+}
+.bf-studio h2 {
+  margin: 9px 0;
+  font-size: 27px;
+  font-weight: 750;
+  color: var(--header-primary, #fff);
+}
+.bf-studio h3 {
+  margin: 0 0 14px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.bf-studio p {
+  margin: 8px 0;
+  color: var(--text-muted, #a9abb7);
+  line-height: 1.55;
+}
+.bf-studio .bs-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.1fr) minmax(250px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.bf-studio .bs-panel {
+  background: var(--bs-panel);
+  border: 1px solid var(--bs-edge);
+  border-radius: 14px;
+  padding: 20px;
+  min-width: 0;
+}
+.bf-studio label.bs-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 16px 0 7px;
+  color: var(--text-normal);
+}
+.bf-studio input:not([type="checkbox"]):not([type="range"]),
+.bf-studio select {
+  width: 100%;
+  background: var(--input-background, #15161b);
+  color: var(--text-normal, #fff);
+  border: 1px solid var(--bs-edge);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+}
+.bf-studio input[type="range"] {
+  width: 100%;
+  accent-color: var(--bs-accent);
+}
+.bf-studio button {
+  cursor: pointer;
+  font: inherit;
+  color: var(--text-normal, #fff);
+  border: 1px solid var(--bs-edge);
+  border-radius: 8px;
+  background: var(--background-tertiary, #17181d);
+  padding: 9px 13px;
+}
+.bf-studio button:hover:not(:disabled) {
+  border-color: var(--bs-accent);
+  background: #ff943812;
+}
+.bf-studio button.bs-primary {
+  background: #c7540a;
+  border-color: #f9862c;
+  color: #fff;
+  font-weight: 700;
+}
+.bf-studio button.bs-danger {
+  color: #ff9c9c;
+}
+.bf-studio button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+.bf-studio :is(button, input, select):focus-visible {
+  outline: 2px solid var(--bs-accent);
+  outline-offset: 3px;
+}
+.bf-studio .bs-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 16px;
+}
+.bf-studio .bs-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+.bf-studio .bs-field {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--bs-edge);
+  border-radius: 10px;
+  cursor: pointer;
+  min-width: 0;
+}
+.bf-studio .bs-field:has(input:checked) {
+  background: #ff94380b;
+  border-color: #ff94385c;
+}
+.bf-studio .bs-field input {
+  accent-color: var(--bs-accent);
+  margin: 2px 0;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.bf-studio .bs-field strong {
+  font-size: 13px;
+  display: block;
+}
+.bf-studio .bs-field small {
+  color: var(--text-muted, #a9abb7);
+  display: block;
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+.bf-studio .bs-note {
+  margin: 14px 0;
+  padding: 12px 14px;
+  background: #ff94380d;
+  border: 1px solid #ff943840;
+  border-radius: 9px;
+  color: var(--text-normal, #ccc);
+  line-height: 1.5;
+  font-size: 13px;
+}
+.bf-studio .bs-error {
+  background: #ff424215;
+  border-color: #ff424260;
+  color: #ffb5b5;
+}
+.bf-studio .bs-success {
+  background: #35b88715;
+  border-color: #35b88760;
+}
+.bf-studio .bs-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+.bf-studio .bs-card {
+  background: var(--bs-panel);
+  border: 1px solid var(--bs-edge);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.bf-studio .bs-banner {
+  height: 90px;
+  background-size: cover;
+  background-position: center;
+}
+.bf-studio .bs-card-body {
+  padding: 0 16px 17px;
+  overflow-wrap: anywhere;
+}
+.bf-studio .bs-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 5px solid var(--bs-panel);
+  margin-top: -28px;
+  background: #363943;
+  object-fit: cover;
+}
+.bf-studio .bs-avatar-placeholder {
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  font-weight: bold;
+  color: #ff9438;
+}
+.bf-studio .bs-card h3 {
+  margin: 8px 0;
+}
+.bf-studio .bs-bio {
+  white-space: pre-wrap;
+  font-size: 13px;
+  max-height: 80px;
+  overflow: auto;
+  margin: 8px 0;
+}
+.bf-studio .bs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 12px 0;
+}
+.bf-studio .bs-chip {
+  border: 1px solid var(--bs-edge);
+  color: var(--text-muted, #bbb);
+  padding: 3px 7px;
+  border-radius: 20px;
+  font-size: 10px;
+}
+.bf-studio .bs-empty {
+  border: 1px dashed var(--bs-edge);
+  border-radius: 14px;
+  padding: 35px;
+  text-align: center;
+  margin-top: 18px;
+}
+.bf-studio .bs-preview {
+  aspect-ratio: 1;
+  max-width: 280px;
+  margin: 12px auto;
+  border-radius: 50%;
+  overflow: hidden;
+  background: repeating-conic-gradient(#22252b 0 25%, #2c2f36 0 50%) 50%/20px 20px;
+  display: grid;
+  place-items: center;
+}
+.bf-studio .bs-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.bf-studio video {
+  width: 100%;
+  max-height: 250px;
+  border-radius: 10px;
+  background: #111;
+}
+.bf-studio .bs-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 12px 0;
+}
+.bf-studio progress {
+  width: 100%;
+  height: 9px;
+  accent-color: var(--bs-accent);
+}
+.bf-studio .bs-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.bf-studio.bs-modal,
+.bf-studio .bs-modal {
+  padding: 0 4px 8px;
+  max-height: 67vh;
+  overflow-y: auto;
+}
+@media (max-width: 850px) {
+  .bf-studio .bs-layout {
+    grid-template-columns: 1fr;
+  }
+  .bf-studio .bs-fields {
+    grid-template-columns: 1fr;
+  }
+}
+.bf-studio {
+  container-type: inline-size;
+}
+@container (max-width:680px) {
+  .bf-studio .bs-layout {
+    grid-template-columns: 1fr;
+  }
+  .bf-studio .bs-fields {
+    grid-template-columns: 1fr;
+  }
+}
+.bf-studio.bs-native-tools {
+  padding: 14px 16px;
+  margin: 12px 0;
+  border: 1px solid var(--bs-edge);
+  border-left: 3px solid var(--bs-accent);
+  border-radius: 10px;
+  background: var(--bs-panel);
+}
+.bf-studio.bs-native-tools h3 {
+  margin: 7px 0;
+  font-size: 16px;
+}
+.bf-studio.bs-native-tools p {
+  font-size: 12px;
+}
+.bf-studio .bs-file-drop {
+  border: 1px dashed #ff94385c;
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.bf-studio .bs-video-stage {
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #101114;
+  touch-action: none;
+  user-select: none;
+}
+.bf-studio .bs-video-stage > video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+  object-fit: fill;
+  pointer-events: none;
+}
+.bf-studio .bs-crop-box {
+  position: absolute;
+  border: 2px solid #ff9438;
+  box-shadow: 0 0 0 2000px #0009;
+  cursor: grab;
+  touch-action: none;
+}
+.bf-studio .bs-crop-box:active {
+  cursor: grabbing;
+}
+.bf-studio .bs-crop-box:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -5px;
+}
+.bf-studio .bs-crop-circle {
+  position: absolute;
+  inset: 0;
+  border: 1px dashed #ffffffe0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.bf-studio button.bs-crop-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  background: #ff9438;
+  z-index: 2;
+  touch-action: none;
+}
+.bf-studio .bs-crop-handle.nw {
+  top: -2px;
+  left: -2px;
+  cursor: nwse-resize;
+}
+.bf-studio .bs-crop-handle.ne {
+  top: -2px;
+  right: -2px;
+  cursor: nesw-resize;
+}
+.bf-studio .bs-crop-handle.sw {
+  bottom: -2px;
+  left: -2px;
+  cursor: nesw-resize;
+}
+.bf-studio .bs-crop-handle.se {
+  bottom: -2px;
+  right: -2px;
+  cursor: nwse-resize;
+}
+.bf-studio .is-busy .bs-crop-box,
+.bf-studio .is-busy .bs-crop-handle {
+  cursor: wait;
+}
+.bf-studio .bs-crop-mini {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 58px;
+  pointer-events: none;
+  z-index: 3;
+  text-align: center;
+}
+.bf-studio .bs-crop-mini canvas {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #15161a;
+  box-shadow: 0 2px 10px #0008;
+}
+.bf-studio .bs-crop-mini span {
+  font-size: 10px;
+  color: #fff;
+  background: #000b;
+  border-radius: 10px;
+  padding: 2px 5px;
+}
+.bf-studio p.bs-drag-help {
+  font-size: 12px;
+  color: var(--bs-accent);
+}
+.bf-studio .bs-play-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.bf-studio .bs-play-controls span {
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.bf-studio .bs-clip-timeline {
+  height: 30px;
+  position: relative;
+  margin: 15px 8px 8px;
+  border-radius: 6px;
+  background: repeating-linear-gradient(90deg, #252832 0 20px, #333744 20px 21px);
+  touch-action: none;
+}
+.bf-studio .bs-clip-band {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  min-width: 1px;
+  background: #ff94385c;
+  border-top: 2px solid #ff9438;
+  border-bottom: 2px solid #ff9438;
+  cursor: grab;
+}
+.bf-studio .bs-clip-band:active {
+  cursor: grabbing;
+}
+.bf-studio .bs-clip-handle {
+  position: absolute;
+  top: -4px;
+  width: 14px;
+  height: 38px;
+  background: #ff9438;
+  border: 2px solid #ffd7b5;
+  border-radius: 5px;
+  transform: translateX(-50%);
+  cursor: ew-resize;
+  touch-action: none;
+}
+.bf-studio .bs-clip-handle:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+.bf-studio .bs-clip-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+.bf-studio .bs-clip-labels strong {
+  color: var(--bs-accent);
+}
+.bf-studio .bs-video-advanced {
+  border-top: 1px solid var(--bs-edge);
+  padding-top: 12px;
+  margin: 16px 0;
+}
+.bf-studio .bs-video-advanced summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+.bf-studio .bs-preview canvas {
+  width: 100%;
+  height: 100%;
+}
+.bf-studio .bs-preview [hidden] {
+  display: none !important;
+}

@@ -2,15 +2,15 @@
 
 [Português](README.md)
 
-Discord customization for Windows and Linux.
+Customize Discord on Windows, Linux and Android.
 
 ## Install
 
-1. [Download the Windows installer](https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstaller.exe).
-2. Fully close Discord, including its system tray icon.
-3. Run the installer and select your Discord installation.
+Download from the [official site](https://byaflux.discloud.dev) or [latest release](https://github.com/ByaFlux/byaflux/releases/latest).
 
-### Linux
+- **Windows:** fully close Discord, run `ByaFluxInstaller.exe` and select your installation.
+- **Android:** install the ByaFlux APK and follow its instructions to install the modified Discord app.
+- **Linux:** fully close Discord and run:
 
 ```sh
 curl -fL https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstallerCli-Linux-$(uname -m) -o ByaFluxInstaller
@@ -18,22 +18,22 @@ chmod +x ByaFluxInstaller
 ./ByaFluxInstaller --install
 ```
 
-If the Discord directory requires administrator access, use `sudo ./ByaFluxInstaller --install`.
-
-[Android](https://github.com/ByaFlux/byaflux/releases/latest) · [All downloads](https://github.com/ByaFlux/byaflux/releases/latest)
+Use `sudo ./ByaFluxInstaller --install` when Discord's installation directory requires administrator access.
 
 ## Update or remove
 
-When an update is available, choose **Update and restart** in Discord.
-To repair or remove ByaFlux, close Discord and run the installer again.
-On Linux, use `./ByaFluxInstaller --uninstall` to remove it.
+On desktop, use **Update and restart** when prompted. Reopen the installer to repair or remove ByaFlux.
+On Linux, remove it with `./ByaFluxInstaller --uninstall`.
+
+On Android, accept the update prompt, update the installer and reinstall modified Discord to apply the new bundle.
 
 ## Requirements
 
-Discord installed, an internet connection, and Windows x64 or Linux x86_64/ARM64.
+Internet access. Installed Discord on Windows x64 or Linux x86_64/ARM64. Android 9 or newer.
+Nitro features and collectibles still require the corresponding account benefits.
+
+[Donate](https://byaflux.discloud.dev/doar)
 
 ## Credits
 
-Based on [Equicord](https://github.com/Equicord/Equicord), [Vencord](https://github.com/Vendicated/Vencord)
-and [Equilotl](https://github.com/Equicord/Equilotl). Licenses: [client](mod/LICENSE) and [installer](installer/LICENSE).
-ByaFlux is independent and is not affiliated with Discord.
+Based on Equicord, Vencord, Equilotl and Valenced. Original project and dependency credits and licenses are preserved.

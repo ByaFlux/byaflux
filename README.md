@@ -2,15 +2,15 @@
 
 [English](README.en.md)
 
-Personalização para o Discord no Windows e Linux.
+Personalize seu Discord no Windows, Linux e Android.
 
 ## Instalar
 
-1. [Baixe o instalador para Windows](https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstaller.exe).
-2. Feche completamente o Discord, inclusive o ícone perto do relógio.
-3. Execute o instalador e selecione seu Discord.
+Baixe pelo [site oficial](https://byaflux.discloud.dev) ou pelos [downloads da versão atual](https://github.com/ByaFlux/byaflux/releases/latest).
 
-### Linux
+- **Windows:** feche o Discord completamente, execute `ByaFluxInstaller.exe` e escolha sua instalação.
+- **Android:** instale o APK do ByaFlux e siga as instruções para instalar o Discord modificado.
+- **Linux:** com o Discord fechado, execute:
 
 ```sh
 curl -fL https://github.com/ByaFlux/byaflux/releases/latest/download/ByaFluxInstallerCli-Linux-$(uname -m) -o ByaFluxInstaller
@@ -20,20 +20,20 @@ chmod +x ByaFluxInstaller
 
 Se a pasta do Discord exigir permissão de administrador, use `sudo ./ByaFluxInstaller --install`.
 
-[Android](https://github.com/ByaFlux/byaflux/releases/latest) · [Todos os downloads](https://github.com/ByaFlux/byaflux/releases/latest)
-
 ## Atualizar ou remover
 
-Quando houver atualização, use **Atualizar e reiniciar** no Discord.
-Para reparar ou remover, feche o Discord e abra o instalador novamente.
-No Linux, use `./ByaFluxInstaller --uninstall` para remover.
+No computador, use **Atualizar e reiniciar** quando o aviso aparecer. Para reparar ou remover, abra o instalador novamente.
+No Linux, remova com `./ByaFluxInstaller --uninstall`.
+
+No Android, aceite o aviso de atualização, atualize o instalador e reinstale o Discord modificado para aplicar o novo bundle.
 
 ## Requisitos
 
-Discord instalado, conexão com a internet e Windows x64 ou Linux x86_64/ARM64.
+Conexão com a internet. Discord instalado no Windows x64 ou Linux x86_64/ARM64. Android 9 ou superior.
+Recursos Nitro e itens de perfil continuam dependendo dos benefícios disponíveis na conta.
+
+[Doações](https://byaflux.discloud.dev/doar)
 
 ## Créditos
 
-Baseado em [Equicord](https://github.com/Equicord/Equicord), [Vencord](https://github.com/Vendicated/Vencord)
-e [Equilotl](https://github.com/Equicord/Equilotl). Licenças: [cliente](mod/LICENSE) e [instalador](installer/LICENSE).
-O ByaFlux é independente e não tem afiliação com o Discord.
+Baseado em Equicord, Vencord, Equilotl e Valenced. Créditos e licenças dos projetos e das dependências foram preservados.

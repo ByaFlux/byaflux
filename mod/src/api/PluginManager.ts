@@ -386,7 +386,8 @@ export const initPluginManager = onlyOnce(function init() {
         "renderNicknameIcon"
     ];
 
-    const neededApiPlugins = new Set<string>();
+    // Native profile presets use the existing internal settings API.
+    const neededApiPlugins = new Set<string>(["UserSettingsAPI"]);
 
     // First round-trip to mark and force enable dependencies
     //

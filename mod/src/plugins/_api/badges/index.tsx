@@ -250,8 +250,15 @@ export default definePlugin({
         DirectoryBadges = {};
     },
 
-    mergeProfileBadges(profile: { userId: string; guildId: string; }, native: ProfileBadge[]) {
-        return applyProfileBadgeTransforms(profile, mergeProfileBadges(this.getBadges(profile), native));
+    mergeProfileBadges(profile: { userId: string; guildId: string; } | null | undefined, native: ProfileBadge[] | null | undefined) {
+        const original = mergeProfileBadges([], native);
+        if (!profile || typeof profile.userId !== "string") return original;
+        try {
+            return applyProfileBadgeTransforms(profile, mergeProfileBadges(this.getBadges(profile), original));
+        } catch (error) {
+            new Logger("BadgeAPI#mergeProfileBadges").error("Falha nas badges personalizadas; mantendo as badges nativas.", error);
+            return original;
+        }
     },
 
     useBadgeUpdates() {

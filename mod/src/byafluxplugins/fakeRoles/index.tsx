@@ -11,6 +11,7 @@ import { definePluginSettings } from "@api/Settings";
 import { Button } from "@components/Button";
 import ErrorBoundary from "@components/ErrorBoundary";
 import definePlugin from "@utils/types";
+import { Logger } from "@utils/Logger";
 import { findStoreLazy, waitFor } from "@webpack";
 import {
   Checkbox,
@@ -280,7 +281,12 @@ function projectedProps(props: Record<string, any>, ctx: ProfileRoleContext) {
     hoistRoleId: appearance.hoistRoleId,
   };
   const next: Record<string, any> = { ...props, ...fields };
-  if (props.author) next.author = { ...props.author, ...fields };
+  if (props.author && typeof props.author === "object" && typeof props.author.getAvatarURL !== "function")
+    next.author = Object.assign(
+      Object.create(Object.getPrototypeOf(props.author)),
+      props.author,
+      fields,
+    );
   for (const key of ["member", "guildMember"])
     if (props[key]) next[key] = projectMember(props[key], selected, available, ctx.guildId);
   for (const key of ["roles", "roleIds"])
@@ -350,6 +356,8 @@ function projectionContext(guildArg?: string, channelArg?: string) {
 function bindRuntime() {
   bridge = createProfileBridge(React, {
     enabled: () => active,
+    onError: (error) =>
+      new Logger("FakeRoles").error("Falha na projeção visual; usando perfil nativo.", error),
     useChanges,
     resolve: resolveContext,
     hasSelection: (ctx) => !!settings.store.profiles?.[roleKey(ctx.userId, ctx.guildId)],

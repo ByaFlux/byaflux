@@ -1,144 +1,180 @@
 export const appearanceExports = [
-    "MessageHeader",
-    "MessageUsername",
-    "MessageAuthor",
-    "MessageAuthorName",
-    "GuildMemberListItem",
-    "MemberListItem",
-    "MemberListRow"
+  "MessageHeader",
+  "MessageUsername",
+  "MessageAuthor",
+  "MessageAuthorName",
+  "GuildMemberListItem",
+  "MemberListItem",
+  "MemberListRow",
 ];
 export const roleSectionExports = [
-    "UserProfileRoles",
-    "UserProfileRolesSection",
-    "UserProfileRolesList",
-    "ProfileRoles",
-    "ProfileRolesSection",
-    "GuildMemberRoles",
-    "GuildMemberProfileRoles",
-    "GuildMemberProfileRolesSection",
-    "RolesSection",
-    "RolesList",
-    "Roles"
+  "UserProfileRoles",
+  "UserProfileRolesSection",
+  "UserProfileRolesList",
+  "ProfileRoles",
+  "ProfileRolesSection",
+  "GuildMemberRoles",
+  "GuildMemberProfileRoles",
+  "GuildMemberProfileRolesSection",
+  "RolesSection",
+  "RolesList",
+  "Roles",
 ];
 export const profileExports = [
-    "UserProfile",
-    "UserProfileHeader",
-    "UserProfileBody",
-    "UserProfileModal",
-    "GuildMemberProfile",
-    "ProfileHeader",
-    "ProfileBody"
+  "UserProfile",
+  "UserProfileHeader",
+  "UserProfileBody",
+  "UserProfileModal",
+  "GuildMemberProfile",
+  "ProfileHeader",
+  "ProfileBody",
 ];
 export interface ProfileRoleContext {
-    userId: string;
-    guildId: string;
-    entryShown?: boolean;
+  userId: string;
+  guildId: string;
+  entryShown?: boolean;
 }
 export function createProfileBridge(
-    React: any,
-    options: {
-        enabled(): boolean;
-        useChanges(): void;
-        resolve(
-            props: Record<string, any>,
-            parent: ProfileRoleContext | null
-        ): ProfileRoleContext | undefined;
-        hasSelection(context: ProfileRoleContext): boolean;
-        project(props: Record<string, any>, context: ProfileRoleContext): Record<string, any>;
-        renderRoles(context: ProfileRoleContext): any;
-        renderAction(context: ProfileRoleContext): any;
-    }
+  React: any,
+  options: {
+    enabled(): boolean;
+    useChanges(): void;
+    resolve(
+      props: Record<string, any>,
+      parent: ProfileRoleContext | null,
+    ): ProfileRoleContext | undefined;
+    hasSelection(context: ProfileRoleContext): boolean;
+    project(props: Record<string, any>, context: ProfileRoleContext): Record<string, any>;
+    renderRoles(context: ProfileRoleContext): any;
+    renderAction(context: ProfileRoleContext): any;
+    onError?(error: unknown): void;
+  },
 ) {
-    const Context = React.createContext(null);
-    const headers = new WeakSet<object>();
-    const types = new WeakMap<object, "profile" | "roles" | "scoped" | "scopedRoles" | "display">(),
-        wrappers = new WeakMap<object, any>();
-    let creatingNative = false,
-        matchedRoles = 0;
-    const native = (type: any, props: any) => {
-        creatingNative = true;
-        try {
-            return React.createElement(type, props);
-        } finally {
-            creatingNative = false;
-        }
-    };
-    function kind(type: any, props: Record<string, any>) {
-        const known = types.get(type);
-        if (known) return known;
-        const fn = type?.type ?? type?.render ?? type;
-        const name = typeof fn === "function" ? (fn.displayName ?? fn.name ?? "") : "";
+  const Context = React.createContext(null);
+  const headers = new WeakSet<object>();
+  const types = new WeakMap<object, "profile" | "roles" | "scoped" | "scopedRoles" | "display">(),
+    wrappers = new WeakMap<object, any>();
+  const internal = new WeakSet<object>();
+  let creatingNative = false,
+    matchedRoles = 0;
+  const native = (type: any, props: any) => {
+    creatingNative = true;
+    try {
+      return React.createElement(type, props);
+    } finally {
+      creatingNative = false;
+    }
+  };
+  function kind(type: any, props: Record<string, any>) {
+    if (internal.has(type)) return;
+    const known = types.get(type);
+    // Never project roles into an editor/preview. Its pending data is authoritative.
+    const displayName =
+      type?.displayName ??
+      type?.type?.displayName ??
+      type?.render?.displayName ??
+      type?.name ??
+      type?.type?.name ??
+      type?.render?.name ??
+      "";
+    if (/Customization|Editing|Editor|Settings|Preview/.test(displayName)) return;
+    if (known) return known;
+    const fn = type?.type ?? type?.render ?? type;
+    const name = typeof fn === "function" ? (fn.displayName ?? fn.name ?? "") : "";
+    if (
+      /^(?:UserProfile|GuildMemberProfile|GuildMemberRoles|ProfileRoles|ProfileHeader|ProfileBody)/.test(
+        name,
+      ) &&
+      !/Badge|Avatar|Banner|Button|FakeRoles/.test(name)
+    )
+      return /Roles(?:Section|List)?$/.test(name) ? "roles" : "profile";
+    if (props.displayProfile || props.userProfile || props.profile?.userId) return "profile";
+    if (Array.isArray(props.roleIds) || Array.isArray(props.roles)) return "scoped";
+    return undefined;
+  }
+  function wrap(type: any) {
+    let wrapped = wrappers.get(type);
+    if (wrapped) return wrapped;
+    const Projected = function FakeRolesView(props: Record<string, any>) {
+      options.useChanges();
+      const parent = React.useContext(Context);
+      const ctx = options.resolve(props, parent);
+      if (!options.enabled() || !ctx) return native(type, props);
+      const mode = kind(type, props),
+        name = (type?.type ?? type?.render ?? type)?.name ?? "";
+      if (mode === "display")
+        return native(type, options.hasSelection(ctx) ? options.project(props, ctx) : props);
+      if ((mode === "scoped" || mode === "scopedRoles") && !parent) return native(type, props);
+      if ((mode === "roles" || mode === "scopedRoles") && options.hasSelection(ctx)) {
+        matchedRoles++;
         if (
-            /^(?:UserProfile|GuildMemberProfile|GuildMemberRoles|ProfileRoles|ProfileHeader|ProfileBody)/.test(
-                name
-            ) &&
-            !/Badge|Avatar|Banner|Button|FakeRoles/.test(name)
+          Array.isArray(props.roles) ||
+          Array.isArray(props.roleIds) ||
+          Array.isArray(props.member?.roles)
         )
-            return /Roles(?:Section|List)?$/.test(name) ? "roles" : "profile";
-        if (props.displayProfile || props.userProfile || props.profile?.userId) return "profile";
-        if (Array.isArray(props.roleIds) || Array.isArray(props.roles)) return "scoped";
-        return undefined;
-    }
-    function wrap(type: any) {
-        let wrapped = wrappers.get(type);
-        if (wrapped) return wrapped;
-        wrapped = function FakeRolesView(props: Record<string, any>) {
-            options.useChanges();
-            const parent = React.useContext(Context);
-            const ctx = options.resolve(props, parent);
-            if (!options.enabled() || !ctx) return native(type, props);
-            const mode = kind(type, props),
-                name = (type?.type ?? type?.render ?? type)?.name ?? "";
-            if (mode === "display")
-                return native(type, options.hasSelection(ctx) ? options.project(props, ctx) : props);
-            if ((mode === "scoped" || mode === "scopedRoles") && !parent) return native(type, props);
-            if ((mode === "roles" || mode === "scopedRoles") && options.hasSelection(ctx)) {
-                matchedRoles++;
-                if (
-                    Array.isArray(props.roles) ||
-                    Array.isArray(props.roleIds) ||
-                    Array.isArray(props.member?.roles)
-                )
-                    return native(type, options.project(props, ctx));
-                return options.renderRoles(ctx);
-            }
-            const header =
-                headers.has(type) ||
-                /Header/.test(name) ||
-                (types.get(type) === "profile" && /Header/.test(type?.displayName ?? ""));
-            const entry = !!parent?.entryShown || header;
-            return React.createElement(Context.Provider, {
-                value: { ...ctx, entryShown: entry },
-                children: [
-                    native(type, options.hasSelection(ctx) ? options.project(props, ctx) : props),
-                    header && !parent?.entryShown ? options.renderAction(ctx) : null
-                ]
-            });
-        };
-        wrappers.set(type, wrapped);
-        return wrapped;
-    }
-    return {
-        register(type: unknown, mode: "profile" | "roles" | "display", name = "") {
-            if (typeof type === "function" || (typeof type === "object" && type !== null)) {
-                types.set(type, /^Roles/.test(name) ? "scopedRoles" : mode);
-                if (/Header/.test(name)) headers.add(type);
-            }
-        },
-        patchArgs<T extends [unknown, unknown?, ...unknown[]]>(args: T): T {
-            const type = args[0],
-                props = (args[1] ?? {}) as Record<string, any>;
-            if (
-                creatingNative ||
-                !options.enabled() ||
-                (typeof type !== "function" && (typeof type !== "object" || !type))
-            )
-                return args;
-            if (!kind(type, props)) return args;
-            args[1] = props;
-            args[0] = wrap(type);
-            return args;
-        },
-        matchedRoles: () => matchedRoles
+          return native(type, options.project(props, ctx));
+        return options.renderRoles(ctx);
+      }
+      const header =
+        headers.has(type) ||
+        /Header/.test(name) ||
+        (types.get(type) === "profile" && /Header/.test(type?.displayName ?? ""));
+      const entry = !!parent?.entryShown || header;
+      return React.createElement(Context.Provider, {
+        value: { ...ctx, entryShown: entry },
+        children: [
+          native(type, options.hasSelection(ctx) ? options.project(props, ctx) : props),
+          header && !parent?.entryShown ? options.renderAction(ctx) : null,
+        ],
+      });
     };
+    // A failed visual projection must not take Discord's entire profile tree down.
+    class ProjectionBoundary extends React.Component {
+      state = { failed: false };
+      static getDerivedStateFromError() {
+        return { failed: true };
+      }
+      componentDidCatch(error: unknown) {
+        options.onError?.(error);
+      }
+      render() {
+        const { originalProps } = this.props;
+        return this.state.failed ? native(type, originalProps) : native(Projected, originalProps);
+      }
+    }
+    internal.add(Projected);
+    internal.add(ProjectionBoundary);
+    wrapped = function SafeFakeRolesView(props: Record<string, any>) {
+      return native(ProjectionBoundary, { originalProps: props });
+    };
+    internal.add(wrapped);
+    wrappers.set(type, wrapped);
+    return wrapped;
+  }
+  return {
+    register(type: unknown, mode: "profile" | "roles" | "display", name = "") {
+      if (typeof type === "function" || (typeof type === "object" && type !== null)) {
+        types.set(type, /^Roles/.test(name) ? "scopedRoles" : mode);
+        if (/Header/.test(name)) headers.add(type);
+      }
+    },
+    patchArgs<T extends [unknown, unknown?, ...unknown[]]>(args: T): T {
+      const type = args[0],
+        props = (args[1] ?? {}) as Record<string, any>;
+      if (
+        creatingNative ||
+        !options.enabled() ||
+        (typeof type !== "function" && (typeof type !== "object" || !type))
+      )
+        return args;
+      try {
+        if (!kind(type, props)) return args;
+        return [wrap(type), props, ...args.slice(2)] as unknown as T;
+      } catch (error) {
+        options.onError?.(error);
+        return args;
+      }
+    },
+    matchedRoles: () => matchedRoles,
+  };
 }

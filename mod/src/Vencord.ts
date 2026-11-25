@@ -23,6 +23,7 @@ import "./fixWeirdAppRegionBug.css";
 import nativeTitleBarStyles from "./nativeTitleBar.css?managed";
 
 export * as Api from "./api";
+export * as ProfileEditor from "./components/profileEditor";
 export * as Plugins from "./api/PluginManager";
 export * as Components from "./components";
 export * as Util from "./utils";
@@ -35,6 +36,7 @@ import { enableStyle, initStyles } from "@api/Styles";
 import { debounce } from "@shared/debounce";
 import { restoreHomeIcon } from "@shared/iconMaker/homeIcon";
 import { StartAt } from "@utils/types";
+import { initializeProfileEditor } from "@components/profileEditor";
 import { SettingsRouter, showToast } from "@webpack/common";
 
 import { get as dsGet } from "./api/DataStore";
@@ -191,6 +193,7 @@ async function init() {
   }
 }
 
+initializeProfileEditor();
 initPluginManager();
 initStyles();
 startAllPlugins(StartAt.Init);

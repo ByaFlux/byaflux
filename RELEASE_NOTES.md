@@ -1,9 +1,17 @@
-# ByaFlux 0.1.21
+# ByaFlux 0.1.22
 
-- Icon Maker: salve PNG ou GIF no botão inicial do Discord, com restauração automática após reiniciar e atualizar.
-- O ícone inicial usa o recorte nativo do Discord. Reaplique um ícone salvo no teste anterior com Salvar e usar no início.
-- FakeRoles inclui o próprio usuário mesmo quando sua linha ainda não foi carregada na lista de membros.
-- Mensagem de novidades com a identidade do ByaFlux e doações em https://byaflux.discloud.dev/doar.
+- ProfilePreset e conversor de vídeo para GIF integrados ao núcleo do editor de perfil, sem ativar plugins.
+- Presets com seleção dos campos, fotos, banner, cores, cosméticos e status. Os conjuntos locais anteriores continuam disponíveis.
+- Recorte por arraste, alças de redimensionamento, prévia animada e linha do tempo do vídeo.
+- Correção da leitura de badges incompletas e proteção da projeção de cargos visuais ao abrir perfis.
+- Limpeza de arquivos auxiliares sem uso e README em português e inglês.
 
-Windows, Linux x86_64 e Linux ARM64. Inclui o instalador Android 0.2.10, com a correção do FakeRoles e o link de doação.
-No Android, atualize o instalador e reinstale o Discord modificado para aplicar o novo bundle.
+Windows, Linux x86_64 e Linux ARM64. Inclui o instalador Android 0.2.11.
+
+No Android, os dois recursos também estão disponíveis em Configurações do ByaFlux, na seção Perfil. A aplicação das alterações visuais depende do editor de perfil carregado e da confirmação em Salvar alterações. O vídeo é processado localmente.
+
+Atualize o instalador Android e reinstale o Discord modificado para aplicar o novo bundle. Recursos Nitro e itens de perfil continuam dependendo da conta.
+
+Compilação e testes automatizados aprovados. Validação visual em um cliente Discord real e em um aparelho Android físico ainda não realizada.
+
+Apoie o projeto em https://byaflux.discloud.dev/doar.
