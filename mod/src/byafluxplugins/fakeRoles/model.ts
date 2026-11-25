@@ -202,29 +202,30 @@ export function projectMemberList<T extends MemberListSnapshot>(
     hoist = selected.find((r) => r.hoist);
   const targetId = offline ? "offline" : (hoist?.id ?? "online");
   const sections = new Map<string, { header?: MemberRecord; rows: unknown[] }>();
-  let group: string | undefined,
+  let offset = 0,
     originalId: string | undefined,
     originalRow: MemberRecord | undefined;
-  for (const row of source.rows) {
-    const id = groupRowId(row);
-    if (id) {
-      group = id;
-      if (!sections.has(id)) sections.set(id, { header: row as MemberRecord, rows: [] });
-      continue;
+  // Native group counts include unloaded rows. Preserve their slots during projection.
+  for (const meta of source.groups) {
+    if (!Number.isSafeInteger(meta.count) || meta.count < 0) return source;
+    const header = source.rows[offset] as MemberRecord | undefined;
+    if (header && groupRowId(header) !== meta.id) return source;
+    const rows = source.rows.slice(offset + 1, offset + 1 + meta.count);
+    if (rows.length !== meta.count) return source;
+    const index = rows.findIndex((row) => memberRowId(row) === userId);
+    if (index >= 0) {
+      originalId = meta.id;
+      originalRow = rows[index] as MemberRecord;
+      rows.splice(index, 1);
     }
-    if (!group) return source;
-    const section = sections.get(group)!;
-    if (memberRowId(row) === userId) {
-      originalId = group;
-      originalRow ??= row as MemberRecord;
-    } else section.rows.push(row);
+    sections.set(meta.id, {
+      header: header ?? (meta.type === "GROUP" ? meta : undefined),
+      rows,
+    });
+    offset += meta.count + 1;
   }
-  if (!source.rows.length || !sections.size) return source;
-  const nativeHoist = ordered.find((r) => r.hoist && (member.roles ?? []).includes(r.id));
-  originalId ??= offline ? "offline" : (nativeHoist?.id ?? "online");
+  if (offset !== source.rows.length || !originalRow) return source;
   const visual = projectMember(member, selection, ordered, guildId);
-  // Unloaded virtual rows have native keys and heights that cannot be reconstructed safely.
-  if (!originalRow) return source;
   const template = originalRow;
   const row: MemberRecord = {
     ...template,
@@ -281,16 +282,21 @@ export function projectMemberList<T extends MemberListSnapshot>(
   if (!sections.has(targetId)) {
     const header = [...sections.values()].find((s) => s.header)?.header;
     if (!header) return source;
-    const meta = groups.find((g) => g.id === targetId)!;
     sections.set(targetId, {
       header: {
         ...header,
         id: targetId,
-        count: meta.count,
-        name: hoist?.name ?? targetId,
+        ...(Object.hasOwn(header, "key") ? { key: targetId } : {}),
+        ...(Object.hasOwn(header, "title")
+          ? {
+              title:
+                targetId === hoist?.id ? hoist.name : targetId === "online" ? "Online" : "Offline",
+            }
+          : {}),
+        name: targetId === hoist?.id ? hoist.name : targetId,
         ...(Object.hasOwn(header, "groupId") ? { groupId: targetId } : {}),
         ...(Object.hasOwn(header, "role") ? { role: hoist } : {}),
-        ...(header.group ? { group: { ...header.group, id: targetId, count: meta.count } } : {}),
+        ...(header.group ? { group: { ...header.group, id: targetId } } : {}),
       },
       rows: [],
     });
@@ -308,17 +314,31 @@ export function projectMemberList<T extends MemberListSnapshot>(
       g.count > 0 ||
       (sections.get(g.id)?.rows.length ?? 0) > 0,
   );
-  for (const meta of groups) {
-    const section = sections.get(meta.id);
-    if (!section) continue;
-    if (section.header)
-      rows.push({
-        ...section.header,
-        count: meta.count,
-        ...(section.header.group ? { group: { ...section.header.group, count: meta.count } } : {}),
-      });
-    rows.push(...section.rows);
-  }
+  const indexed = source.groups.some((g) => typeof g.index === "number");
+  groups = groups.map((meta) => {
+    const section = sections.get(meta.id)!;
+    const index = rows.length;
+    const header = section.header
+      ? {
+          ...section.header,
+          count: meta.count,
+          ...(indexed ? { index } : {}),
+          ...(section.header.group
+            ? { group: { ...section.header.group, count: meta.count } }
+            : {}),
+        }
+      : undefined;
+    rows.length += 1 + section.rows.length;
+    if (header) rows[index] = header;
+    section.rows.forEach((row, i) => {
+      rows[index + 1 + i] = row;
+    });
+    return {
+      ...meta,
+      ...(header && source.groups.some((g) => g.type === "GROUP") ? header : {}),
+      ...(indexed ? { index } : {}),
+    };
+  });
   return {
     ...source,
     rows,
@@ -348,8 +368,14 @@ export function bindMemberListStore(
     originalRows = store.getRows;
   let reading = false,
     presentationVersion = 0;
-  const cache = new WeakMap<object, { key: string; result: unknown }>();
-  const versioned = new Map<string, { key: string; result: MemberListSnapshot }>();
+  const cache = new WeakMap<
+    object,
+    { key: string; groups: readonly MemberGroup[]; result: unknown }
+  >();
+  const versioned = new Map<
+    string,
+    { key: string; source: MemberListSnapshot; result: MemberListSnapshot }
+  >();
   const props = function (this: unknown, ...args: unknown[]) {
     if (reading) return originalProps.apply(store, args);
     let source: MemberListSnapshot;
@@ -362,12 +388,19 @@ export function bindMemberListStore(
     if (!source || !Array.isArray(source.rows) || !Array.isArray(source.groups)) return source;
     const ctx = context(args[0] as string | undefined, args[1] as string | undefined);
     if (!ctx?.selection) return source;
-    const key = `${ctx.guildId}:${ctx.userId}:${ctx.revision}:${source.version ?? ""}`;
+    const key = `${ctx.guildId}:${ctx.userId}:${ctx.revision}:${ctx.status}:${source.version ?? ""}`;
     const listKey = `${ctx.guildId}:${ctx.userId}:${source.listId ?? args[1] ?? ""}`;
     const known = versioned.get(listKey);
-    if (typeof source.version === "number" && known?.key === key) return known.result;
+    if (
+      typeof source.version === "number" &&
+      known?.key === key &&
+      known.source.groups === source.groups &&
+      known.source.rows.length === source.rows.length &&
+      source.rows.every((row, i) => row === known.source.rows[i])
+    )
+      return known.result;
     const hit = cache.get(source.rows);
-    if (hit?.key === key) return hit.result;
+    if (hit?.key === key && hit.groups === source.groups) return hit.result;
     let result = projectMemberList(
       source,
       ctx.guildId,
@@ -385,9 +418,9 @@ export function bindMemberListStore(
       );
       result = { ...result, version: presentationVersion };
     }
-    cache.set(source.rows, { key, result });
+    cache.set(source.rows, { key, groups: source.groups, result });
     if (typeof source.version === "number") {
-      versioned.set(listKey, { key, result });
+      versioned.set(listKey, { key, source, result });
       if (versioned.size > 32) versioned.delete(versioned.keys().next().value!);
     }
     return result;

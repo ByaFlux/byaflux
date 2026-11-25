@@ -1,11 +1,10 @@
-# ByaFlux 0.1.19
+# ByaFlux 0.1.20
 
-- Organização pública das badges do ByaFlux: arraste para ordenar e clique para ocultar.
-- Confirmação da conta pelo Discord para editar apenas o próprio perfil.
-- Controles nativos do Discord preservados para as badges oficiais.
-- Correções de cor e ícone dos cargos visuais do FakeRoles no Windows e Linux.
-- Integração da instalação manual com as estatísticas da API.
-- Limpeza de arquivos de testes e instruções antigas do repositório.
+- Correção dos grupos, identificadores e índices do FakeRoles na barra lateral.
+- Preserva os espaços de membros ainda não carregados em servidores grandes.
+- Mantém a cor e o ícone dos cargos visuais nas mensagens e na lista de membros.
+- Corrige a atualização da lista ao mudar o status ou receber novos grupos do servidor.
 
-A organização pública das badges requer a API 1.2.0 já instalada no servidor.
-Esta atualização é para Windows e Linux. O download Android mantém a versão 0.2.8.
+Disponível para Windows, Linux x86_64 e Linux ARM64.
+Inclui o instalador Android 0.2.9, com a mesma correção do FakeRoles.
+No Android, atualize o instalador e reinstale o Discord modificado para aplicar o novo bundle.
