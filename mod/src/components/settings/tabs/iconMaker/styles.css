@@ -1,583 +1,618 @@
 .bf-im-site {
-    --im-bg: #36393f;
-    --im-panel: #2f3136;
-    --im-circle: #40444b;
-    --im-hover: #4a4e57;
-    --im-text: #fff;
-    --im-muted: #b9bbbe;
-    --im-line: #484c54;
-    --im-green: #43b581;
-    color: var(--im-text);
-    background: var(--im-bg);
-    border-radius: 12px;
-    overflow: hidden;
-    font-family: var(--font-primary, sans-serif);
-    margin: 0 0 24px;
-    container-type: inline-size;
+  --im-bg: #36393f;
+  --im-panel: #2f3136;
+  --im-circle: #40444b;
+  --im-hover: #4a4e57;
+  --im-text: #fff;
+  --im-muted: #b9bbbe;
+  --im-line: #484c54;
+  --im-green: #43b581;
+  color: var(--im-text);
+  background: var(--im-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: var(--font-primary, sans-serif);
+  margin: 0 0 24px;
+  container-type: inline-size;
 }
 .bf-im-site.light {
-    --im-bg: #f7f8fa;
-    --im-panel: #eceef1;
-    --im-circle: #dfe2e7;
-    --im-hover: #d4d8df;
-    --im-text: #292c32;
-    --im-muted: #606772;
-    --im-line: #cdd2da;
+  --im-bg: #f7f8fa;
+  --im-panel: #eceef1;
+  --im-circle: #dfe2e7;
+  --im-hover: #d4d8df;
+  --im-text: #292c32;
+  --im-muted: #606772;
+  --im-line: #cdd2da;
 }
 .bf-im-site * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 .bf-im-site button,
 .bf-im-site input,
 .bf-im-site select {
-    font: inherit;
+  font: inherit;
 }
 .bf-im-site button {
-    cursor: pointer;
-    color: inherit;
+  cursor: pointer;
+  color: inherit;
 }
 .bf-im-site button:disabled {
-    cursor: wait;
-    opacity: 0.5;
+  cursor: wait;
+  opacity: 0.5;
 }
 .bf-im-site button:focus-visible,
 .bf-im-site label:has(input:focus-visible) {
-    outline: 3px solid #faa95b;
-    outline-offset: 3px;
+  outline: 3px solid #faa95b;
+  outline-offset: 3px;
 }
 .bf-im-site svg {
-    display: block;
-    width: 100%;
-    height: 100%;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .bf-im-sitebar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    padding: 18px 24px;
-    border-bottom: 1px solid var(--im-line);
-    flex-wrap: wrap;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--im-line);
+  flex-wrap: wrap;
 }
 .bf-im-sitebar nav {
-    display: flex;
-    gap: 4px;
+  display: flex;
+  gap: 4px;
 }
 .bf-im-sitebar nav button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border: 0;
-    background: none;
-    border-radius: 6px;
-    padding: 10px 12px;
-    color: var(--im-muted);
-    font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--im-muted);
+  font-weight: 600;
 }
 .bf-im-sitebar nav button svg {
-    width: 19px;
-    height: 19px;
+  width: 19px;
+  height: 19px;
 }
 .bf-im-sitebar nav button[aria-pressed="true"] {
-    background: var(--im-circle);
-    color: var(--im-text);
+  background: var(--im-circle);
+  color: var(--im-text);
 }
 .bf-im-switches {
-    display: flex;
-    gap: 16px;
+  display: flex;
+  gap: 16px;
 }
 .bf-im-switches > label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    cursor: pointer;
-    position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  position: relative;
 }
 .bf-im-switches input {
-    position: absolute;
-    right: 0;
-    width: 38px;
-    height: 24px;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 2;
+  position: absolute;
+  right: 0;
+  width: 38px;
+  height: 24px;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
 }
 .bf-im-switches i {
-    display: flex;
-    align-items: center;
-    width: 38px;
-    height: 22px;
-    border-radius: 20px;
-    background: var(--im-circle);
-    padding: 3px;
-    font-style: normal;
-    transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  width: 38px;
+  height: 22px;
+  border-radius: 20px;
+  background: var(--im-circle);
+  padding: 3px;
+  font-style: normal;
+  transition: background 0.15s;
 }
 .bf-im-switches i > span,
 .bf-im-switches i > svg {
-    background: var(--im-muted);
-    color: var(--im-bg);
-    border-radius: 50%;
-    width: 16px;
-    height: 16px;
-    transition: transform 0.15s;
-    text-align: center;
-    line-height: 16px;
+  background: var(--im-muted);
+  color: var(--im-bg);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.15s;
+  text-align: center;
+  line-height: 16px;
 }
 .bf-im-switches input:checked + i {
-    background: var(--im-green);
+  background: var(--im-green);
 }
 .bf-im-switches input:checked + i > * {
-    transform: translateX(16px);
-    background: #fff;
-    color: #36393f;
+  transform: translateX(16px);
+  background: #fff;
+  color: #36393f;
 }
 .bf-im-hero {
-    text-align: center;
-    padding: 30px 24px 26px;
+  text-align: center;
+  padding: 30px 24px 26px;
 }
 .bf-im-hero h2 {
-    margin: 0;
-    font-size: 28px;
-    font-weight: 750;
-    letter-spacing: -0.5px;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 750;
+  letter-spacing: -0.5px;
 }
 .bf-im-hero > p {
-    margin: 8px 0 22px;
-    color: var(--im-muted);
-    font-size: 14px;
+  margin: 8px 0 22px;
+  color: var(--im-muted);
+  font-size: 14px;
 }
 .bf-im-stage {
-    width: 192px;
-    height: 192px;
-    margin: 24px auto 28px;
+  width: 192px;
+  height: 192px;
+  margin: 24px auto 28px;
 }
 .bf-im-stage > div {
-    width: 100%;
-    height: 100%;
+  width: 100%;
+  height: 100%;
 }
 .bf-im-stage.checker {
-    background: conic-gradient(#8882 25%, transparent 0 50%, #8882 0 75%, transparent 0) 0 0/16px 16px;
-    border-radius: 8px;
+  background: conic-gradient(#8882 25%, transparent 0 50%, #8882 0 75%, transparent 0) 0 0/16px 16px;
+  border-radius: 8px;
 }
 .bf-im-hero-actions {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 .bf-im-round {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 50px;
-    height: 50px;
-    min-width: 0;
-    border: 2px solid transparent;
-    border-radius: 50%;
-    padding: 9px;
-    background: var(--im-circle);
-    color: var(--im-muted);
-    cursor: pointer;
-    transition:
-        background 0.15s,
-        border-color 0.15s,
-        transform 0.15s;
-    overflow: hidden;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  min-width: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  padding: 9px;
+  background: var(--im-circle);
+  color: var(--im-muted);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.15s;
+  overflow: hidden;
 }
 .bf-im-round:hover {
-    background: var(--im-hover);
-    transform: translateY(-1px);
+  background: var(--im-hover);
+  transform: translateY(-1px);
 }
 .bf-im-round.selected {
-    border-color: var(--im-green);
-    color: var(--im-text);
+  border-color: var(--im-green);
+  color: var(--im-text);
 }
 .bf-im-round > svg {
-    width: 23px;
-    height: 23px;
+  width: 23px;
+  height: 23px;
 }
 .bf-im-round input[type="radio"],
 .bf-im-picker input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    margin: 0;
-    z-index: 2;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+  z-index: 2;
 }
 .bf-im-swatch {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 4px solid var(--im-circle);
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 4px solid var(--im-circle);
 }
 .bf-im-download-pill {
-    display: flex;
-    overflow: hidden;
-    border-radius: 28px;
-    background: var(--im-green);
-    color: white;
-    height: 50px;
+  display: flex;
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--im-green);
+  color: white;
+  height: 50px;
 }
 .bf-im-download-pill button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background: none;
-    border: 0;
-    padding: 0 20px;
-    font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: none;
+  border: 0;
+  padding: 0 20px;
+  font-weight: 600;
 }
 .bf-im-download-pill button + button {
-    padding: 0 12px;
-    border-left: 1px solid #ffffff40;
+  padding: 0 12px;
+  border-left: 1px solid #ffffff40;
 }
 .bf-im-download-pill button:hover,
 .bf-im-download-pill .active {
-    background: #ffffff20;
+  background: #ffffff20;
 }
 .bf-im-download-pill svg {
-    width: 21px;
-    height: 21px;
+  width: 21px;
+  height: 21px;
 }
 .bf-im-download-pill span {
-    text-align: left;
-    line-height: 18px;
+  text-align: left;
+  line-height: 18px;
 }
 .bf-im-download-pill small {
-    display: block;
-    font-size: 10px;
-    font-weight: 400;
-    opacity: 0.85;
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.85;
 }
 .bf-im-controls {
-    border: 0;
-    margin: 0;
-    padding: 30px;
-    background: var(--im-panel);
-    min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 30px;
+  background: var(--im-panel);
+  min-width: 0;
 }
 .bf-im-columns {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 42px;
-    max-width: 840px;
-    margin: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 42px;
+  max-width: 840px;
+  margin: auto;
 }
 .bf-im-chooser {
-    margin-bottom: 28px;
+  margin-bottom: 28px;
 }
 .bf-im-chooser:last-child {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
 .bf-im-chooser h3 {
-    font-size: 15px;
-    font-weight: 650;
-    margin: 0 0 14px;
-    display: flex;
-    gap: 8px;
-    align-items: center;
+  font-size: 15px;
+  font-weight: 650;
+  margin: 0 0 14px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 .bf-im-chooser h3 small {
-    font-size: 11px;
-    color: var(--im-muted);
-    font-weight: 400;
+  font-size: 11px;
+  color: var(--im-muted);
+  font-weight: 400;
 }
 .bf-im-circles {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 9px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
 }
 .bf-im-thumb {
-    display: block;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 .bf-im-choice {
-    padding: 7px;
+  padding: 7px;
 }
 .bf-im-choice .bf-im-thumb svg {
-    overflow: hidden;
+  overflow: hidden;
 }
 .bf-im-cut-icon {
-    display: block;
-    width: 22px;
-    height: 22px;
-    border: 2px solid currentColor;
-    border-radius: 50%;
-    position: relative;
-    opacity: 0.75;
+  display: block;
+  width: 22px;
+  height: 22px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  position: relative;
+  opacity: 0.75;
 }
 .bf-im-cut-icon::after {
-    content: "";
-    position: absolute;
-    left: 8px;
-    top: -2px;
-    width: 2px;
-    height: 22px;
-    transform: rotate(45deg);
-    background: currentColor;
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: -2px;
+  width: 2px;
+  height: 22px;
+  transform: rotate(45deg);
+  background: currentColor;
 }
 .bf-im-auto {
-    font-size: 9px;
-    font-weight: 750;
-    letter-spacing: -0.2px;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: -0.2px;
 }
 .bf-im-layer-icon {
-    position: relative;
-    width: 28px;
-    height: 28px;
+  position: relative;
+  width: 28px;
+  height: 28px;
 }
 .bf-im-layer-icon i,
 .bf-im-layer-icon b {
-    position: absolute;
-    display: block;
-    width: 19px;
-    height: 19px;
-    border-radius: 4px;
-    top: 1px;
-    left: 1px;
-    background: #aeb2b9;
+  position: absolute;
+  display: block;
+  width: 19px;
+  height: 19px;
+  border-radius: 4px;
+  top: 1px;
+  left: 1px;
+  background: #aeb2b9;
 }
 .bf-im-layer-icon b {
-    top: 8px;
-    left: 8px;
-    background: #5e646e;
-    border: 2px solid var(--im-circle);
+  top: 8px;
+  left: 8px;
+  background: #5e646e;
+  border: 2px solid var(--im-circle);
 }
 .bf-im-layer-icon.front b {
-    background: #aeb2b9;
+  background: #aeb2b9;
 }
 .bf-im-layer-icon.front i {
-    background: #5e646e;
+  background: #5e646e;
 }
 .bf-im-playback {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin: 18px auto 0;
-    max-width: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 18px auto 0;
+  max-width: 320px;
 }
 .bf-im-playback button,
 .bf-im-reset {
-    border: 0;
-    background: none;
-    color: var(--im-muted);
-    font-size: 12px;
-    padding: 4px;
+  border: 0;
+  background: none;
+  color: var(--im-muted);
+  font-size: 12px;
+  padding: 4px;
 }
 .bf-im-playback input,
 .bf-im-range input {
-    accent-color: var(--im-green);
-    width: 100%;
-    cursor: pointer;
+  accent-color: var(--im-green);
+  width: 100%;
+  cursor: pointer;
 }
 .bf-im-range {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-    margin: 10px 0;
-    font-size: 12px;
-    color: var(--im-muted);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin: 10px 0;
+  font-size: 12px;
+  color: var(--im-muted);
 }
 .bf-im-range input {
-    grid-column: 1/-1;
-    margin: 5px 0;
+  grid-column: 1/-1;
+  margin: 5px 0;
 }
 .bf-im-range output {
-    font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums;
 }
 .bf-im-chooser > small {
-    color: var(--im-muted);
-    font-size: 12px;
+  color: var(--im-muted);
+  font-size: 12px;
 }
 .bf-im-reset {
-    display: block;
-    margin-top: 12px;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+  display: block;
+  margin-top: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .bf-im-settings {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    text-align: left;
-    max-width: 620px;
-    margin: 24px auto 0;
-    padding: 20px;
-    border: 1px solid var(--im-line);
-    border-radius: 10px;
-    background: var(--im-panel);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  text-align: left;
+  max-width: 620px;
+  margin: 24px auto 0;
+  padding: 20px;
+  border: 1px solid var(--im-line);
+  border-radius: 10px;
+  background: var(--im-panel);
 }
 .bf-im-settings legend {
-    font-size: 13px;
-    padding: 0 8px;
-    color: var(--im-muted);
+  font-size: 13px;
+  padding: 0 8px;
+  color: var(--im-muted);
 }
 .bf-im-settings > label {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--im-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--im-muted);
 }
 .bf-im-settings input:not([type="color"]),
 .bf-im-settings select {
-    height: 36px;
-    width: 100%;
-    color: var(--im-text);
-    background: var(--im-bg);
-    border: 1px solid var(--im-line);
-    border-radius: 5px;
-    padding: 6px 10px;
+  height: 36px;
+  width: 100%;
+  color: var(--im-text);
+  background: var(--im-bg);
+  border: 1px solid var(--im-line);
+  border-radius: 5px;
+  padding: 6px 10px;
 }
 .bf-im-settings input[type="color"] {
-    width: 100%;
-    height: 36px;
-    background: var(--im-bg);
-    border: 1px solid var(--im-line);
+  width: 100%;
+  height: 36px;
+  background: var(--im-bg);
+  border: 1px solid var(--im-line);
 }
 .bf-im-settings-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    grid-column: 1/-1;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  grid-column: 1/-1;
 }
 .bf-im-settings-actions button,
 .bf-im-upload-panel button,
 .bf-im-progress button {
-    background: var(--im-circle);
-    border: 0;
-    padding: 8px 12px;
-    border-radius: 5px;
-    font-size: 12px;
+  background: var(--im-circle);
+  border: 0;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-size: 12px;
 }
 .bf-im-settings > small {
-    grid-column: 1/-1;
-    color: var(--im-muted);
-    font-size: 11px;
-    line-height: 1.5;
+  grid-column: 1/-1;
+  color: var(--im-muted);
+  font-size: 11px;
+  line-height: 1.5;
 }
 .bf-im-name-error,
 .bf-im-error {
-    color: #f58c8c !important;
+  color: #f58c8c !important;
 }
 .bf-im-success {
-    color: var(--im-green) !important;
+  color: var(--im-green) !important;
 }
 .bf-im-progress {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 18px;
-    font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  font-size: 12px;
 }
 .bf-im-progress progress {
-    accent-color: var(--im-green);
-    width: 130px;
+  accent-color: var(--im-green);
+  width: 130px;
 }
 .bf-im-upload-panel {
-    font-size: 12px;
-    color: var(--im-muted);
-    margin: -10px 0 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  font-size: 12px;
+  color: var(--im-muted);
+  margin: -10px 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .bf-im-upload-panel button {
-    align-self: flex-start;
+  align-self: flex-start;
 }
 .bf-im-footer {
-    padding: 20px 24px;
-    text-align: center;
-    background: var(--im-panel);
-    border-top: 1px solid var(--im-line);
+  padding: 20px 24px;
+  text-align: center;
+  background: var(--im-panel);
+  border-top: 1px solid var(--im-line);
 }
 .bf-im-footer a {
-    font-size: 11px;
-    color: var(--im-muted);
-    text-decoration: underline;
-    text-underline-offset: 3px;
+  font-size: 11px;
+  color: var(--im-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .bf-im-footer small {
-    display: block;
-    font-size: 10px;
-    margin-top: 8px;
-    color: var(--im-muted);
-    line-height: 1.5;
+  display: block;
+  font-size: 10px;
+  margin-top: 8px;
+  color: var(--im-muted);
+  line-height: 1.5;
 }
 @container (max-width:620px) {
-    .bf-im-sitebar {
-        padding: 14px;
-        justify-content: center;
-    }
-    .bf-im-switches {
-        gap: 24px;
-    }
-    .bf-im-columns {
-        gap: 26px;
-    }
-    .bf-im-controls {
-        padding: 24px 16px;
-    }
-    .bf-im-round {
-        width: 44px;
-        height: 44px;
-    }
-    .bf-im-circles {
-        gap: 7px;
-    }
-    .bf-im-stage {
-        width: 168px;
-        height: 168px;
-    }
-    .bf-im-hero-actions {
-        gap: 8px;
-    }
-    .bf-im-download-pill {
-        height: 44px;
-    }
-    .bf-im-download-pill button {
-        padding: 0 12px;
-    }
+  .bf-im-sitebar {
+    padding: 14px;
+    justify-content: center;
+  }
+  .bf-im-switches {
+    gap: 24px;
+  }
+  .bf-im-columns {
+    gap: 26px;
+  }
+  .bf-im-controls {
+    padding: 24px 16px;
+  }
+  .bf-im-round {
+    width: 44px;
+    height: 44px;
+  }
+  .bf-im-circles {
+    gap: 7px;
+  }
+  .bf-im-stage {
+    width: 168px;
+    height: 168px;
+  }
+  .bf-im-hero-actions {
+    gap: 8px;
+  }
+  .bf-im-download-pill {
+    height: 44px;
+  }
+  .bf-im-download-pill button {
+    padding: 0 12px;
+  }
 }
 @container (max-width:460px) {
-    .bf-im-columns {
-        grid-template-columns: 1fr;
-    }
-    .bf-im-settings {
-        grid-template-columns: 1fr;
-    }
-    .bf-im-hero {
-        padding: 24px 12px;
-    }
-    .bf-im-hero-actions {
-        gap: 6px;
-    }
-    .bf-im-round {
-        width: 42px;
-        height: 42px;
-    }
-    .bf-im-download-pill button {
-        padding: 0 10px;
-    }
-    .bf-im-download-pill button + button {
-        padding: 0 8px;
-    }
+  .bf-im-columns {
+    grid-template-columns: 1fr;
+  }
+  .bf-im-settings {
+    grid-template-columns: 1fr;
+  }
+  .bf-im-hero {
+    padding: 24px 12px;
+  }
+  .bf-im-hero-actions {
+    gap: 6px;
+  }
+  .bf-im-round {
+    width: 42px;
+    height: 42px;
+  }
+  .bf-im-download-pill button {
+    padding: 0 10px;
+  }
+  .bf-im-download-pill button + button {
+    padding: 0 8px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-    .bf-im-site * {
-        transition: none !important;
-    }
+  .bf-im-site * {
+    transition: none !important;
+  }
+}
+
+.bf-im-home-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px;
+}
+.bf-im-home-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--im-line);
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: var(--im-panel);
+}
+.bf-im-home-actions button:first-child {
+  background: #c7540a;
+  border-color: #ff9438;
+  color: #fff;
+}
+.bf-im-home-actions button:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+.bf-im-home-actions svg {
+  width: 18px;
+  height: 18px;
+}
+.bf-im-home-actions small {
+  flex-basis: 100%;
+  color: var(--im-muted);
+  text-align: center;
 }

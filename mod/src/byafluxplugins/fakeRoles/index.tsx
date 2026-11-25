@@ -11,7 +11,7 @@ import { definePluginSettings } from "@api/Settings";
 import { Button } from "@components/Button";
 import ErrorBoundary from "@components/ErrorBoundary";
 import definePlugin from "@utils/types";
-import { waitFor } from "@webpack";
+import { findStoreLazy, waitFor } from "@webpack";
 import {
   Checkbox,
   ChannelMemberStore,
@@ -52,6 +52,8 @@ import {
   roleSectionExports,
   type ProfileRoleContext,
 } from "./profileBridge";
+
+const SelfPresenceStore = findStoreLazy("SelfPresenceStore");
 
 const settings = definePluginSettings({}).withPrivateSettings<{
   profiles?: Record<string, RoleSelection>;
@@ -341,7 +343,7 @@ function projectionContext(guildArg?: string, channelArg?: string) {
     roles: roles(guildId),
     member: GuildMemberStore.getMember(guildId, user.id) ?? undefined,
     user,
-    status: PresenceStore.getStatus(user.id),
+    status: SelfPresenceStore.getStatus(),
     revision: version,
   };
 }
@@ -423,6 +425,7 @@ function bindRuntime() {
     GuildMemberStore,
     GuildRoleStore,
     PresenceStore,
+    SelfPresenceStore,
     UserStore,
     ChannelMemberStore,
   ] as any[]) {

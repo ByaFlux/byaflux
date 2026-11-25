@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 // DO NOT REMOVE UNLESS YOU WISH TO FACE THE WRATH OF THE CIRCULAR DEPENDENCY DEMON!!!!!!!
 import "~plugins";
@@ -33,6 +33,7 @@ export { PlainSettings, Settings };
 
 import { enableStyle, initStyles } from "@api/Styles";
 import { debounce } from "@shared/debounce";
+import { restoreHomeIcon } from "@shared/iconMaker/homeIcon";
 import { StartAt } from "@utils/types";
 import { SettingsRouter, showToast } from "@webpack/common";
 
@@ -40,140 +41,154 @@ import { get as dsGet } from "./api/DataStore";
 import { showNotification } from "./api/Notifications";
 import { initPluginManager, PMLogger, startAllPlugins } from "./api/PluginManager";
 import { PlainSettings, Settings, SettingsStore } from "./api/Settings";
-import { areLocalSettingsDirty, getCloudSettings, getCloudSyncDirection, markLocalSettingsDirty, putCloudSettings, shouldCloudSync } from "./api/SettingsSync/cloudSync";
+import {
+  areLocalSettingsDirty,
+  getCloudSettings,
+  getCloudSyncDirection,
+  markLocalSettingsDirty,
+  putCloudSettings,
+  shouldCloudSync,
+} from "./api/SettingsSync/cloudSync";
 import { relaunch } from "./utils/native";
-import { checkForUpdates, setUpdateAvailableHandler, updateAndRestart, UpdateLogger } from "./utils/updater";
+import {
+  checkForUpdates,
+  setUpdateAvailableHandler,
+  updateAndRestart,
+  UpdateLogger,
+} from "./utils/updater";
 import { showUpdateBanner } from "./utils/updateBanner";
 import { onceReady } from "./webpack";
 import { patches } from "./webpack/patchWebpack";
 
 if (IS_REPORTER) {
-    require("./debug/runReporter");
+  require("./debug/runReporter");
 }
 
 async function syncSettings() {
-    const hasCloudAuth = await dsGet("Vencord_cloudSecret");
-    if (!hasCloudAuth) {
-        if (Settings.cloud.authenticated) {
-            // User switched to an account that isn't connected to cloud
-            showNotification({
-                title: "Cloud Settings",
-                body: "Cloud sync was disabled because this account isn't connected to the cloud App. You can enable it again by connecting this account in Cloud Settings. (note: it will store your preferences separately)",
-                color: "var(--yellow-360)",
-                onClick: () => SettingsRouter.openUserSettings("equicord_cloud_panel")
-            });
-            // Disable cloud sync globally
-            Settings.cloud.authenticated = false;
-        }
-        return;
+  const hasCloudAuth = await dsGet("Vencord_cloudSecret");
+  if (!hasCloudAuth) {
+    if (Settings.cloud.authenticated) {
+      // User switched to an account that isn't connected to cloud
+      showNotification({
+        title: "Cloud Settings",
+        body: "Cloud sync was disabled because this account isn't connected to the cloud App. You can enable it again by connecting this account in Cloud Settings. (note: it will store your preferences separately)",
+        color: "var(--yellow-360)",
+        onClick: () => SettingsRouter.openUserSettings("equicord_cloud_panel"),
+      });
+      // Disable cloud sync globally
+      Settings.cloud.authenticated = false;
     }
+    return;
+  }
 
-    // pre-check for local shared settings
-    if (
-        Settings.cloud.authenticated &&
-        !hasCloudAuth // this has been enabled due to local settings share or some other bug
-    ) {
-        // show a notification letting them know and tell them how to fix it
-        showNotification({
-            title: "Cloud Integrations",
-            body: "We've noticed you have cloud integrations enabled in another client! Due to limitations, you will " +
-                "need to re-authenticate to continue using them. Click here to go to the settings page to do so!",
-            color: "var(--yellow-360)",
-            onClick: () => SettingsRouter.openUserSettings("equicord_cloud_panel"),
-            noPersist: true
-        });
-        return;
-    }
-
-    if (
-        Settings.cloud.settingsSync && // if it's enabled
-        Settings.cloud.authenticated && // if cloud integrations are enabled
-        getCloudSyncDirection() !== "manual" // if we're not in manual mode
-    ) {
-        if (areLocalSettingsDirty() && shouldCloudSync("push")) {
-            await putCloudSettings();
-        } else if (shouldCloudSync("pull") && await getCloudSettings(false)) { // if we synchronized something (false means no sync)
-            // we show a notification here instead of allowing getCloudSettings() to show one to declutter the amount of
-            // potential notifications that might occur. getCloudSettings() will always send a notification regardless if
-            // there was an error to notify the user, but besides that we only want to show one notification instead of all
-            // of the possible ones it has (such as when your settings are newer).
-            showNotification({
-                title: "Cloud Settings",
-                body: "Your settings have been updated! Click here to restart to fully apply changes!",
-                color: "var(--green-360)",
-                onClick: relaunch
-            });
-        }
-    }
-
-    const saveSettingsOnFrequentAction = debounce(async () => {
-        if (Settings.cloud.settingsSync && Settings.cloud.authenticated && shouldCloudSync("push")) {
-            await putCloudSettings();
-        }
-    }, 60_000);
-
-    SettingsStore.addGlobalChangeListener(() => {
-        markLocalSettingsDirty();
-        saveSettingsOnFrequentAction();
+  // pre-check for local shared settings
+  if (
+    Settings.cloud.authenticated &&
+    !hasCloudAuth // this has been enabled due to local settings share or some other bug
+  ) {
+    // show a notification letting them know and tell them how to fix it
+    showNotification({
+      title: "Cloud Integrations",
+      body:
+        "We've noticed you have cloud integrations enabled in another client! Due to limitations, you will " +
+        "need to re-authenticate to continue using them. Click here to go to the settings page to do so!",
+      color: "var(--yellow-360)",
+      onClick: () => SettingsRouter.openUserSettings("equicord_cloud_panel"),
+      noPersist: true,
     });
+    return;
+  }
+
+  if (
+    Settings.cloud.settingsSync && // if it's enabled
+    Settings.cloud.authenticated && // if cloud integrations are enabled
+    getCloudSyncDirection() !== "manual" // if we're not in manual mode
+  ) {
+    if (areLocalSettingsDirty() && shouldCloudSync("push")) {
+      await putCloudSettings();
+    } else if (shouldCloudSync("pull") && (await getCloudSettings(false))) {
+      // if we synchronized something (false means no sync)
+      // we show a notification here instead of allowing getCloudSettings() to show one to declutter the amount of
+      // potential notifications that might occur. getCloudSettings() will always send a notification regardless if
+      // there was an error to notify the user, but besides that we only want to show one notification instead of all
+      // of the possible ones it has (such as when your settings are newer).
+      showNotification({
+        title: "Cloud Settings",
+        body: "Your settings have been updated! Click here to restart to fully apply changes!",
+        color: "var(--green-360)",
+        onClick: relaunch,
+      });
+    }
+  }
+
+  const saveSettingsOnFrequentAction = debounce(async () => {
+    if (Settings.cloud.settingsSync && Settings.cloud.authenticated && shouldCloudSync("push")) {
+      await putCloudSettings();
+    }
+  }, 60_000);
+
+  SettingsStore.addGlobalChangeListener(() => {
+    markLocalSettingsDirty();
+    saveSettingsOnFrequentAction();
+  });
 }
 
 let notifiedForUpdatesThisSession = false;
 
 function showUpdateNotice() {
-    if (notifiedForUpdatesThisSession) return;
+  if (notifiedForUpdatesThisSession) return;
 
-    try {
-        showUpdateBanner(async () => {
-            try {
-                await updateAndRestart();
-            } catch (error) {
-                UpdateLogger.error(error);
-                throw error;
-            }
-        });
-        notifiedForUpdatesThisSession = true;
-    } catch (error) {
-        UpdateLogger.error("Failed to show update notice", error);
-    }
+  try {
+    showUpdateBanner(async () => {
+      try {
+        await updateAndRestart();
+      } catch (error) {
+        UpdateLogger.error(error);
+        throw error;
+      }
+    });
+    notifiedForUpdatesThisSession = true;
+  } catch (error) {
+    UpdateLogger.error("Failed to show update notice", error);
+  }
 }
 
 async function runUpdateCheck() {
-    if (IS_UPDATER_DISABLED) return;
+  if (IS_UPDATER_DISABLED) return;
 
-    try {
-        await checkForUpdates();
-    } catch (err) {
-        UpdateLogger.error("Failed to check for updates", err);
-    }
+  try {
+    await checkForUpdates();
+  } catch (err) {
+    UpdateLogger.error("Failed to check for updates", err);
+  }
 }
 
 async function init() {
-    await onceReady;
-    startAllPlugins(StartAt.WebpackReady);
+  await onceReady;
+  startAllPlugins(StartAt.WebpackReady);
 
-    syncSettings();
+  syncSettings();
 
-    if (!IS_DEV && !IS_WEB && !IS_UPDATER_DISABLED) {
-        setUpdateAvailableHandler(showUpdateNotice);
-        runUpdateCheck();
+  if (!IS_DEV && !IS_WEB && !IS_UPDATER_DISABLED) {
+    setUpdateAvailableHandler(showUpdateNotice);
+    runUpdateCheck();
 
-        // Periodic checks also detect releases published while Discord stays open.
-        setInterval(runUpdateCheck, 1000 * 60 * 5); // 5 minutes
-    }
+    // Periodic checks also detect releases published while Discord stays open.
+    setInterval(runUpdateCheck, 1000 * 60 * 5); // 5 minutes
+  }
 
-    if (IS_DEV) {
-        const pendingPatches = patches.filter(p => !p.all && p.predicate?.() !== false);
-        if (pendingPatches.length)
-            PMLogger.warn(
-                "Webpack has finished initialising, but some patches haven't been applied yet.",
-                "This might be expected since some Modules are lazy loaded, but please verify",
-                "that all plugins are working as intended.",
-                "You are seeing this warning because this is a Development build of ByaFlux.",
-                "\nThe following patches have not been applied:",
-                "\n\n" + pendingPatches.map(p => `${p.plugin}: ${p.find}`).join("\n")
-            );
-    }
+  if (IS_DEV) {
+    const pendingPatches = patches.filter((p) => !p.all && p.predicate?.() !== false);
+    if (pendingPatches.length)
+      PMLogger.warn(
+        "Webpack has finished initialising, but some patches haven't been applied yet.",
+        "This might be expected since some Modules are lazy loaded, but please verify",
+        "that all plugins are working as intended.",
+        "You are seeing this warning because this is a Development build of ByaFlux.",
+        "\nThe following patches have not been applied:",
+        "\n\n" + pendingPatches.map((p) => `${p.plugin}: ${p.find}`).join("\n"),
+      );
+  }
 }
 
 initPluginManager();
@@ -181,10 +196,17 @@ initStyles();
 startAllPlugins(StartAt.Init);
 init();
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
     startAllPlugins(StartAt.DOMContentLoaded);
+    void restoreHomeIcon().catch((error) =>
+      PMLogger.error("Não foi possível restaurar o ícone inicial.", error),
+    );
 
     if (IS_DISCORD_DESKTOP && Settings.nativeTitleBar) {
-        enableStyle(nativeTitleBarStyles);
+      enableStyle(nativeTitleBarStyles);
     }
-}, { once: true });
+  },
+  { once: true },
+);
