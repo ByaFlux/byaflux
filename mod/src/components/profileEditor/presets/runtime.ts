@@ -44,7 +44,7 @@ export async function captureProfile(accountId: string, name: string, fields: Fi
   const profile = UserProfileStore.getUserProfile(accountId) as any;
   const pending = UserProfileSettingsStore.getPendingChanges() as any;
   const profileFrame =
-    pending && "pendingProfileFrame" in pending
+    pending?.pendingProfileFrame !== undefined
       ? pending.pendingProfileFrame
       : (profile?.profileFrame ?? null);
   const preset = makeProfile(

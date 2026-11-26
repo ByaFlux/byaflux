@@ -286,7 +286,7 @@ export default definePlugin({
             .map(b => toDirectoryBadge(b, userId));
     },
 
-    getDirectoryBadgeId(badgeId: string, userId?: string) {
+    getDirectoryBadgeId(badgeId: string, userId?: string): string | number | undefined {
         if (!userId) return;
 
         const badge = this.getBadges({ userId, guildId: "" })

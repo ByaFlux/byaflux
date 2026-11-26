@@ -48,7 +48,7 @@ function Editor({
   const [hidden, setHidden] = React.useState<string[]>(["discord:1"]);
   const [busy, setBusy] = React.useState(false);
   const [notice, setNotice] = React.useState("Carregando sua organização…");
-  const [code, setCode] = React.useState("");
+  const [connecting, setConnecting] = React.useState(false);
   const [drag, setDrag] = React.useState<string | null>(null);
   const root = React.useRef<HTMLElement | null>(null);
   const mounted = React.useRef(true);
@@ -115,7 +115,7 @@ function Editor({
     setProfile(null);
     setOrder([]);
     setHidden(["discord:1"]);
-    setCode("");
+    setConnecting(false);
     setBusy(true);
     if (userId)
       void Native.getEditorProfile(userId)
@@ -143,9 +143,41 @@ function Editor({
     if (autoFocus) root.current?.focus();
     return () => {
       mounted.current = false;
+      if (userId) void Native.cancelLayoutConnection(userId).catch(() => {});
       if (autoFocus && !skipReturnFocusRef?.current) returnFocusRef?.current?.focus?.();
     };
   }, [userId]);
+  React.useEffect(() => {
+    if (!connecting || !userId) return;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      try {
+        const result = (await Native.checkLayoutConnection(userId!)) as OwnerProfile & {
+          pending?: boolean;
+        };
+        if (stopped || !mounted.current || currentUser.current !== userId) return;
+        if (result.pending) {
+          timer = setTimeout(poll, 1000);
+          return;
+        }
+        accept(result);
+        onSaved(result);
+        setConnecting(false);
+        setNotice("Conta confirmada pelo Discord. Você já pode organizar e salvar.");
+      } catch (error) {
+        if (!stopped && mounted.current && currentUser.current === userId) {
+          setConnecting(false);
+          setNotice(error instanceof Error ? error.message : String(error));
+        }
+      }
+    }
+    timer = setTimeout(poll, 500);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [connecting, userId]);
   React.useLayoutEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     for (const [key, node] of nodes.current) {
@@ -287,47 +319,35 @@ function Editor({
       <p className="bf-badge-layout-notice" role="status">
         {notice}
       </p>
-      {code && (
-        <p className="bf-badge-layout-code">
-          Código: <strong>{code}</strong>
-        </p>
-      )}
       {!profile?.connected ? (
         <div className="bf-badge-layout-actions">
           <Button
-            disabled={busy || !userId}
+            disabled={busy || connecting || !userId}
             onClick={() =>
               task(async () => {
-                const result = await Native.beginLayoutConnection(userId!);
-                if (mounted.current) {
-                  setCode(result.code);
-                  setNotice("Confirme este código na página aberta e depois verifique a conexão.");
+                await Native.beginLayoutConnection(userId!);
+                if (mounted.current && currentUser.current === userId) {
+                  setConnecting(true);
+                  setNotice("Autorize no Discord. A confirmação aparecerá aqui automaticamente.");
+                } else {
+                  await Native.cancelLayoutConnection(userId!);
                 }
               })
             }
           >
-            Confirmar com Discord
+            {connecting ? "Aguardando Discord…" : "Confirmar com Discord"}
           </Button>
-          {code && (
+          {connecting && (
             <Button
-              disabled={busy}
               onClick={() =>
-                task(async () => {
-                  const result = (await Native.checkLayoutConnection(userId!)) as OwnerProfile & {
-                    pending?: boolean;
-                  };
-                  if (!mounted.current) return;
-                  if (result.pending) {
-                    setNotice("Aguardando sua confirmação no navegador.");
-                    return;
-                  }
-                  accept(result);
-                  setCode("");
-                  setNotice("Conta confirmada. Você já pode organizar e salvar.");
+                void task(async () => {
+                  await Native.cancelLayoutConnection(userId!);
+                  setConnecting(false);
+                  setNotice("Confirmação cancelada. Você pode iniciar novamente.");
                 })
               }
             >
-              Verificar conexão
+              Cancelar confirmação
             </Button>
           )}
         </div>

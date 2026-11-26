@@ -5,6 +5,7 @@
  */
 
 import { Button } from "@components/Button";
+import { getBadgeRevision, subscribeToBadgeUpdates } from "@api/Badges";
 import { Paragraph } from "@components/Paragraph";
 import { classes } from "@utils/misc";
 import { Checkbox, React } from "@webpack/common";
@@ -76,6 +77,7 @@ export function LevelPicker({
 }
 
 export function BadgeEditor({ selection, save }: EditorProps) {
+  React.useSyncExternalStore(subscribeToBadgeUpdates, getBadgeRevision, getBadgeRevision);
   const order = badgeOrder(selection.order);
   const list = React.useRef<HTMLDivElement>(null);
   const rows = React.useRef(new Map<string, HTMLDivElement>());

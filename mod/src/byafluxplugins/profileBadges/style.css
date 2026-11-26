@@ -1,143 +1,142 @@
 .vc-profilebadges-content {
-    padding-bottom: 20px;
+  padding-bottom: 20px;
 }
 
 .vc-profilebadges-option {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .vc-profilebadges-option img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .vc-profilebadges-list {
-    max-height: min(55vh, 520px);
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    padding: 8px;
-    margin: 0 -8px 16px;
-    scrollbar-width: thin;
+  max-height: min(55vh, 520px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 8px;
+  margin: 0 -8px 16px;
+  scrollbar-width: thin;
 }
 
 .vc-profilebadges-sortable {
-    position: relative;
-    padding-bottom: 8px;
-    transition: none;
+  position: relative;
+  padding-bottom: 8px;
+  transition: none;
 }
 
 .vc-profilebadges-list-dragging .vc-profilebadges-sortable {
-    transition: transform 200ms cubic-bezier(.2, .8, .2, 1);
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .vc-profilebadges-list-dragging .vc-profilebadges-following {
-    transition: none;
+  transition: none;
 }
 
 .vc-profilebadges-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 8px;
-    border: 1px solid var(--border-subtle);
-    border-radius: 10px;
-    background: var(--background-secondary);
-    transition: box-shadow 200ms ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--background-secondary);
+  transition: box-shadow 200ms ease;
 }
 
 .vc-profilebadges-lifted {
-    z-index: 2;
+  z-index: 2;
 }
 
 .vc-profilebadges-lifted .vc-profilebadges-row {
-    box-shadow: var(--shadow-high);
-    border-color: var(--brand-500);
+  box-shadow: var(--shadow-high);
+  border-color: var(--brand-500);
 }
 
 .vc-profilebadges-row-content {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .vc-profilebadges-row-content .vc-form-switch-container {
-    margin: 0;
-    padding-bottom: 4px;
+  margin: 0;
+  padding-bottom: 4px;
 }
 
 .vc-profilebadges-list-dragging .vc-profilebadges-row-content {
-    pointer-events: none;
-    user-select: none;
+  pointer-events: none;
+  user-select: none;
 }
 
 .vc-profilebadges-handle {
-    cursor: grab;
-    touch-action: none;
-    user-select: none;
-    flex-shrink: 0;
-    color: var(--text-muted);
-    margin-top: 3px;
-
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  margin-top: 3px;
 }
 
 .vc-profilebadges-grip {
-    display: grid;
-    grid-template-columns: repeat(2, 3px);
-    grid-template-rows: repeat(2, 3px);
-    gap: 3px;
+  display: grid;
+  grid-template-columns: repeat(2, 3px);
+  grid-template-rows: repeat(2, 3px);
+  gap: 3px;
 }
 
 .vc-profilebadges-grip span {
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    background: currentColor;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .vc-profilebadges-handle:active {
-    cursor: grabbing;
+  cursor: grabbing;
 }
 
 .vc-profilebadges-levels {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    padding: 4px 0 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px 0 8px;
 }
 
 .vc-profilebadges-level {
-    justify-content: flex-start;
-    text-align: left;
-    white-space: normal;
-    border: 1px solid transparent;
+  justify-content: flex-start;
+  text-align: left;
+  white-space: normal;
+  border: 1px solid transparent;
 }
 
 .vc-profilebadges-level img {
-    width: 22px;
-    height: 22px;
-    flex-shrink: 0;
-    object-fit: contain;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 
 .vc-profilebadges-level-selected {
-    border-color: var(--brand-500);
-    background: var(--background-modifier-selected);
+  border-color: var(--brand-500);
+  background: var(--background-modifier-selected);
 }
 
 .vc-profilebadges-announcement {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .vc-profilebadges-list .vc-profilebadges-sortable,
-    .vc-profilebadges-row {
-        transition: none;
-    }
+  .vc-profilebadges-list .vc-profilebadges-sortable,
+  .vc-profilebadges-row {
+    transition: none;
+  }
 }

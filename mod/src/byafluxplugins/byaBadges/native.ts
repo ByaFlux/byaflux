@@ -26,4 +26,5 @@ export {
   saveProfileLayout,
   resetProfileLayout,
   disconnectProfileLayout,
+  cancelLayoutConnection,
 } from "./layout-native";
