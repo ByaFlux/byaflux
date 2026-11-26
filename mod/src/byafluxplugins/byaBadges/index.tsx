@@ -16,6 +16,7 @@ import { Modal, openModal, React, UserStore } from "@webpack/common";
 import { BadgeLayoutEditor, BadgeCustomizationPanel } from "./editor";
 import { applyBadgeLayout, BadgeLayout, readBadgeLayout } from "./layout";
 import "./layout.css";
+import { applyBadgeVisibility } from "./visibility";
 
 const Native = VencordNative.pluginHelpers.ByaBadges as PluginNative<typeof import("./native")>;
 type RemoteBadge = { id: string; name: string; description: string; icon: string };
@@ -169,6 +170,11 @@ export default definePlugin({
       (args, badges) => applyBadgeLayout(badges, cache.get(args.userId)?.layout ?? null),
       100,
     );
+    addProfileBadgeTransform(
+      "ByaFlux.BadgeVisibility",
+      (args, badges) => applyBadgeVisibility(badges, cache.get(args.userId)?.layout ?? null),
+      300,
+    );
     void Native.reportOpen(VERSION).catch(() => {});
     let count = 0;
     timer = setInterval(() => {
@@ -185,5 +191,6 @@ export default definePlugin({
     pending.clear();
     removeProfileBadge(provider);
     removeProfileBadgeTransform("ByaFlux.PublicBadgeLayout");
+    removeProfileBadgeTransform("ByaFlux.BadgeVisibility");
   },
 });

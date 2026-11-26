@@ -4,6 +4,7 @@ import { PluginNative } from "@utils/types";
 import { findByPropsLazy, findStoreLazy } from "@webpack";
 import { React, UserStore, useStateFromStores } from "@webpack/common";
 import { badgeKey, BadgeLayout, moveLayoutItem, readBadgeLayout } from "./layout";
+import { BadgeVisibilityControl } from "./visibility";
 
 const Native = VencordNative.pluginHelpers.ByaBadges as PluginNative<typeof import("./native")>;
 const Directory: any = findStoreLazy("BadgeDirectoryStore");
@@ -44,7 +45,7 @@ function Editor({
   const native = (useNativeBadges ?? useFallbackBadges)();
   const [profile, setProfile] = React.useState<OwnerProfile | null>(null);
   const [order, setOrder] = React.useState<string[]>([]);
-  const [hidden, setHidden] = React.useState<string[]>([]);
+  const [hidden, setHidden] = React.useState<string[]>(["discord:1"]);
   const [busy, setBusy] = React.useState(false);
   const [notice, setNotice] = React.useState("Carregando sua organização…");
   const [code, setCode] = React.useState("");
@@ -95,7 +96,7 @@ function Editor({
     setProfile(data);
     const layout = readBadgeLayout(data.badgeLayout);
     setOrder(layout?.order ?? []);
-    setHidden(layout?.hidden ?? []);
+    setHidden(layout?.hidden ?? ["discord:1"]);
   }
   async function task(fn: () => Promise<void>) {
     if (busy) return;
@@ -113,7 +114,7 @@ function Editor({
     currentUser.current = userId;
     setProfile(null);
     setOrder([]);
-    setHidden([]);
+    setHidden(["discord:1"]);
     setCode("");
     setBusy(true);
     if (userId)
@@ -183,8 +184,8 @@ function Editor({
       throw new Error("A conta mudou. Reabra o painel.");
     const result = (await Native.saveProfileLayout(userId, {
       expectedRevision: revision,
-      order: shownOrder,
-      hidden: hidden.filter((key) => keys.has(key)),
+      order: [...new Set([...shownOrder, ...(hidden.includes("discord:1") ? ["discord:1"] : [])])],
+      hidden: hidden.filter((key) => key === "discord:1" || keys.has(key)),
     })) as OwnerProfile;
     if (!mounted.current) return;
     accept({ ...result, connected: true });
@@ -201,11 +202,22 @@ function Editor({
       aria-label="Personalize suas insígnias"
     >
       <h3>Personalize suas insígnias</h3>
+      <BadgeVisibilityControl
+        hidden={hidden.includes("discord:1")}
+        disabled={!profile?.connected || busy}
+        onChange={(checked) =>
+          setHidden((value) =>
+            checked
+              ? [...new Set([...value, "discord:1"])]
+              : value.filter((key) => key !== "discord:1"),
+          )
+        }
+      />
       <p>Arraste para reordenar. Clique nas badges do ByaFlux para ocultar ou mostrar.</p>
       <div className="bf-badge-layout-grid" role="group" aria-label="Ordem das badges">
         {shownOrder.map((key) => {
           const entry = byKey.get(key)!;
-          const invisible = entry.custom ? hidden.includes(key) : entry.nativeHidden;
+          const invisible = hidden.includes(key) || (!entry.custom && entry.nativeHidden);
           return (
             <div
               key={key}
@@ -389,7 +401,7 @@ export function BadgeCustomizationPanel({
   return (
     <div className="bf-badge-customization-panel">
       <NativePanel {...nativeProps} />
-      <details className="bf-badge-customization-extra">
+      <details className="bf-badge-customization-extra" open>
         <summary>Organizar badges do ByaFlux</summary>
         <BadgeLayoutEditor
           {...nativeProps}
