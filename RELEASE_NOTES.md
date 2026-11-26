@@ -1,17 +1,17 @@
-# ByaFlux 0.1.22
+# ByaFlux 0.1.23
 
-- ProfilePreset e conversor de vídeo para GIF integrados ao núcleo do editor de perfil, sem ativar plugins.
-- Presets com seleção dos campos, fotos, banner, cores, cosméticos e status. Os conjuntos locais anteriores continuam disponíveis.
-- Recorte por arraste, alças de redimensionamento, prévia animada e linha do tempo do vídeo.
-- Correção da leitura de badges incompletas e proteção da projeção de cargos visuais ao abrir perfis.
-- Limpeza de arquivos auxiliares sem uso e README em português e inglês.
+- Corrigido o FakeBadges ao carregar a organização pública das badges do ByaFlux.
+- GameTime, GameVariety e Streaming com 10 níveis cada, e Gifting com 6 níveis.
+- As escolhas substituem a badge nativa da mesma família, sem duplicação, e são atualizadas imediatamente.
+- Imagens dos novos níveis incluídas no client, inclusive no Android.
+- Preferências anteriores preservadas e recuperação de seleções inválidas.
+- Corrigida a mutação do cache de badges no Android após renderizações repetidas.
 
-Windows, Linux x86_64 e Linux ARM64. Inclui o instalador Android 0.2.11.
+Simulações apenas locais. Não concedem insígnias reais, progresso, presentes ou benefícios.
 
-No Android, os dois recursos também estão disponíveis em Configurações do ByaFlux, na seção Perfil. A aplicação das alterações visuais depende do editor de perfil carregado e da confirmação em Salvar alterações. O vídeo é processado localmente.
+Windows, Linux x86_64 e Linux ARM64. Inclui Android 0.2.12.
+No Android, atualize o instalador e reinstale o Discord modificado para aplicar o novo bundle.
 
-Atualize o instalador Android e reinstale o Discord modificado para aplicar o novo bundle. Recursos Nitro e itens de perfil continuam dependendo da conta.
-
-Compilação e testes automatizados aprovados. Validação visual em um cliente Discord real e em um aparelho Android físico ainda não realizada.
+Compilação e testes automatizados aprovados. Ainda sem validação em um Discord real ou aparelho físico.
 
 Apoie o projeto em https://byaflux.discloud.dev/doar.
