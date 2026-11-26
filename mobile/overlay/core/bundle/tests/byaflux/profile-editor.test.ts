@@ -90,6 +90,48 @@ beforeEach(() => {
     vi.unstubAllGlobals()
 })
 describe('Native mobile profile editor', () => {
+    it('stores independent permanent images for multiple presets and ignores undefined draft fields', async () => {
+        const fetcher = vi.fn(
+            async (url: string) =>
+                new Response(
+                    String(url).includes('second')
+                        ? 'second image'
+                        : 'first image',
+                    { headers: { 'Content-Type': 'image/png' } },
+                ),
+        )
+        vi.stubGlobal('fetch', fetcher)
+        f.pending = {
+            pendingAvatar: { imageUri: 'blob:first' },
+            pendingBio: 'First',
+        }
+        await capture(['avatarDataUrl', 'bio'])
+        f.pending = {
+            pendingAvatar: { imageUri: 'blob:second' },
+            pendingBio: 'Second',
+        }
+        const values = await capture(['avatarDataUrl', 'bio'])
+        expect(values).toHaveLength(2)
+        expect(values[0]!.data.avatarDataUrl).toBe(
+            'data:image/png;base64,Zmlyc3QgaW1hZ2U=',
+        )
+        expect(values[1]!.data.avatarDataUrl).toBe(
+            'data:image/png;base64,c2Vjb25kIGltYWdl',
+        )
+        expect(values[0]!.data.bio).toBe('First')
+        expect(values[1]!.data.bio).toBe('Second')
+        f.pending = {
+            pendingAvatar: undefined,
+            pendingBio: undefined,
+            pendingThemeColors: undefined,
+        }
+        const final = await capture(['avatarDataUrl', 'bio', 'themeColors'])
+        expect(final[2]!.data.bio).toBe('Bio')
+        expect(final[2]!.data.themeColors).toEqual([0xff6600, 0x222222])
+        expect(fetcher).toHaveBeenLastCalledWith(
+            expect.stringContaining('/avatars/'),
+        )
+    })
     it('keeps all fifteen fields available and creates IDs without Web Crypto', () => {
         vi.stubGlobal('crypto', undefined)
         expect(allFields()).toHaveLength(15)

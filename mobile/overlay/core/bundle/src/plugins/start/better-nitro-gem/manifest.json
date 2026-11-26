@@ -1,0 +1,9 @@
+{
+  "id": "byaflux.better-nitro-gem",
+  "name": "BetterNitroGem",
+  "description": "Substitui as badges de Boost por gemas animadas, incluindo as do FakeBadges.",
+  "author": "Haru <1227436212982251533>",
+  "icon": "AwardIcon",
+  "enabledByDefault": false,
+  "dependencies": { "byaflux.bya-badges": {} }
+}

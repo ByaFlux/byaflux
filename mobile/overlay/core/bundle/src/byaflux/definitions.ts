@@ -3,11 +3,14 @@
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
+import { getBoostGemImage } from './boost-gems'
 import { progressionBadges } from './progression-badges'
 export const imageUrl = (hash: string) =>
-    hash.startsWith('data:image/png;base64,')
+    getBoostGemImage(hash) ??
+    (hash.startsWith('data:image/png;base64,')
         ? hash
-        : `https://cdn.discordapp.com/badge-icons/${hash}.png`
+        : `https://cdn.discordapp.com/badge-icons/${hash}.png`)
 export interface BadgeLevel {
     id: string
     title: string

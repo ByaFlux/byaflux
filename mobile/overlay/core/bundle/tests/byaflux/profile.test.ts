@@ -114,14 +114,52 @@ vi.mock('react-native', () => ({
     Pressable: () => null,
 }))
 
+import { boostGems, setBoostGemsEnabled } from '../../src/byaflux/boost-gems'
 import { connectProfiles } from '../../src/byaflux/profile'
 import { badgeState } from '../../src/byaflux/state'
 
 function ProfileBadgeRows() {
     return null
 }
+function ProfileBadge() {
+    return null
+}
 
 describe('ByaFlux mobile profile integration', () => {
+    it('keeps the native Boost component, touch handlers and dimensions for simulated gems', () => {
+        const cleanup: (() => unknown)[] = []
+        const id = '1227436212982251533'
+        connectProfiles((...fns) => cleanup.push(...fns))
+        try {
+            setBoostGemsEnabled(true)
+            badgeState.setFake({
+                target: id,
+                users: { [id]: { badges: [], nitro: '', boost: '24m' } },
+            })
+            const style = { width: 18, height: 18 },
+                onPress = vi.fn()
+            const props = { id: `byaflux-${id}-fake-boost`, style, onPress }
+            const rendered = fixtures.jsx.jsx(ProfileBadge, props) as {
+                type: unknown
+                props: Record<string, unknown>
+            }
+            expect(rendered.type).toBe(ProfileBadge)
+            expect(rendered.props.id).toBe('guild_booster_lvl9')
+            expect(rendered.props.iconSrc).toBe(boostGems[8]!.image)
+            expect(rendered.props.style).toBe(style)
+            expect(rendered.props.onPress).toBe(onPress)
+            expect(props.id).toBe(`byaflux-${id}-fake-boost`)
+            setBoostGemsEnabled(false)
+            const fallback = fixtures.jsx.jsx(ProfileBadge, props) as {
+                type: unknown
+            }
+            expect(fallback.type).not.toBe(ProfileBadge)
+        } finally {
+            setBoostGemsEnabled(false)
+            badgeState.setFake(undefined)
+            for (const fn of cleanup.reverse()) fn()
+        }
+    })
     it('integrates badges locally and restores native methods on cleanup', async () => {
         const cleanup: (() => unknown)[] = []
         const originalFetch = fixtures.fetchers.fetchBadge

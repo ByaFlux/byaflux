@@ -5,6 +5,7 @@ import { before, instead } from '@valenced/patcher'
 import { React, ReactJSXRuntime } from '@valenced/react'
 import { useSyncExternalStore } from 'react'
 import { Alert, Image, Pressable } from 'react-native'
+import { nativeBoostProps } from './boost-gems'
 import { badgeState, isRecord, Prefix } from './state'
 import type { PluginCleanupApi } from '@valenced/plugins/types'
 
@@ -258,6 +259,24 @@ export function connectProfiles(cleanup: PluginCleanupApi) {
         const name = typeof type === 'function' ? type.name : undefined
         if (name === 'ProfileBadgeRows' && isRecord(args[1]))
             args[1] = profileProps(args[1])
+        if (
+            name === 'ProfileBadge' &&
+            isRecord(args[1]) &&
+            typeof args[1].id === 'string' &&
+            args[1].id.endsWith('-fake-boost')
+        ) {
+            const original = args[1]
+            const local = badgeState.props(original.id)
+            const native = nativeBoostProps({
+                ...original,
+                id: original.id,
+                iconSrc: local?.source.uri ?? original.iconSrc,
+            })
+            if (native.id !== original.id) {
+                args[1] = native
+                return args
+            }
+        }
         if (
             name === 'ProfileBadge' &&
             isRecord(args[1]) &&

@@ -41,6 +41,17 @@ function profileStore(): Data {
 }
 async function image(url: string | null): Promise<string | null> {
     if (!url) return null
+    if (url.startsWith('data:')) {
+        if (
+            !/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(
+                url,
+            )
+        )
+            throw Error('A imagem do perfil não tem um formato compatível.')
+        if (((url.length - url.indexOf(',') - 1) * 3) / 4 > 8 * 1024 * 1024)
+            throw Error('A imagem ultrapassa 8 MB.')
+        return url
+    }
     const response = await fetch(url)
     if (!response.ok) throw Error('Não foi possível salvar a imagem do perfil.')
     const bytes = await response.arrayBuffer()
@@ -86,7 +97,7 @@ async function capture(id: string, name: string, fields: Field[]) {
     const profile = store('UserProfileStore')?.getUserProfile?.(id)
     if (!profile)
         throw Error('Abra seu próprio perfil antes de salvar um preset.')
-    const pending = profileStore().getPendingChanges() ?? {}
+    const pending = { ...(profileStore().getPendingChanges() ?? {}) }
     const proto = store('UserSettingsProtoStore')?.settings?.status
     const custom =
         store('CustomStatusStore')?.getCustomStatus?.(id) ?? proto?.customStatus
@@ -191,7 +202,7 @@ async function capture(id: string, name: string, fields: Field[]) {
         if (fields.includes(field))
             data[field] =
                 pending[key] !== undefined
-                    ? (pending[key]?.imageUri ?? pending[key])
+                    ? await image(pending[key]?.imageUri ?? pending[key])
                     : await image(cdn(kind, id, hash))
     }
     own(id)

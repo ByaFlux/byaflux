@@ -1,4 +1,5 @@
 import { applyBadgeLayout } from './badge-layout'
+import { replaceUserBoostGems } from './boost-gems'
 import { imageUrl, staticBadges, tieredBadges } from './definitions'
 import type { BadgeLayout } from './badge-layout'
 import type { BadgeLevel, TieredBadgeKey } from './definitions'
@@ -71,9 +72,12 @@ export const badgeState = {
         badges: T[],
         userId: string,
     ): T[] {
-        return applyBadgeLayout(
-            applyNitroVisibility(badges, this.layout(userId)),
-            this.layout(userId),
+        return replaceUserBoostGems(
+            userId,
+            applyBadgeLayout(
+                applyNitroVisibility(badges, this.layout(userId)),
+                this.layout(userId),
+            ),
         )
     },
     getFake: () => fake,
@@ -108,7 +112,10 @@ export const badgeState = {
                     })
             }
         }
-        return applyNitroVisibility(result, this.layout(userId))
+        return replaceUserBoostGems(
+            userId,
+            applyNitroVisibility(result, this.layout(userId)),
+        )
     },
     merge(original: unknown[], userId: string): unknown[] {
         const selection = fake?.users[userId]
