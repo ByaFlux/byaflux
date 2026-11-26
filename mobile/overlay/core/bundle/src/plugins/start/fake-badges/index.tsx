@@ -5,7 +5,7 @@ import { registerInternalPlugin } from '@valenced/plugins/_'
 import { useState, useSyncExternalStore } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { validUserId } from '~/byaflux/catalog'
-import { boostLevels, nitroLevels, staticBadges } from '~/byaflux/definitions'
+import { staticBadges, tieredBadges } from '~/byaflux/definitions'
 import { badgeState, emptySelection, readFakeSettings } from '~/byaflux/state'
 import manifest from './manifest.json'
 import type { PluginSettingsComponent } from '@valenced/plugins/types'
@@ -118,48 +118,30 @@ const Settings: PluginSettingsComponent<{ jsonStorage: FakeSettings }> = ({
                                 />
                             ))}
                         </TableRowGroup>
-                        <TableRadioGroup
-                            key={`nitro-${target}`}
-                            title="Badge de Nitro"
-                            defaultValue={selection.nitro}
-                            onChange={(nitro: string) =>
-                                save({ ...selection, nitro })
-                            }
-                        >
-                            <TableRadioRow
-                                value=""
-                                label="Manter a badge original"
-                            />
-                            {nitroLevels.map(b => (
+                        {tieredBadges.map(group => (
+                            <TableRadioGroup
+                                key={`${group.key}-${target}-${selection[group.key] ?? ''}`}
+                                title={`Badge de ${group.title}`}
+                                defaultValue={selection[group.key] ?? ''}
+                                onChange={(value: string) =>
+                                    save({ ...selection, [group.key]: value })
+                                }
+                            >
                                 <TableRadioRow
-                                    key={b.id}
-                                    value={b.id}
-                                    label={b.title}
+                                    value=""
+                                    label="Manter a badge original"
                                 />
-                            ))}
-                        </TableRadioGroup>
-                        <TableRadioGroup
-                            key={`boost-${target}`}
-                            title="Badge de boost"
-                            defaultValue={selection.boost}
-                            onChange={(boost: string) =>
-                                save({ ...selection, boost })
-                            }
-                        >
-                            <TableRadioRow
-                                value=""
-                                label="Manter a badge original"
-                            />
-                            {boostLevels.map(b => (
-                                <TableRadioRow
-                                    key={b.id}
-                                    value={b.id}
-                                    label={b.title
-                                        .replace('months', 'meses')
-                                        .replace('month', 'mês')}
-                                />
-                            ))}
-                        </TableRadioGroup>
+                                {group.levels.map(level => (
+                                    <TableRadioRow
+                                        key={level.id}
+                                        value={level.id}
+                                        label={level.title
+                                            .replace('months', 'meses')
+                                            .replace('month', 'mês')}
+                                    />
+                                ))}
+                            </TableRadioGroup>
+                        ))}
                         <TableRowGroup title="Ordem das badges selecionadas">
                             {selection.badges.map((key, index) => (
                                 <View

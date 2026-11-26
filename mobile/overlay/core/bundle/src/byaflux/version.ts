@@ -1,2 +1,2 @@
-export const MobileVersionName = '0.2.11'
-export const MobileVersionCode = 21199
+export const MobileVersionName = '0.2.12'
+export const MobileVersionCode = 21299

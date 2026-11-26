@@ -1,10 +1,19 @@
 import { applyBadgeLayout } from './badge-layout'
-import { boostLevels, imageUrl, nitroLevels, staticBadges } from './definitions'
+import { imageUrl, staticBadges, tieredBadges } from './definitions'
 import type { BadgeLayout } from './badge-layout'
+import type { BadgeLevel, TieredBadgeKey } from './definitions'
 
 export const Prefix = 'byaflux-'
 export type NativeBadge = Record<string, unknown>
-export type Selection = { badges: string[]; nitro: string; boost: string }
+export type Selection = {
+    badges: string[]
+    nitro: string
+    boost: string
+    gameTime?: string
+    gameVariety?: string
+    streaming?: string
+    gifting?: string
+}
 export type FakeSettings = { target: string; users: Record<string, Selection> }
 export type DisplayBadge = {
     id: string
@@ -17,6 +26,10 @@ export const emptySelection = (): Selection => ({
     badges: [],
     nitro: '',
     boost: '',
+    gameTime: '',
+    gameVariety: '',
+    streaming: '',
+    gifting: '',
 })
 export const isRecord = (x: unknown): x is Record<string, unknown> =>
     x !== null && typeof x === 'object' && !Array.isArray(x)
@@ -26,7 +39,9 @@ let revision = 0
 let remoteProvider: ((userId: string) => DisplayBadge[]) | undefined
 let layoutProvider: ((userId: string) => BadgeLayout | null) | undefined
 let fake: FakeSettings | undefined
-const nativeHashes = [...nitroLevels, ...boostLevels].map(x => x.hash)
+const nativeHashes = tieredBadges.flatMap(group =>
+    group.levels.map(x => x.hash),
+)
 
 export const badgeState = {
     status: 'Carregando catálogo',
@@ -60,12 +75,12 @@ export const badgeState = {
     },
     getFake: () => fake,
     setFake(value: FakeSettings | undefined) {
-        fake = value
+        fake = value ? readFakeSettings(value) : undefined
         this.changed()
     },
     badges(userId: string): DisplayBadge[] {
-        const result: DisplayBadge[] = remoteProvider?.(userId) ?? []
-        const selected = this.layout(userId) ? undefined : fake?.users[userId]
+        const result: DisplayBadge[] = [...(remoteProvider?.(userId) ?? [])]
+        const selected = fake?.users[userId]
         if (selected) {
             for (const key of selected.badges) {
                 const badge = staticBadges.find(b => b.key === key)
@@ -77,15 +92,14 @@ export const badgeState = {
                         iconSrc: imageUrl(badge.hash),
                     })
             }
-            for (const [kind, id, levels] of [
-                ['nitro', selected.nitro, nitroLevels],
-                ['boost', selected.boost, boostLevels],
-            ] as const) {
-                const badge = levels.find(b => b.id === id)
+            for (const group of tieredBadges) {
+                const badge = group.levels.find(
+                    b => b.id === selected[group.key],
+                )
                 if (badge)
                     result.push({
-                        id: `${Prefix}${userId}-fake-${kind}`,
-                        description: `${kind === 'nitro' ? 'Nitro' : 'Boost'}: ${badge.title}`,
+                        id: `${Prefix}${userId}-fake-${group.key}`,
+                        description: `${group.title}: ${badge.title}`,
                         icon: 'dummy',
                         iconSrc: imageUrl(badge.hash),
                     })
@@ -94,7 +108,7 @@ export const badgeState = {
         return result
     },
     merge(original: unknown[], userId: string): unknown[] {
-        const selection = this.layout(userId) ? undefined : fake?.users[userId]
+        const selection = fake?.users[userId]
         const native = original.filter(item => {
             if (!isRecord(item)) return true
             if (
@@ -102,23 +116,13 @@ export const badgeState = {
                 String(item.id ?? item.badge_id).startsWith(Prefix)
             )
                 return false
-            const id = String(item.id ?? item.badge_id ?? '').toLowerCase()
-            const image = String(
-                item.iconSrc ?? item.icon ?? item.simple_icon_raster_url ?? '',
-            )
             if (
-                selection?.nitro &&
-                (id === 'premium' ||
-                    /^(premium_tenure|nitro)(_|$)/.test(id) ||
-                    nitroLevels.some(b => image.includes(b.hash)))
-            )
-                return false
-            if (
-                selection?.boost &&
-                (/^(guild_booster|premium_guild_subscription|boost)(_|$)/.test(
-                    id,
-                ) ||
-                    boostLevels.some(b => image.includes(b.hash)))
+                selection &&
+                tieredBadges.some(
+                    group =>
+                        selection[group.key] &&
+                        isTieredNativeBadge(item, group.key),
+                )
             )
                 return false
             return true
@@ -138,8 +142,8 @@ export const badgeState = {
             ? { source: { uri: badge.iconSrc }, label: badge.description }
             : undefined
     },
-    hasReplacement(userId: string, kind: 'nitro' | 'boost') {
-        return !this.layout(userId) && !!fake?.users[userId]?.[kind]
+    hasReplacement(userId: string, kind: TieredBadgeKey) {
+        return !!fake?.users[userId]?.[kind]
     },
     nativeHashes,
 }
@@ -163,17 +167,63 @@ export function readFakeSettings(value: unknown): FakeSettings {
                       ),
                   ]
                 : [],
-            nitro:
-                typeof selection.nitro === 'string' &&
-                nitroLevels.some(b => b.id === selection.nitro)
-                    ? selection.nitro
-                    : '',
-            boost:
-                typeof selection.boost === 'string' &&
-                boostLevels.some(b => b.id === selection.boost)
-                    ? selection.boost
-                    : '',
+            nitro: '',
+            boost: '',
+        }
+        for (const group of tieredBadges) {
+            const value = selection[group.key]
+            result.users[id]![group.key] =
+                typeof value === 'string' &&
+                group.levels.some(level => level.id === value)
+                    ? value
+                    : ''
         }
     }
     return result
+}
+
+export function isTieredNativeBadge(
+    badge: NativeBadge,
+    kind: TieredBadgeKey,
+): boolean {
+    const group = tieredBadges.find(group => group.key === kind)!
+    const ids = [badge.id, badge.badge_id, badge.legacyBadgeId, badge.key]
+    const patterns: Record<TieredBadgeKey, RegExp> = {
+        nitro: /^(?:premium|premium_tier_[123]|premium_tenure(?:_[a-z0-9]+)*|nitro(?:_[a-z0-9]+)*)$/i,
+        boost: /^(?:guild_booster|guild_boosting|server_booster|premium_guild_subscription|boost)(?:_[a-z0-9]+)*$/i,
+        gameTime: /^game_time(?:_[a-z0-9]+)*$/i,
+        gameVariety: /^game_(?:variety|diversity)(?:_[a-z0-9]+)*$/i,
+        streaming: /^streaming(?:_[a-z0-9]+)*$/i,
+        gifting: /^gifting(?:_[a-z0-9]+)*$/i,
+    }
+    if (
+        ids.some(
+            id =>
+                id === group.nativeId ||
+                id === String(group.nativeId) ||
+                (typeof id === 'string' && patterns[kind].test(id)),
+        )
+    )
+        return true
+    const icons = [
+        badge.iconSrc,
+        badge.icon,
+        badge.icon_src,
+        badge.simple_icon_url,
+        badge.simple_icon_raster_url,
+    ]
+    return icons.some(
+        icon =>
+            typeof icon === 'string' &&
+            (group.levels as readonly BadgeLevel[]).some(
+                level =>
+                    icon.includes(level.hash) ||
+                    (!!level.source &&
+                        icon.includes(
+                            level.source
+                                .slice(level.source.lastIndexOf('/') + 1)
+                                .split('.')[0],
+                        )),
+            ),
+    )
 }

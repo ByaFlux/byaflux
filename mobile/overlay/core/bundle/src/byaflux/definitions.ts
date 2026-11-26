@@ -3,8 +3,17 @@
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+import { progressionBadges } from './progression-badges'
 export const imageUrl = (hash: string) =>
-    `https://cdn.discordapp.com/badge-icons/${hash}.png`
+    hash.startsWith('data:image/png;base64,')
+        ? hash
+        : `https://cdn.discordapp.com/badge-icons/${hash}.png`
+export interface BadgeLevel {
+    id: string
+    title: string
+    hash: string
+    source?: string
+}
 
 type StaticBadge = { key: string; title: string; hash: string }
 export const staticBadges: StaticBadge[] = [
@@ -133,3 +142,10 @@ export const boostLevels = [
 export function currentBadge(levels: typeof nitroLevels, id: string) {
     return levels.find(b => b.id === id) ?? levels[0]
 }
+
+export const tieredBadges = [
+    { key: 'nitro', title: 'Nitro', nativeId: 1, levels: nitroLevels },
+    { key: 'boost', title: 'Boost', nativeId: 12, levels: boostLevels },
+    ...progressionBadges,
+] as const
+export type TieredBadgeKey = (typeof tieredBadges)[number]['key']

@@ -84,7 +84,7 @@ describe('public badge layouts', () => {
             readBadgeLayout({ revision: 1, order: 'bad', hidden: [] }),
         ).toBeNull()
     })
-    it('uses public display for owner and viewers despite local fake settings', () => {
+    it('preserves public layouts without disabling local simulations', () => {
         badgeState.setRemoteProvider(() => [
             {
                 id: `byaflux-${user}-official-owner`,
@@ -96,17 +96,20 @@ describe('public badge layouts', () => {
         ])
         badgeState.setFake({
             target: user,
-            users: { [user]: { badges: [], nitro: '1', boost: '' } },
+            users: { [user]: { badges: [], nitro: 'bronze', boost: '' } },
         })
         badgeState.setLayoutProvider(() => ({
             revision: 1,
             order: ['discord:1', 'byaflux:owner'],
             hidden: [],
         }))
-        expect(badgeState.hasReplacement(user, 'nitro')).toBe(false)
+        expect(badgeState.hasReplacement(user, 'nitro')).toBe(true)
         expect(
             badgeState.merge([{ id: 'premium' }], user).map(b => (b as any).id),
-        ).toEqual(['premium', `byaflux-${user}-official-owner`])
+        ).toEqual([
+            `byaflux-${user}-official-owner`,
+            `byaflux-${user}-fake-nitro`,
+        ])
         badgeState.setLayoutProvider(undefined)
         expect(badgeState.hasReplacement(user, 'nitro')).toBe(true)
     })
