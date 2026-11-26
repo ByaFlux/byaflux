@@ -71,7 +71,10 @@ export const badgeState = {
         badges: T[],
         userId: string,
     ): T[] {
-        return applyBadgeLayout(badges, this.layout(userId))
+        return applyBadgeLayout(
+            applyNitroVisibility(badges, this.layout(userId)),
+            this.layout(userId),
+        )
     },
     getFake: () => fake,
     setFake(value: FakeSettings | undefined) {
@@ -105,7 +108,7 @@ export const badgeState = {
                     })
             }
         }
-        return result
+        return applyNitroVisibility(result, this.layout(userId))
     },
     merge(original: unknown[], userId: string): unknown[] {
         const selection = fake?.users[userId]
@@ -127,9 +130,9 @@ export const badgeState = {
                 return false
             return true
         })
-        return applyBadgeLayout(
+        return this.arrange(
             [...this.badges(userId), ...native] as Record<string, unknown>[],
-            this.layout(userId),
+            userId,
         )
     },
     props(id: unknown) {
@@ -146,6 +149,33 @@ export const badgeState = {
         return !!fake?.users[userId]?.[kind]
     },
     nativeHashes,
+}
+
+export function applyNitroVisibility<T>(
+    badges: T[],
+    layout: BadgeLayout | null,
+): T[] {
+    if (!layout?.hidden.includes('discord:1')) return badges
+    return badges.filter(badge => {
+        if (!isRecord(badge)) return true
+        if (
+            typeof badge.id === 'string' &&
+            /^byaflux-\d{17,20}-fake-nitro$/.test(badge.id)
+        )
+            return false
+        if (
+            typeof badge.layoutKey === 'string' &&
+            badge.layoutKey.startsWith('byaflux:')
+        )
+            return true
+        if (
+            typeof badge.id === 'string' &&
+            (badge.id.startsWith('byaflux_') ||
+                /^byaflux-\d{17,20}-official-/.test(badge.id))
+        )
+            return true
+        return !isTieredNativeBadge(badge, 'nitro')
+    })
 }
 
 export function readFakeSettings(value: unknown): FakeSettings {

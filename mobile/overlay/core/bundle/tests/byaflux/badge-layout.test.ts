@@ -5,7 +5,12 @@ import {
     moveLayoutItem,
     readBadgeLayout,
 } from '../../src/byaflux/badge-layout'
-import { badgeState } from '../../src/byaflux/state'
+import {
+    boostLevels,
+    imageUrl,
+    nitroLevels,
+} from '../../src/byaflux/definitions'
+import { applyNitroVisibility, badgeState } from '../../src/byaflux/state'
 
 const user = '1227436212982251533'
 afterEach(() => {
@@ -14,6 +19,54 @@ afterEach(() => {
     badgeState.setFake(undefined)
 })
 describe('public badge layouts', () => {
+    it('hides all Nitro tiers only for the profile with the public preference', () => {
+        const hidden = {
+            revision: 1,
+            order: ['discord:1'],
+            hidden: ['discord:1'],
+        }
+        const custom = {
+            id: `byaflux-${user}-official-supporter`,
+            layoutKey: 'byaflux:supporter',
+            iconSrc: imageUrl(nitroLevels[0]!.hash),
+        }
+        const nitro = nitroLevels.map(level => ({
+            id: 'unknown',
+            iconSrc: imageUrl(level.hash),
+        }))
+        const boost = boostLevels.map(level => ({
+            id: 'guild_booster',
+            iconSrc: imageUrl(level.hash),
+        }))
+        const original = [
+            ...nitro,
+            ...boost,
+            custom,
+            { id: 1 },
+            { id: 'premium_tenure_999_months' },
+        ]
+        expect(applyNitroVisibility(original, hidden)).toEqual([
+            ...boost,
+            custom,
+        ])
+        expect(original).toHaveLength(nitro.length + boost.length + 3)
+        badgeState.setLayoutProvider(id => (id === user ? hidden : null))
+        badgeState.setFake({
+            target: user,
+            users: { [user]: { badges: [], nitro: 'opal', boost: '3m' } },
+        })
+        expect(
+            badgeState.badges(user).some(b => b.id.endsWith('fake-nitro')),
+        ).toBe(false)
+        expect(badgeState.merge([{ id: 1 }, { id: 12 }], user)).toHaveLength(1)
+        expect(
+            badgeState.arrange([{ id: 1 }, { id: 12 }], '111111111111111111'),
+        ).toEqual([{ id: 1 }, { id: 12 }])
+        badgeState.setLayoutProvider(() => ({ ...hidden, hidden: [] }))
+        expect(
+            badgeState.badges(user).some(b => b.id.endsWith('fake-nitro')),
+        ).toBe(true)
+    })
     it('normalizes catalog and legacy badges across platforms', () => {
         expect(badgeKey({ badge_id: 1 })).toBe('discord:1')
         expect(badgeKey({ id: 'premium_tenure_12_month_v2' })).toBe('discord:1')

@@ -1,8 +1,9 @@
 import Page from '@valenced/components/Page'
 import { Design } from '@valenced/discord/design'
+import { getStore } from '@valenced/discord/flux'
 import { registerInternalPlugin } from '@valenced/plugins/_'
 import { useSyncExternalStore } from 'react'
-import { ScrollView } from 'react-native'
+import { Linking, ScrollView } from 'react-native'
 import { readBadgeLayout } from '~/byaflux/badge-layout'
 import { connectProfiles, matchedBadgeHooks } from '~/byaflux/profile'
 import { badgeState, Prefix } from '~/byaflux/state'
@@ -142,6 +143,21 @@ registerInternalPlugin(manifest, {
                         <TableRow
                             label={badgeState.status}
                             subLabel="Consulta por perfil, sem login e sem bot."
+                        />
+                        <TableRow
+                            label="Ocultar minha badge de Nitro"
+                            subLabel="Confirme seu perfil e salve a visibilidade para quem usa ByaFlux."
+                            onPress={() => {
+                                getStore<{
+                                    getCurrentUser(): { id: string } | undefined
+                                }>('UserStore', store => {
+                                    const id = store.getCurrentUser()?.id
+                                    if (id && /^\d{17,20}$/.test(id))
+                                        void Linking.openURL(
+                                            `${API}/badges/settings?profile=${encodeURIComponent(id)}`,
+                                        ).catch(() => {})
+                                })
+                            }}
                         />
                         <TableRow
                             label="Atualizar badges"

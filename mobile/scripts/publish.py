@@ -25,7 +25,7 @@ if existing.returncode == 0:
     print(f'{tag} already published. No release or update channel changes.')
     raise SystemExit(0)
 notes = Path('mobile-output/RELEASE_NOTES.txt')
-notes.write_text(f'ByaFlux Mobile {version}\nFakeBadges volta a funcionar com a organização pública das badges.\nGameTime, GameVariety e Streaming com 10 níveis cada. Gifting com 6 níveis.\nSeleção imediata e persistente, substituindo a badge nativa correspondente.\nSimulações apenas locais, sem alterar progresso, presentes enviados ou benefícios da conta.\nCorrigida a duplicação de badges no cache após renderizações repetidas.\nAtualize o instalador e reinstale o Discord modificado para aplicar o novo bundle.\nApoio ao projeto: https://byaflux.discloud.dev/doar.\n')
+notes.write_text(f'ByaFlux Mobile {version}\nPreferência pública para ocultar a sua badge de Nitro, em qualquer nível.\nAbra ByaBadges > Ocultar minha badge de Nitro e confirme o dono do perfil.\nA preferência acompanha o perfil e preserva Boost e as demais badges.\nRequer a API ByaFlux Cloud 1.3.1.\nAtualize o instalador e reinstale o Discord modificado para aplicar o novo bundle.\nApoio ao projeto: https://byaflux.discloud.dev/doar.\n')
 assets = [str(apk), 'mobile-output/SHA256SUMS', 'mobile-output/byaflux-mobile.bundle', 'mobile-output/manifest.json']
 gh('release','create',tag,*assets,'--target',os.environ['GITHUB_SHA'],'--title',f'ByaFlux Mobile {version}','--notes-file',str(notes),'--latest=false')
 # Keep the desktop release title intact: its commit hash drives desktop updates.
