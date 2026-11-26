@@ -1,12 +1,12 @@
-# ByaFlux 0.1.24
+# ByaFlux 0.1.25
 
-- Opção "Ocultar minha badge de Nitro" no painel de badges.
-- Preferência pública por perfil, válida para todos os níveis de Nitro nos clientes ByaFlux compatíveis.
-- Salvamento pelo dono confirmado, com proteção contra alterações em outro perfil.
-- Boost, as demais badges e os controles nativos de organização são preservados.
-- Android 0.2.13 incluído na release principal.
+- Restaurado o painel de badges do ByaFlux no menu de personalização do perfil.
+- Corrigida a compatibilidade com o novo parâmetro `hasUnreadIndicator` do Discord.
+- A opção "Ocultar minha badge de Nitro" volta a aparecer junto da organização pública das badges.
+- Nova entrada "Personalizar badges do ByaFlux" ao clicar com o botão direito no próprio perfil.
+- Os controles nativos do Discord são preservados.
 
-Requer ByaFlux Cloud 1.3.1 para salvar a preferência.
-No Android, atualize o instalador e reinstale o Discord modificado para aplicar o novo bundle.
+API 1.3.1 continua compatível. Não é necessário reenviar a API.
+Windows, Linux x86_64 e ARM64. Inclui o Android estável 0.2.13, sem mudanças nesta correção.
 
 Apoie o projeto: https://byaflux.discloud.dev/doar

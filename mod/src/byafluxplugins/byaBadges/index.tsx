@@ -9,10 +9,12 @@ import {
   removeProfileBadgeTransform,
   setPublicBadgeLayout,
 } from "@api/Badges";
+import type { NavContextMenuPatchCallback } from "@api/ContextMenu";
 import { Button } from "@components/Button";
+import { StarFilled } from "@components/Icons";
 import { Paragraph } from "@components/Paragraph";
 import definePlugin, { PluginNative } from "@utils/types";
-import { Modal, openModal, React, UserStore } from "@webpack/common";
+import { Menu, Modal, openModal, React, UserStore } from "@webpack/common";
 import { BadgeLayoutEditor, BadgeCustomizationPanel } from "./editor";
 import { applyBadgeLayout, BadgeLayout, readBadgeLayout } from "./layout";
 import "./layout.css";
@@ -110,6 +112,20 @@ export function openLayoutEditor() {
     </Modal>
   ));
 }
+const selfProfileMenu: NavContextMenuPatchCallback = (children, { user }) => {
+  const currentUser = UserStore.getCurrentUser();
+  if (!currentUser || user?.id !== currentUser.id) return;
+  children.push(
+    <Menu.MenuGroup key="byaflux-public-badges">
+      <Menu.MenuItem
+        id="byaflux-public-badges-edit"
+        label="Personalizar badges do ByaFlux"
+        leadingAccessory={{ type: "icon", icon: StarFilled }}
+        action={openLayoutEditor}
+      />
+    </Menu.MenuGroup>,
+  );
+};
 export default definePlugin({
   name: "ByaBadges",
   description: "Badges oficiais do ByaFlux e organização pública do perfil.",
@@ -117,12 +133,20 @@ export default definePlugin({
   required: true,
   enabledByDefault: true,
   dependencies: ["BadgeAPI"],
+  toolboxActions: { "Personalizar badges do ByaFlux": openLayoutEditor },
+  contextMenus: {
+    "user-context": selfProfileMenu,
+    "user-profile": selfProfileMenu,
+    "vc-ap-server-profile"(children) {
+      selfProfileMenu(children, { user: UserStore.getCurrentUser() });
+    },
+  },
   patches: [
     {
       find: 'action:"VIEW_BADGE_CUSTOMIZATION"',
       replacement: {
         match:
-          /function (\i)\((\i)\)\{(?=let\{onClose:\i,returnFocusRef:\i,skipReturnFocusRef:\i\}=)(?=[\s\S]{0,2000}?action:"VIEW_BADGE_CUSTOMIZATION")(?=[\s\S]{0,3000}?\{fixedBadges:\i,reorderableBadges:\i,hiddenBadges:\i\}=\(0,(\i)\.(\i)\)\(\))/,
+          /function (\i)\((\i)\)\{(?=let\{(?=[^}]{0,500}\bonClose:)[^}]{1,500}\}=\2(?:,|;))(?=[\s\S]{0,2000}?action:"VIEW_BADGE_CUSTOMIZATION")(?=[\s\S]{0,3000}?\{fixedBadges:\i,reorderableBadges:\i,hiddenBadges:\i\}=\(0,(\i)\.(\i)\)\(\))/,
         replace:
           "function $1($2){return $self.renderLayoutEditor($2,$3.$4,byafluxNative_$1)}function byafluxNative_$1($2){",
       },
